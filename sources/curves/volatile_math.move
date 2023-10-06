@@ -21,7 +21,7 @@ module amm::volatile_math {
   }
 
   public fun geometric_mean(unsorted: &vector<u256>, sort: bool): u256 {
-    let x = if (sort) { bubble_sort_descending(unsorted) } else { *unsorted };
+    let x = if (sort) { descending_insertion_sort(unsorted) } else { *unsorted };
 
     let len = vector::length(&x);
     let d = *vector::borrow(&x, 0); 
@@ -51,28 +51,20 @@ module amm::volatile_math {
 
   // Our pools will not have more than 4 tokens
   // Bubble sort is enough
-  fun bubble_sort_descending(x: &vector<u256>): vector<u256> {
+  fun descending_insertion_sort(x: &vector<u256>): vector<u256> {
     let x = *x;
     let len = vector::length(&x) - 1;
-    let swapped: bool;
+    let i = 0;
 
-   loop {
-      swapped = false;
-      let i = 0;
-
-      while (i < len) {
-        if (*vector::borrow(&x, i) < *vector::borrow(&x, i + 1)) {
-          vector::swap(&mut x, i, i + 1);
-          swapped = true;
-        };
-
-        i = i + 1;
+    while (i < len) {
+      let j = i;
+      while (j > 0 && *vector::borrow(&x, j - 1) <  *vector::borrow(&x, j)) {
+        vector::swap(&mut x, j, j - 1);
+        j = j - 1;
       };
 
-      if (!swapped) {
-        break
-      };
-    };
+      i = i + 1;
+    }; 
 
     x
   }
