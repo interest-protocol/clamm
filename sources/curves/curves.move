@@ -45,7 +45,7 @@ module amm::curves {
     assert!(is_stable_pair<Type>(), errors::invalid_curve());
   }
 
-  public fun assert_is_stable_type<Type>() {
+  public fun assert_is_stable_tuple<Type>() {
     assert!(is_stable_tuple<Type>(), errors::invalid_curve());
   }
 

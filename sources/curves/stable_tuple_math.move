@@ -1,9 +1,11 @@
 module amm::stable_tuple_math {
+
   use std::vector;
 
   use sui::clock::{Self, Clock};  
 
   use amm::errors;
+  use amm::math::diff_u256;
 
   public fun get_a(
     a0: u256,
@@ -50,11 +52,8 @@ module amm::stable_tuple_math {
       let prev_d = d; 
       d = (ann * s + d_p * n_coins_u256) * d / ((ann -1) * d + (n_coins_u256+ 1) * d_p);
 
-      if (d > prev_d) {
-        if (d - prev_d <= 1) break;
-      } else {
-        if (prev_d - d <= 1) break;
-      };
+      if (diff_u256(d, prev_d) <= 1) break;
+ 
       i = i + 1;
     };
 
@@ -95,13 +94,10 @@ module amm::stable_tuple_math {
 
     while (index < 255) {
       let prev_y = y;
+
       y = (y * y + c) / (2 * y + b - d);
 
-      if (y > prev_y) {
-        if (y - prev_y <= 1) break;
-      };
-
-      if (prev_y - y <= 1) break;
+      if (diff_u256(y, prev_y) <= 1) break;
 
       index = index + 1;
     };
@@ -138,11 +134,7 @@ module amm::stable_tuple_math {
       let prev_y = y;
       y = (y * y + c) / (2 * y + b - d);
 
-      if (y > prev_y) {
-        if (y - prev_y <= 1) break;
-      };
-
-      if (prev_y - y <= 1) break;
+      if (diff_u256(y, prev_y) <= 1) break;
 
       index = index + 1;
     };
