@@ -1,6 +1,7 @@
 module amm::stable_pair_math {
 
   use amm::constants::ray;
+  use amm::math::diff_u256;
 
   public fun k(
     x: u64, 
@@ -29,7 +30,6 @@ module amm::stable_pair_math {
       let precision = ray();
       // Here it is using the Newton's method to to make sure that y and and y_prev are equal   
       while (i < 255) {
-        i = i + 1;
         let y_prev = y;
         let k = f(x0, y);
         
@@ -40,11 +40,8 @@ module amm::stable_pair_math {
             y = y - ((k - xy) * precision) / d(x0, y);
           };
 
-        if (y > y_prev) {
-            if (y - y_prev <= 1) break
-          } else {
-            if (y_prev - y <= 1) break
-          };
+        if (diff_u256(y, y_prev) <= 1) break
+        i = i + 1;
       };
       y
     }
