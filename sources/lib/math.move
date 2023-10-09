@@ -1,4 +1,5 @@
 module amm::math {
+  use std::vector;
 
   use amm::errors;
   use amm::constants::{wad, ray};
@@ -59,6 +60,24 @@ module amm::math {
     } else {
       y - x
     }
+  }
+
+  /// calculate sum of nums
+  public fun sum_u256(nums: &vector<u256>): u256 {
+    let len = vector::length(nums);
+    let i = 0;
+    let sum = 0;
+    
+    while (i < len){
+      sum = sum + *vector::borrow(nums, i);
+      i = i + 1;
+    };
+    
+    sum
+  }
+
+  public fun max_u256(a: u256, b: u256): u256 {
+    if (a >= b) a else b
   }
 
 }

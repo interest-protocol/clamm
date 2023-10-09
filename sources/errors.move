@@ -15,4 +15,16 @@ module amm::errors {
   public fun failed_to_converge(): u64 {
     3
   }
+
+  public fun invalid_gamma(): u64 {
+    4
+  }
+
+  public fun invalid_a(): u64 {
+    5
+  }
+
+  public fun unsafe_value(): u64 {
+    6
+  }
 }

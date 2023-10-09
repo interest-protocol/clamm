@@ -30,6 +30,7 @@ module amm::stable_pair_math {
       let precision = ray();
       // Here it is using the Newton's method to to make sure that y and and y_prev are equal   
       while (i < 255) {
+        i = i + 1;
         let y_prev = y;
         let k = f(x0, y);
         
@@ -41,7 +42,6 @@ module amm::stable_pair_math {
           };
 
         if (diff_u256(y, y_prev) <= 1) break
-        i = i + 1;
       };
       y
     }
