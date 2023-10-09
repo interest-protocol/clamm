@@ -27,4 +27,8 @@ module amm::errors {
   public fun unsafe_value(): u64 {
     6
   }
+
+  public fun invalid_d(): u64 {
+    7
+  }  
 }

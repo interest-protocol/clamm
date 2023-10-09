@@ -76,8 +76,7 @@ module amm::math {
     sum
   }
 
-  public fun max_u256(a: u256, b: u256): u256 {
-    if (a >= b) a else b
+  public fun max_u256(x: u256, y: u256): u256 {
+    if (x >= y) x else y
   }
-
 }

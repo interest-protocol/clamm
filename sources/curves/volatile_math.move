@@ -6,7 +6,7 @@ module amm::volatile_math {
 
   use amm::errors;
   use amm::constants::ray;
-  use amm::math::{diff_u256, sum_u256, max_u256};
+  use amm::math::{diff_u256 as diff, sum_u256 as sum, max_u256 as max};
 
   const A_MULTIPLIER: u256 = 10000;
   const MIN_GAMMA: u256 = 10_000_000_000; // 10e6
@@ -39,7 +39,7 @@ module amm::volatile_math {
       };
       d = d * (((len as u256) - 1) * ray + temp) / ((len as u256) * ray);
 
-      let diff = diff_u256(d, prev_d);
+      let diff = diff(d, prev_d);
       
       if (diff <= 1 || diff * ray < d) return d;
       
@@ -49,7 +49,7 @@ module amm::volatile_math {
   }
 
   public fun reducation_coefficient(x: &vector<u256>, fee_gamma: u256): u256 {
-    let s = sum_u256(x);
+    let s = sum(x);
     let n_coins = vector::length(x);
 
     let i = 0;
@@ -85,7 +85,7 @@ module amm::volatile_math {
     };
 
     let d = (n_coins as u256) * geometric_mean(&x, false);
-    let s = sum_u256(&x);
+    let s = sum(&x);
 
     let i = 0;
     while (i < 255) {
@@ -99,7 +99,7 @@ module amm::volatile_math {
         j = j + 1;
       };
 
-      let g1k0 = diff_u256(gamma + ray, k0) + 1;
+      let g1k0 = diff(gamma + ray, k0) + 1;
       let mul1 = ray * d / gamma * g1k0 / gamma * g1k0 * A_MULTIPLIER / ann;
       let mul2 = (2 * ray) * (n_coins as u256) * k0 / g1k0;
       let neg_fprime = (s + s * mul2 / ray) + mul1 * (n_coins as u256) / k0 - mul2 * d / ray;
@@ -113,9 +113,9 @@ module amm::volatile_math {
       };
 
       d = if (d_plus > d_minus) { d_plus - d_minus } else { (d_minus - d_plus) / 2 };
-      let diff = diff_u256(d, d_prev);
+      let diff = diff(d, d_prev);
 
-      if (diff * 100000000000000 < max_u256(10000000000000000, d)) {
+      if (diff * 100000000000000 < max(10000000000000000, d)) {
         let j = 0;
         while (j < n_coins) {
           let frac = *vector::borrow(&x, j) * ray / d;
@@ -123,6 +123,78 @@ module amm::volatile_math {
           j = j + 1;
         };
         return d
+      };
+    };
+    abort errors::failed_to_converge()
+  }
+
+  public fun newton_y(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
+    let n_coins = vector::length(x);
+    let ray = ray();
+    
+    assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_a());
+    assert!(gamma > MIN_GAMMA - 1 && gamma < MAX_GAMMA + 1, errors::invalid_gamma());
+    assert!(d > 100000000000000000 - 1 && d < 1000000000000000 * ray + 1, errors::invalid_d());
+
+    let j = 0;
+    while (j < 3) {
+      let frac = *vector::borrow(x, j) * ray / d;
+      assert!(frac > 10000000000000000 - 1 && frac < 100000000000000000001, errors::unsafe_value());
+      j = j + 1;
+    };
+
+    let y = d / (n_coins as u256);
+    let k0_i = ray;
+    let s_i = 0;
+
+    let new_x = *x;
+    *vector::borrow_mut(&mut new_x, (i as u64)) = 0;
+    let x_sorted = descending_insertion_sort(&new_x);
+
+    let converge_limit = max(max(*vector::borrow(&x_sorted, 0) / 100000000000000, d / 100000000000000), 100);
+
+    j = 2;
+    while (j < n_coins + 1) {
+      let x = *vector::borrow(&x_sorted, n_coins - j);
+      y = y * d / (x * (n_coins as u256));
+      s_i = s_i + x;
+      j = j + 1;
+    };
+
+    j = 0;
+    while (j < n_coins - 1) {
+      k0_i = k0_i * *vector::borrow(&x_sorted, j) * (n_coins as u256) / d;
+      j = j + 1;
+    };
+
+    j = 0;
+    while (j < 255) {
+      let y_prev = y;
+      let k0 = k0_i * y * (n_coins as u256) / d;
+      let s = s_i + y;
+
+      let g1k0 = diff(gamma + ray, k0) + 1;
+      let mul1 = ray * d / gamma * g1k0 / gamma * g1k0 * A_MULTIPLIER / ann;
+      let mul2 = ray + (2 * ray) * k0 / g1k0;
+
+      let yfprime = ray * y + s * mul2 + mul1;
+      let dyfprime = d * mul2;
+      if (yfprime < dyfprime) { y = y_prev / 2; continue } else { yfprime = yfprime - dyfprime; };
+
+      let fprime = yfprime / y;
+
+      let y_minus = mul1 / fprime;
+      let y_plus = (yfprime + ray * d) / fprime + y_minus * ray / k0;
+      y_minus = y_minus + ray * s / fprime;
+
+      if (y_plus < y_minus) { y = y_prev / 2; } else { y = y_plus - y_minus; };
+      
+      let diff = diff(y, y_prev);
+
+      if (diff < max(converge_limit, y / 100000000000000)) {
+        let frac = y * ray / d;
+        assert!(frac > 10000000000000000 - 1 && frac < 100000000000000000001, errors::unsafe_value());
+        return y
       };
     };
     abort errors::failed_to_converge()
