@@ -4,31 +4,27 @@ module amm::errors {
     0
   }
 
-  public fun zero_division(): u64 {
+  public fun same_coin_index(): u64 {
     1
   }
 
-  public fun same_coin_index(): u64 {
+  public fun failed_to_converge(): u64 {
     2
   }
 
-  public fun failed_to_converge(): u64 {
+  public fun invalid_gamma(): u64 {
     3
   }
 
-  public fun invalid_gamma(): u64 {
+  public fun invalid_amplifier(): u64 {
     4
   }
 
-  public fun invalid_a(): u64 {
+  public fun unsafe_value(): u64 {
     5
   }
 
-  public fun unsafe_value(): u64 {
+  public fun invalid_invariant(): u64 {
     6
-  }
-
-  public fun invalid_d(): u64 {
-    7
   }  
 }

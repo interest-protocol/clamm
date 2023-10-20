@@ -2,12 +2,13 @@
 
 [move]
 version = 0
-manifest_digest = "D3D1697FCE98B5C0D079C22816FF2D15392EDBF9133DD07CDE5EFBA48729AA84"
-deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
+manifest_digest = "C9A701C78C68A69FAA05B52E293ADF3D8D12E5D8048B328BA9688ECEA6C84016"
+deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
 
 dependencies = [
   { name = "MoveStdlib" },
   { name = "Sui" },
+  { name = "SuiTears" },
 ]
 
 [[move.package]]
@@ -20,4 +21,13 @@ source = { git = "https://github.com/MystenLabs/sui.git", rev = "testnet-v1.11.1
 
 dependencies = [
   { name = "MoveStdlib" },
+]
+
+[[move.package]]
+name = "SuiTears"
+source = { git = "https://github.com/interest-protocol/suitears.git", rev = "testnet", subdir = "contracts" }
+
+dependencies = [
+  { name = "MoveStdlib" },
+  { name = "Sui" },
 ]

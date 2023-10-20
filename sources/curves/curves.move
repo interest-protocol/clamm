@@ -1,7 +1,7 @@
 module amm::curves {
 
-  use amm::utils::are_types_equal;
   use amm::errors;
+  use amm::utils::are_types_equal;
 
   /*
   * We have decided to use Curve V2 formula instead of Uniswap V3 for the following reasons
