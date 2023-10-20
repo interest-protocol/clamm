@@ -13,15 +13,22 @@ module amm::curves {
   // https://resources.curve.fi/base-features/understanding-crypto-pools/
   struct Volatile {}
 
-  /*
-  * For a pool of two pegged assets.
-  * The most effective stable algorithm is  k = x^3y + xy^3 by Andre Cronje
-  */
+  /**********************************************************************************************
+  // invariant                                                                                 //
+  // k = invariant                                                                             //
+  // x = Balance of X                  k = x^3y + xy^3                                         //
+  // y = Balance of Y                                                                          //
+  **********************************************************************************************/
   struct StablePair {}
 
-  /*
-  * Curve V1 Stable formula has been battle tested and the high gas cost by brute forcing the newton method is fine on a low gas cost chain
-  */
+  /**********************************************************************************************
+  // invariant                                                                                 //
+  // D = invariant                                                  D^(n+1)                    //
+  // A = amplification coefficient      A  n^n S + D = A D n^n + -----------                   //
+  // S = sum of balances                                             n^n P                     //
+  // P = product of balances                                                                   //
+  // n = number of tokens                                                                      //
+  **********************************************************************************************/
   struct StableTuple {}
 
 

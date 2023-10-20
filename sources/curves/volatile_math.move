@@ -9,11 +9,11 @@ module amm::volatile_math {
 
   use amm::errors;
 
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
   const A_MULTIPLIER: u256 = 10000;
   const MIN_GAMMA: u256 = 10_000_000_000; // 10e6
   const MAX_GAMMA: u256 = 50_000_000_000_000_000; // 5e16
-
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  
   public fun get_min_a(n_coins: u64): u256 {
     (pow(n_coins, (n_coins as u8)) as u256) * A_MULTIPLIER / 100
   }
