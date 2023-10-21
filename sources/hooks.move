@@ -65,7 +65,7 @@ module amm::hooks {
 
   // * Hook hot Potatoes
 
-  // * Hot potato _ DO NOT ADD ABILITIES
+  // * Hot potato DO NOT ADD ABILITIES
 
   struct StablePairPreSwap<phantom Witness: drop, phantom CoinType> {
     coin_in: Coin<CoinType>,
@@ -101,7 +101,7 @@ module amm::hooks {
     }
   }
 
-  public fun destroy_post_swap_action<Witness: drop, CoinOut>(action: StablePairPostSwap<Witness, CoinOut>): Coin<CoinOut> {
+  public fun destroy_post_swap_action<Witness: drop, CoinOut>(_: Witness, action: StablePairPostSwap<Witness, CoinOut>): Coin<CoinOut> {
     let StablePairPostSwap { coin_out } = action;
     coin_out
   }
