@@ -31,6 +31,7 @@ module amm::stable_pair_core {
   };
 
   friend amm::stable_pair;
+  friend amm::stable_pair_hooks;
 
   const MINIMUM_LIQUIDITY: u64 = 100;
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
@@ -134,7 +135,7 @@ module amm::stable_pair_core {
     (pool, lp_coin)
   }
 
-  public(friend) fun new_with_hooks<HookWitness:drop, Label, CoinX, CoinY, LpCoin>(
+  public(friend) fun new_with_hooks<Label, HookWitness:drop, CoinX, CoinY, LpCoin>(
     otw: HookWitness, 
     hook_map: HookMap,
     coin_x: Coin<CoinX>,

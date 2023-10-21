@@ -1,9 +1,8 @@
 // No Hook function Calls
 module amm::stable_pair {
-  use sui::event::emit;
+  use sui::object;
   use sui::balance::Supply;
-  use sui::object::{Self, ID};
-  use sui::tx_context::{Self, TxContext};
+  use sui::tx_context::TxContext;
   use sui::transfer::public_share_object;
   use sui::coin::{Self, CoinMetadata, Coin};
 
@@ -11,37 +10,8 @@ module amm::stable_pair {
   use amm::errors;
   use amm::curves::StablePair;
   use amm::stable_pair_core as core;
+  use amm::stable_pair_events as events;
   use amm::interest_pool::{Self, Pool, Nothing};
-
-  struct NewStablePair<phantom Curve, phantom Label, phantom HookWitness> has drop, copy {
-    pool_id: ID,
-    amount_x: u64,
-    amount_y: u64,
-    sender: address
-  }
-
-  struct Swap<phantom Curve, phantom Label, phantom HookWitness, phantom CoinIn, phantom CoinOut> has drop, copy {
-    pool_id: ID,
-    amount_in: u64,
-    amount_out: u64,
-    sender: address
-  }
-
-  struct AddLiquidity<phantom Curve, phantom Label, phantom HookWitness, phantom CoinX, phantom CoinY> has drop, copy {
-    pool_id: ID,
-    amount_x: u64,
-    amount_y: u64,
-    shares: u64,
-    sender: address
-  }
-
-  struct RemoveLiquidity<phantom Curve, phantom Label, phantom HookWitness, phantom CoinX, phantom CoinY> has drop, copy {
-    pool_id: ID,
-    amount_x: u64,
-    amount_y: u64,
-    shares: u64,
-    sender: address
-  }
 
   public fun new<Label, CoinX, CoinY, LpCoin>(
     coin_x: Coin<CoinX>,
@@ -56,7 +26,7 @@ module amm::stable_pair {
     
     let (pool, lp_coin) = core::new<Label, CoinX, CoinY, LpCoin>(coin_x, coin_y, lp_coin_supply, coin_x_metadata, coin_y_metadata, ctx);
 
-    emit(NewStablePair<StablePair, Label, Nothing> { pool_id: object::id(&pool), amount_x, amount_y, sender: tx_context::sender(ctx) });
+    events::emit_new_pair<Label, Nothing>(object::id(&pool), amount_x, amount_y, ctx);
 
     public_share_object(pool);
 
@@ -73,8 +43,8 @@ module amm::stable_pair {
 
     let amount_in = coin::value(&coin_in);
     let coin_out = core::swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(pool, coin_in, coin_min_value, ctx);
-
-    emit(Swap<StablePair, Label, Nothing, CoinIn, CoinOut>{ pool_id: object::id(pool), amount_in, amount_out: coin::value(&coin_out), sender: tx_context::sender(ctx) });
+    
+    events::emit_swap<Label, Nothing, CoinIn, CoinOut>(object::id(pool), amount_in, coin::value(&coin_out), ctx);
 
     coin_out
   }
@@ -93,7 +63,7 @@ module amm::stable_pair {
     
     let (lp_coin, extra_x, extra_y) = core::add_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, coin_x, coin_y, lp_coin_min_amount, ctx);
 
-    emit(AddLiquidity<StablePair, Label, Nothing, CoinX, CoinY>{ pool_id: object::id(pool), amount_x, amount_y, shares: coin::value(&lp_coin), sender: tx_context::sender(ctx) });
+    events::emit_add_liquidity<Label, Nothing, CoinX, CoinY>(object::id(pool), amount_x, amount_y, coin::value(&lp_coin), ctx);
 
     (lp_coin, extra_x, extra_y)
   }
@@ -114,7 +84,7 @@ module amm::stable_pair {
     let amount_x = coin::value(&coin_x);
     let amount_y = coin::value(&coin_y);
 
-    emit(RemoveLiquidity<StablePair, Label, Nothing, CoinX, CoinY>{ pool_id: object::id(pool), amount_x, amount_y, shares, sender: tx_context::sender(ctx) });
+    events::emit_remove_liquidity<Label, Nothing, CoinX, CoinY>(object::id(pool), amount_x, amount_y, shares, ctx);
 
     (coin_x, coin_y)
   }
