@@ -1,4 +1,4 @@
-module amm::stable_pair_core {
+module amm::pair_core {
   use std::vector;
   use std::type_name::{TypeName, get};
 
