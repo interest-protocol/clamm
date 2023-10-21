@@ -166,6 +166,35 @@ module amm::stable_pair_core {
     (coin::from_balance(balance::increase_supply(&mut state.lp_coin_supply, share_to_mint), ctx), extra_x, extra_y)
   }
 
+  public(friend) fun remove_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(
+    pool: &mut Pool<StablePair, Label, HookWitness>,
+    lp_coin: Coin<LpCoin>,
+    coin_x_min_amount: u64,
+    coin_y_min_amount: u64,
+    ctx: &mut TxContext
+  ): (Coin<CoinX>, Coin<CoinY>) {
+    let lp_coin_value = coin::value(&lp_coin);
+
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
+    let (coin_x_reserve, coin_y_reserve, lp_coin_supply) = get_amounts_internal(state);
+
+    // down to give the protocol an edge
+    let coin_x_removed = mul_div_down(lp_coin_value, coin_x_reserve, lp_coin_supply);
+    let coin_y_removed = mul_div_down(lp_coin_value, coin_y_reserve, lp_coin_supply);
+
+    assert!(coin_x_removed >= coin_x_min_amount, errors::slippage());
+    assert!(coin_y_removed >= coin_y_min_amount, errors::slippage());
+
+    balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
+
+    (
+      coin::take(&mut state.balance_x, coin_x_removed, ctx),
+      coin::take(&mut state.balance_y, coin_y_removed, ctx)
+    )
+  }
+
   // * Private Functions
 
   fun swap_coin_x<Label, HookWitness, CoinX, CoinY, LpCoin>(

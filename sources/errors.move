@@ -55,4 +55,7 @@ module amm::errors {
   public fun no_zero_liquidity_amounts(): u64 {
     13
   }
+  public fun no_zero_coin(): u64 {
+    14
+  }
 }
