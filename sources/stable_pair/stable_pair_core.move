@@ -21,7 +21,7 @@ module amm::stable_pair_core {
     Pool,
     Nothing,
     new_stable_pair, 
-    new_stable_pair_with_hook
+    new_stable_pair_with_hooks
   };
 
   const MINIMUM_LIQUIDITY: u64 = 100;
@@ -46,7 +46,7 @@ module amm::stable_pair_core {
     get_amounts_internal(state)
   }
 
-  public fun new<Label, CoinX, CoinY, LpCoin>(
+  public(friend) fun new<Label, CoinX, CoinY, LpCoin>(
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
@@ -70,7 +70,7 @@ module amm::stable_pair_core {
     (pool, lp_coin)
   }
 
-  public fun new_with_hook<HookWitness:drop, Label, CoinX, CoinY, LpCoin>(
+  public(friend) fun new_with_hooks<HookWitness:drop, Label, CoinX, CoinY, LpCoin>(
     otw: HookWitness, 
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
@@ -79,7 +79,7 @@ module amm::stable_pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,      
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, HookWitness>, Coin<LpCoin>) {
-    let pool = new_stable_pair_with_hook<HookWitness, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
+    let pool = new_stable_pair_with_hooks<HookWitness, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
@@ -94,7 +94,7 @@ module amm::stable_pair_core {
     (pool, lp_coin)
   }
 
-  public fun swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(
+  public(friend) fun swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(
     pool: &mut Pool<StablePair, Label, HookWitness>, 
     coin_in: Coin<CoinIn>,
     coin_min_value: u64,
@@ -280,7 +280,7 @@ module amm::stable_pair_core {
   // * HOOK LOGIC
 
   // @dev The hook contract can mutate the state at will
-  public fun hook_get_mut_state<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
+  public(friend) fun hooks_get_mut_state<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
     _: HookWitness,
     pool: &mut Pool<StablePair, Label, HookWitness>
   ): (u256, &mut Supply<LpCoin>, &mut Balance<CoinX>, &mut Balance<CoinY>, u64, u64) {
@@ -288,7 +288,7 @@ module amm::stable_pair_core {
     (state.k_last, &mut state.lp_coin_supply, &mut state.balance_x, &mut state.balance_y, state.decimals_x, state.decimals_y)
   }
 
-  public fun hook_borrow_mut_uid<Label, HookWitness: drop>(_: HookWitness, pool: &mut Pool<StablePair, Label, HookWitness>): &mut UID {
+  public(friend) fun hooks_borrow_mut_uid<Label, HookWitness: drop>(_: HookWitness, pool: &mut Pool<StablePair, Label, HookWitness>): &mut UID {
     core::borrow_mut_uid(pool)
   }
 }   

@@ -37,7 +37,7 @@ module amm::interest_pool {
     }
   }
 
-  public(friend) fun new_stable_pair_with_hook<HookWitness: drop, Label>(
+  public(friend) fun new_stable_pair_with_hooks<HookWitness: drop, Label>(
     otw: HookWitness, 
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
@@ -56,7 +56,7 @@ module amm::interest_pool {
     }
   }
 
-  public(friend) fun new_stable_tuple_with_hook<HookWitness: drop, Label>(
+  public(friend) fun new_stable_tuple_with_hooks<HookWitness: drop, Label>(
     otw: HookWitness, 
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
@@ -75,7 +75,7 @@ module amm::interest_pool {
     }
   }
 
-  public(friend) fun new_volatile_with_hook<HookWitness: drop, Label>(
+  public(friend) fun new_volatile_with_hooks<HookWitness: drop, Label>(
     otw: HookWitness, 
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
