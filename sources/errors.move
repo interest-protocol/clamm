@@ -44,11 +44,11 @@ module amm::errors {
     10
   }
 
-  public fun pool_is_locked(): u64 {
+  public fun slippage(): u64 {
     11
   }
 
-  public fun slippage(): u64 {
+  public fun invalid_fee(): u64 {
     12
   }
 }

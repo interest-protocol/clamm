@@ -3,6 +3,8 @@ module amm::stable_pair_math {
 
   use suitears::math256::diff;
 
+  use amm::utils::remove_fee;
+
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
   /*
@@ -55,7 +57,7 @@ module amm::stable_pair_math {
 
     // We calculate the amount being sold after the fee. 
     // We calculate the amount being sold after the fee. 
-    let token_in_amount_minus_fees_adjusted = coin_amount - ((coin_amount * fee_percent) / PRECISION);
+    let token_in_amount_minus_fees_adjusted = remove_fee(coin_amount, fee_percent, PRECISION);
 
     // Calculate the stable curve invariant k = x3y+y3x 
     // We need to consider stable coins with different decimal values
@@ -69,7 +71,7 @@ module amm::stable_pair_math {
               else 
                 reserve_x - calculate_balance_out(amount_in + reserve_y, k, reserve_x);
 
-    let y = y - ((y * fee_percent) / PRECISION);
+    let y = remove_fee(y, fee_percent, PRECISION);
 
     ((y * if (is_x) { decimals_y } else { decimals_x }) / PRECISION as u64)   
   }      

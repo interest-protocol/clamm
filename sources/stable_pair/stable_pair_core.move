@@ -1,4 +1,4 @@
-module amm::pair_core {
+module amm::stable_pair_core {
   use std::vector;
   use std::type_name::{TypeName, get};
 
@@ -20,13 +20,24 @@ module amm::pair_core {
     Self as core,
     Pool,
     Nothing,
-    new_stable_pair, 
-    new_stable_pair_with_hooks
+    new_pool,
+    new_pool_hooks,
   };
 
   const MINIMUM_LIQUIDITY: u64 = 100;
+  const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
+  const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
 
   struct StateKey has drop, copy, store {}
+
+  struct SwapState has drop {
+    coin_x_reserve: u64,
+    coin_y_reserve: u64,
+    decimals_x: u64,
+    decimals_y: u64,
+    fee_percent: u256,
+    is_x: bool,
+  }
 
   struct State<phantom CoinX, phantom CoinY, phantom LpCoin> has store {
     k_last: u256,
@@ -37,7 +48,6 @@ module amm::pair_core {
     decimals_y: u64,
     fee: Balance<LpCoin>,
     seed_liquidity: Balance<LpCoin>,
-    locked: bool,
     fee_percent: u256    
   }
 
@@ -54,8 +64,7 @@ module amm::pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,      
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, Nothing>, Coin<LpCoin>) {
-
-    let pool = new_stable_pair<Label>(make_coins<CoinX, CoinY>(), ctx);
+    let pool = new_pool<StablePair, Label>(make_coins<CoinX, CoinY>(), ctx);
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
@@ -79,7 +88,7 @@ module amm::pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,      
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, HookWitness>, Coin<LpCoin>) {
-    let pool = new_stable_pair_with_hooks<HookWitness, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
+    let pool = new_pool_hooks<HookWitness, StablePair, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
@@ -100,10 +109,13 @@ module amm::pair_core {
     coin_min_value: u64,
     ctx: &mut TxContext    
   ): Coin<CoinOut> {
+    asserts::assert_coin_has_value(&coin_in);
+
     if (is_coin_x<CoinIn>(core::view_coins<StablePair, Label, HookWitness>(pool))) 
       swap_coin_x<Label, HookWitness, CoinIn, CoinOut, LpCoin>(pool, coin_in, coin_min_value, ctx)
     else 
       swap_coin_y<Label, HookWitness, CoinOut, CoinIn, LpCoin>(pool, coin_in, coin_min_value, ctx)
+
   }
 
   fun swap_coin_x<Label, HookWitness, CoinX, CoinY, LpCoin>(
@@ -112,32 +124,15 @@ module amm::pair_core {
     coin_y_min_value: u64,
     ctx: &mut TxContext
   ): Coin<CoinY> {
-    asserts::assert_coin_has_value(&coin_x);
     let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
+    // * Important needs to be created before any mutations
+    let swap_state = make_swap_state(state, true);
 
-    assert!(!state.locked, errors::pool_is_locked());
+    let coin_in_amount = coin::value(&coin_x);
 
-    let coin_x_balance = coin::into_balance(coin_x);
+    balance::join(&mut state.balance_x, coin::into_balance(coin_x));
 
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);  
-
-    let prev_k = invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y);
-
-    let coin_x_value = balance::value(&coin_x_balance);
-
-    let amount_out = calculate_amount_out(prev_k, coin_x_value, coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y, state.fee_percent, true);
-
-    assert!(amount_out >= coin_y_min_value, errors::slippage());
-
-    balance::join(&mut state.balance_x, coin_x_balance);
-
-    let coin_out = coin::take(&mut state.balance_y, amount_out, ctx);
-
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
-
-    assert!(invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y) >= prev_k, errors::invalid_invariant());
-
-    coin_out 
+    coin::take(&mut state.balance_y, swap_amount_out(swap_state, coin_in_amount, coin_y_min_value), ctx) 
   }
 
   fun swap_coin_y<Label, HookWitness, CoinX, CoinY, LpCoin>(
@@ -146,66 +141,45 @@ module amm::pair_core {
     coin_x_min_value: u64,
     ctx: &mut TxContext
   ): Coin<CoinX> {
-    asserts::assert_coin_has_value(&coin_y);
     let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
+    // * Important needs to be created before any mutations
+    let swap_state = make_swap_state(state, false);
 
-    assert!(!state.locked, errors::pool_is_locked());
+    let coin_in_amount = coin::value(&coin_y);
 
-    let coin_y_balance = coin::into_balance(coin_y);
+    balance::join(&mut state.balance_y, coin::into_balance(coin_y));
 
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state); 
-
-    let prev_k = invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y);
-
-    let coin_y_value = balance::value(&coin_y_balance);
-
-    let amount_out = calculate_amount_out(prev_k, coin_y_value, coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y, state.fee_percent, false);
-
-    assert!(amount_out >= coin_x_min_value, errors::slippage());
-
-    balance::join(&mut state.balance_y, coin_y_balance);
-
-    let coin_out = coin::take(&mut state.balance_x, amount_out, ctx);
-
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
-
-    assert!(invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y) >= prev_k, errors::invalid_invariant());
-
-    coin_out
+    coin::take(&mut state.balance_x, swap_amount_out(swap_state, coin_in_amount, coin_x_min_value), ctx) 
   }
 
-  #[allow(unused_function)]
-  fun mint_fee<CoinX, CoinY, LpCoin>(state: &mut State<CoinX, CoinY, LpCoin>): bool {
-    let is_fee_on = state.fee_percent != 0;
+  fun swap_amount_out(
+    state: SwapState,
+    coin_in_amount: u64,
+    coin_out_min_value: u64 
+  ): u64 {
+    let prev_k = invariant_(state.coin_x_reserve, state.coin_y_reserve, state.decimals_x, state.decimals_y);
 
-    if (is_fee_on) {
-      // We need to know the last K to calculate how many fees were collected
-      if (state.k_last != 0) {
-        // Find the sqrt of the current K
-        let root_k = sqrt(invariant_(balance::value(&state.balance_x), balance::value(&state.balance_y), state.decimals_x, state.decimals_y));
-        // Find the sqrt of the previous K
-        let root_k_last = sqrt(state.k_last);
+    let amount_out = calculate_amount_out(
+      prev_k,
+      coin_in_amount,  
+      state.coin_x_reserve,  
+      state.coin_y_reserve, 
+      state.decimals_x, 
+      state.decimals_y, 
+      state.fee_percent, 
+      state.is_x
+    );
 
-        // If the current K is higher, trading fees were collected. It is the only way to increase the K. 
-        if (root_k > root_k_last) {
-        // Number of fees collected in shares
-        let numerator = (balance::supply_value(&state.lp_coin_supply) as u256) * (root_k - root_k_last);
-        // logic to collect 1/5
-        let denominator = (root_k * 5) + root_k_last;
-        let liquidity = numerator / denominator;
-        if (liquidity != 0) {
-          // Increase the shares supply
-          let new_balance = balance::increase_supply(&mut state.lp_coin_supply, (liquidity as u64));
-          balance::join(&mut state.fee, new_balance);
-        }
-      }
-    };
-      // If the protocol fees are off and we have k_last value, we remove it.  
-    } else if (state.k_last != 0) {
-      state.k_last = 0;
-    };
+    assert!(amount_out >= coin_out_min_value, errors::slippage());
 
-    is_fee_on
+    let new_k = if (state.is_x) 
+        invariant_(state.coin_x_reserve + coin_in_amount, state.coin_y_reserve - amount_out, state.decimals_x, state.decimals_y)
+      else
+        invariant_(state.coin_x_reserve - amount_out, state.coin_y_reserve + coin_in_amount, state.decimals_x, state.decimals_y);
+
+    assert!(new_k >= prev_k, errors::invalid_invariant());
+
+    amount_out    
   }
 
   fun get_amounts_internal<CoinX, CoinY, LpCoin>(state: &State<CoinX, CoinY, LpCoin>): (u64, u64, u64) {
@@ -251,8 +225,7 @@ module amm::pair_core {
         decimals_y,
         fee: balance::zero(),
         seed_liquidity,
-        fee_percent: 250000000000000, // 0.025%
-        locked: false         
+        fee_percent: INITIAL_FEE_PERCENT       
       }
     );
 
@@ -267,6 +240,18 @@ module amm::pair_core {
     df::borrow_mut(id, StateKey {})
   }
 
+  fun make_swap_state<CoinX, CoinY, LpCoin>(state: &State<CoinX, CoinY, LpCoin>, is_x: bool): SwapState {
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
+    SwapState {
+      coin_x_reserve,
+      coin_y_reserve,
+      decimals_x: state.decimals_x,
+      decimals_y: state.decimals_y,
+      fee_percent: state.fee_percent,
+      is_x
+    }
+  }
+
   fun is_coin_x<CoinType>(coins: vector<TypeName>): bool {
     *vector::borrow(&coins, 0) == get<CoinType>()
   }
@@ -275,6 +260,17 @@ module amm::pair_core {
     let coins = vec_set::singleton(get<CoinX>());
     vec_set::insert(&mut coins, get<CoinY>());
     coins
+  }
+
+  // * DAO LOGIC
+
+  public(friend) fun update_fee<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
+    pool: &mut Pool<StablePair, Label, HookWitness>,
+    fee_percent: u256
+  ) {
+    assert!(MAX_FEE_PERCENT >= fee_percent, errors::invalid_fee());
+    let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
+    state.fee_percent = fee_percent;
   }
 
   // * HOOK LOGIC

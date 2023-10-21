@@ -3,14 +3,6 @@ module amm::curves {
   use amm::errors;
   use amm::utils::are_types_equal;
 
-  /**********************************************************************************************
-  // invariant                                                                                 //
-  // k = invariant                                                                             //
-  // x = Balance of X                  k = x + y                                               //
-  // y = Balance of Y                                                                          //
-  **********************************************************************************************/
-  struct SumPair {}
-
   /*
   * We have decided to use Curve V2 formula instead of Uniswap V3 for the following reasons
   * It gives a LP Coin instead of an NFT, which is more composable than an NFT
@@ -39,10 +31,6 @@ module amm::curves {
   **********************************************************************************************/
   struct StableTuple {}
 
-  public fun is_sum_pair<Type>(): bool {
-    are_types_equal<Type, SumPair>() 
-  }
-
   public fun is_volatile<Type>(): bool {
     are_types_equal<Type, Volatile>() 
   }
@@ -56,11 +44,7 @@ module amm::curves {
   }
 
   public fun is_curve<Type>(): bool {
-    is_volatile<Type>() || is_stable_pair<Type>() || is_stable_tuple<Type>() || is_sum_pair<Type>()
-  }
-
-  public fun assert_is_sum_pair<Type>() {
-    assert!(is_sum_pair<Type>(), errors::invalid_curve());    
+    is_volatile<Type>() || is_stable_pair<Type>() || is_stable_tuple<Type>()
   }
 
   public fun assert_is_volatile<Type>() {
