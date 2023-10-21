@@ -59,9 +59,53 @@ module amm::stable_pair_core {
     fee_percent: u256    
   }
 
+  public fun quote_swap_x<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64): (u64, u64, u64) {
+    quote_swap_logic<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, amount_in, true)
+  }
+
+  public fun quote_swap_y<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64): (u64, u64, u64) {
+    quote_swap_logic<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, amount_in, false)
+  }
+
   public fun get_amounts<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>): (u64, u64, u64) {
     let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
     get_amounts_internal(state)
+  }
+
+  public fun quote_add_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(
+    pool: &Pool<StablePair, Label, HookWitness>,
+    amount_x: u64,
+    amount_y: u64
+  ): (u64, u64, u64) {
+    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
+    let (coin_x_reserve, coin_y_reserve, supply) = get_amounts_internal(state);
+
+    let (optimal_x_amount, optimal_y_amount) = calculate_optimal_add_liquidity(
+      amount_x,
+      amount_y,
+      coin_x_reserve,
+      coin_y_reserve
+    );
+
+    let share_to_mint = min(
+      mul_div_down(amount_x, supply, coin_x_reserve),
+      mul_div_down(amount_y, supply, coin_y_reserve)
+    );
+
+    (share_to_mint, optimal_x_amount, optimal_y_amount)
+  }
+
+  public fun quote_remove_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(
+    pool: &Pool<StablePair, Label, HookWitness>,
+    amount: u64
+  ): (u64, u64) {
+    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
+    let (coin_x_reserve, coin_y_reserve, supply) = get_amounts_internal(state);
+
+    (
+      mul_div_down(amount, coin_x_reserve, supply),
+      mul_div_down(amount, coin_y_reserve, supply)
+    )
   }
 
   public(friend) fun new<Label, CoinX, CoinY, LpCoin>(
@@ -371,6 +415,26 @@ module amm::stable_pair_core {
 
   fun calculate_fee(amount: u64, percent: u256): u64 {
     ((((amount as u256) * percent) / PRECISION) as u64)
+  }
+
+  fun quote_swap_logic<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64, is_x: bool): (u64, u64, u64) {
+    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
+
+    let fee_in = calculate_fee(amount_in, state.fee_percent);
+    
+    let amount_out = calculate_amount_out(
+      invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y),
+      amount_in - fee_in,  
+      coin_x_reserve,  
+      coin_y_reserve, 
+      state.decimals_x, 
+      state.decimals_y, 
+      is_x
+    );
+
+    let fee_out = calculate_fee(amount_out, state.fee_percent);
+    ((amount_out - fee_out), fee_in, fee_out)
   }
 
   // * DAO LOGIC
