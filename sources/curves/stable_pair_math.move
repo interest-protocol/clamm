@@ -4,6 +4,7 @@ module amm::stable_pair_math {
   use suitears::math256::diff;
 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  const FEE_PERCENT: u256 = 250000000000000; // 0.025% - 0.00025e18
 
   /*
   * @param x Balance of Coin<X>
@@ -32,12 +33,53 @@ module amm::stable_pair_math {
       (a * b) / PRECISION // x^3y + y^3x  
     }
 
+  public fun calculate_amount_out(
+    k: u256,
+    coin_amount: u64,
+    balance_x: u64,
+    balance_y:u64,
+    decimals_x: u64,
+    decimals_y: u64,
+    is_x: bool
+  ): u64 {
+    // Precision is used to scale the number for more precise calculations. 
+    // We convert them to u256 for more precise calculations and to avoid overflows.
+    let (coin_amount, balance_x, balance_y, decimals_x, decimals_y) =
+      (
+        (coin_amount as u256),
+        (balance_x as u256),
+        (balance_y as u256),
+        (decimals_x as u256),
+        (decimals_y as u256)
+      );
+
+    // We calculate the amount being sold after the fee. 
+    // We calculate the amount being sold after the fee. 
+    let token_in_amount_minus_fees_adjusted = coin_amount - ((coin_amount * FEE_PERCENT) / PRECISION);
+
+    // Calculate the stable curve invariant k = x3y+y3x 
+    // We need to consider stable coins with different decimal values
+    let reserve_x = (balance_x * PRECISION) / decimals_x;
+    let reserve_y = (balance_y * PRECISION) / decimals_y;
+
+    let amount_in = (token_in_amount_minus_fees_adjusted * PRECISION) / if (is_x) { decimals_x } else {decimals_y };
+
+    let y = if (is_x) 
+                reserve_y - calculate_balance_out(amount_in + reserve_x, k, reserve_y) 
+              else 
+                reserve_x - calculate_balance_out(amount_in + reserve_y, k, reserve_x);
+
+    let y = y - ((y * FEE_PERCENT) / PRECISION);
+
+    ((y * if (is_x) { decimals_y } else { decimals_x }) / PRECISION as u64)   
+  }      
+
   /*
   * @param x0 New balance of the Token In
   * @param xy Invariant before the swap
   * @param y Current balance of the Token Out
   */
-    public fun calculate_balance_out(x0: u256, xy: u256, y: u256): u256 {
+  fun calculate_balance_out(x0: u256, xy: u256, y: u256): u256 {
       let i = 0;
       // Here it is using the Newton's method to to make sure that y and and y_prev are equal   
       while (i < 255) {

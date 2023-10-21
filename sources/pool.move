@@ -9,37 +9,35 @@ module amm::interest_pool {
   use amm::errors;
   use amm::curves::{Volatile, StablePair, StableTuple};
 
-  struct HasHooks has drop {}
-
-  struct NoHooks has drop {}
+  friend amm::stable_pair_core;
 
   struct Nothing has drop {}
 
-  struct Pool<phantom Curve, phantom WithHooks, phantom HookWitness> has key {
+  struct Pool<phantom Curve, phantom Label, phantom HookWitness> has key {
     id: UID,
     coins: VecSet<TypeName>
   }
 
-  public fun view_coins<Curve, WithHooks, HookWitness>(pool: &Pool<Curve, WithHooks, HookWitness>): vector<TypeName> {
-    vec_set::into_keys(pool.coins)
+  public fun view_coins<Curve, Label, HookWitness>(pool: &Pool<Curve, Label, HookWitness>): vector<TypeName> {
+    *vec_set::keys(&pool.coins)
   }
 
-  public(friend) fun borrow_mut_uid<Curve, WithHooks, HookWitness>(pool: &mut Pool<Curve, WithHooks, HookWitness>): &mut UID {
+  public(friend) fun borrow_mut_uid<Curve, Label, HookWitness>(pool: &mut Pool<Curve, Label, HookWitness>): &mut UID {
     &mut pool.id
   }
 
-  public(friend) fun new_stable_pair(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<StablePair, NoHooks, Nothing>  {
+  public(friend) fun new_stable_pair<Label>(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<StablePair, Label, Nothing>  {
     Pool {
       id: object::new(ctx),
       coins
     }
   }
 
-  public(friend) fun new_stable_pair_with_hooks<HookWitness: drop>(
+  public(friend) fun new_stable_pair_with_hooks<HookWitness: drop, Label>(
     otw: HookWitness, 
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
-  ): Pool<StablePair, HasHooks, HookWitness> {
+  ): Pool<StablePair, Label, HookWitness> {
     assert!(is_one_time_witness(&otw), errors::invalid_one_time_witness());
     Pool {
       id: object::new(ctx),
@@ -47,18 +45,18 @@ module amm::interest_pool {
     }
   }
 
-  public(friend) fun new_stable_tuple(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<StableTuple, NoHooks, Nothing>  {
+  public(friend) fun new_stable_tuple<Label>(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<StableTuple, Label, Nothing>  {
     Pool {
       id: object::new(ctx),
       coins
     }
   }
 
-  public(friend) fun new_stable_tuple_with_hooks<HookWitness: drop>(
+  public(friend) fun new_stable_tuple_with_hooks<HookWitness: drop, Label>(
     otw: HookWitness, 
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
-  ): Pool<StableTuple, HasHooks, HookWitness> {
+  ): Pool<StableTuple, Label, HookWitness> {
     assert!(is_one_time_witness(&otw), errors::invalid_one_time_witness());
     Pool {
       id: object::new(ctx),
@@ -66,18 +64,18 @@ module amm::interest_pool {
     }
   }
 
-  public(friend) fun new_volatile(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<Volatile, NoHooks, Nothing>  {
+  public(friend) fun new_volatile<Label>(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<Volatile, Label, Nothing>  {
     Pool {
       id: object::new(ctx),
       coins
     }
   }
 
-  public(friend) fun new_volatile_with_hooks<HookWitness: drop>(
+  public(friend) fun new_volatile_with_hooks<HookWitness: drop, Label>(
     otw: HookWitness, 
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
-  ): Pool<Volatile, HasHooks, HookWitness> {
+  ): Pool<Volatile, Label, HookWitness> {
     assert!(is_one_time_witness(&otw), errors::invalid_one_time_witness());
     Pool {
       id: object::new(ctx),
