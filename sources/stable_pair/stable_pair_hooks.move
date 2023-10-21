@@ -17,7 +17,9 @@ module amm::stable_pair_hooks {
     StablePairPreSwap, 
     StablePairPostSwap,
     StablePairPreAddLiquidity,
-    StablePairPostAddLiquidity
+    StablePairPostAddLiquidity,
+    StablePairPreRemoveLiquidity,
+    StablePairPostRemoveLiquidity
   }; 
 
   public fun new<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
@@ -85,5 +87,26 @@ module amm::stable_pair_hooks {
     events::emit_add_liquidity<Label, HookWitness, CoinX, CoinY>(object::id(pool), amount_x, amount_y, coin::value(&lp_coin), ctx);
 
     hooks::post_stable_pair_add_liquidity_action(lp_coin, extra_x, extra_y)
+  }
+
+  public fun remove_liquidity<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
+    pool: &mut Pool<StablePair, Label, HookWitness>,
+    action: StablePairPreRemoveLiquidity<HookWitness, LpCoin>,
+    ctx: &mut TxContext
+  ): StablePairPostRemoveLiquidity<HookWitness, CoinX, CoinY> {
+    assert!(hooks::has_position_hook(interest_pool::view_hooks(pool)), errors::has_no_hook());
+
+    let (lp_coin, coin_x_min_amount, coin_y_min_amount) = hooks::destroy_pre_remove_liquidity_action(action);
+
+    let shares = coin::value(&lp_coin);
+
+    let (coin_x, coin_y) = core::remove_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, lp_coin, coin_x_min_amount, coin_y_min_amount, ctx);
+
+    let amount_x = coin::value(&coin_x);
+    let amount_y = coin::value(&coin_y);
+
+    events::emit_remove_liquidity<Label, HookWitness, CoinX, CoinY>(object::id(pool), amount_x, amount_y, shares, ctx);
+
+    hooks::post_stable_pair_remove_liquidity_action(coin_x, coin_y)
   }
 }

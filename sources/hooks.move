@@ -158,4 +158,54 @@ module amm::hooks {
     let StablePairPostAddLiquidity { lp_coin, coin_x, coin_y } = action;
     (lp_coin, coin_x, coin_y)
   }
+
+  struct StablePairPreRemoveLiquidity<phantom Witness: drop, phantom LpCoin> {
+    lp_coin: Coin<LpCoin>,
+    coin_x_min_amount: u64,
+    coin_y_min_amount: u64,
+  }
+
+  public fun pre_stable_pair_remove_liquidity_action<Witness: drop, LpCoin>(
+    _: Witness,
+    lp_coin: Coin<LpCoin>,
+    coin_x_min_amount: u64,
+    coin_y_min_amount: u64,
+  ): StablePairPreRemoveLiquidity<Witness, LpCoin> {
+    StablePairPreRemoveLiquidity {
+      lp_coin,
+      coin_x_min_amount,
+      coin_y_min_amount
+    }
+  }
+
+  public(friend) fun destroy_pre_remove_liquidity_action<Witness: drop, LpCoin>(
+    action: StablePairPreRemoveLiquidity<Witness, LpCoin>
+  ): (Coin<LpCoin>, u64, u64) {
+    let StablePairPreRemoveLiquidity { lp_coin, coin_x_min_amount, coin_y_min_amount } = action;
+    (lp_coin, coin_x_min_amount, coin_y_min_amount)
+  }
+
+  // * Used after swaps and Pool creation is a swap
+  struct StablePairPostRemoveLiquidity<phantom Witness: drop, phantom CoinX, phantom CoinY> {
+    coin_x: Coin<CoinX>, 
+    coin_y: Coin<CoinY>
+  }
+
+  public(friend) fun post_stable_pair_remove_liquidity_action<Witness: drop, CoinX, CoinY>(
+    coin_x: Coin<CoinX>, 
+    coin_y: Coin<CoinY>
+  ): StablePairPostRemoveLiquidity<Witness, CoinX, CoinY> {
+    StablePairPostRemoveLiquidity {
+      coin_x,
+      coin_y
+    }
+  }
+
+  public fun destroy_post_remove_liquidity_action<Witness: drop, CoinX, CoinY>(
+    _: Witness, 
+    action: StablePairPostRemoveLiquidity<Witness, CoinX, CoinY>
+  ): (Coin<CoinX>, Coin<CoinY>) {
+    let StablePairPostRemoveLiquidity { coin_x, coin_y } = action;
+    (coin_x, coin_y)
+  }
 }
