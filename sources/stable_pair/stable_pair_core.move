@@ -448,6 +448,19 @@ module amm::stable_pair_core {
     state.fee_percent = fee_percent;
   }
 
+  public(friend) fun take_fees<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
+    pool: &mut Pool<StablePair, Label, HookWitness>,
+    ctx: &mut TxContext
+  ): (Coin<CoinX>, Coin<CoinY>) {
+    let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
+    let value_x = balance::value(&state.fee_x);
+    let value_y = balance::value(&state.fee_y);
+    (
+      coin::take(&mut state.fee_x, value_x, ctx),
+      coin::take(&mut state.fee_y, value_y, ctx)
+    )
+  }
+
   // * HOOK LOGIC
 
   // @dev The hook contract can mutate the state at will
