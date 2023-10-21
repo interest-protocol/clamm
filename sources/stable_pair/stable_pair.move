@@ -7,9 +7,11 @@ module amm::stable_pair {
   use sui::transfer::public_share_object;
   use sui::coin::{Self, CoinMetadata, Coin};
 
+  use amm::hooks; 
+  use amm::errors;
   use amm::curves::StablePair;
   use amm::stable_pair_core as core;
-  use amm::interest_pool::{Pool, Nothing};
+  use amm::interest_pool::{Self, Pool, Nothing};
 
   struct NewStablePair<phantom Curve, phantom Label, phantom HookWitness> has drop, copy {
     pool_id: ID,
@@ -67,6 +69,8 @@ module amm::stable_pair {
     coin_min_value: u64,
     ctx: &mut TxContext    
   ): Coin<CoinOut> {
+    assert!(!hooks::has_swap_hook(interest_pool::view_hooks(pool)), errors::hooks_not_allowed());
+
     let amount_in = coin::value(&coin_in);
     let coin_out = core::swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(pool, coin_in, coin_min_value, ctx);
 
@@ -82,6 +86,8 @@ module amm::stable_pair {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext 
   ): (Coin<LpCoin>, Coin<CoinX>, Coin<CoinY>) {
+    assert!(!hooks::has_position_hook(interest_pool::view_hooks(pool)), errors::hooks_not_allowed());
+
     let amount_x = coin::value(&coin_x);
     let amount_y = coin::value(&coin_y);
     
@@ -99,6 +105,8 @@ module amm::stable_pair {
     coin_y_min_amount: u64,
     ctx: &mut TxContext
   ): (Coin<CoinX>, Coin<CoinY>) {
+    assert!(!hooks::has_position_hook(interest_pool::view_hooks(pool)), errors::hooks_not_allowed());
+
     let shares = coin::value(&lp_coin);
 
     let (coin_x, coin_y) = core::remove_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, lp_coin, coin_x_min_amount, coin_y_min_amount, ctx);

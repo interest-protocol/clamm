@@ -15,6 +15,7 @@ module amm::stable_pair_core {
 
   use amm::errors;
   use amm::asserts;
+  use amm::hooks::HookMap;
   use amm::curves::StablePair;
   use amm::stable_pair_math::{
     invariant_, 
@@ -135,6 +136,7 @@ module amm::stable_pair_core {
 
   public(friend) fun new_with_hooks<HookWitness:drop, Label, CoinX, CoinY, LpCoin>(
     otw: HookWitness, 
+    hook_map: HookMap,
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
@@ -142,7 +144,7 @@ module amm::stable_pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,      
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, HookWitness>, Coin<LpCoin>) {
-    let pool = new_pool_hooks<HookWitness, StablePair, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
+    let pool = new_pool_hooks<HookWitness, StablePair, Label>(otw, hook_map, make_coins<CoinX, CoinY>(), ctx);
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),

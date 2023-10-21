@@ -8,6 +8,7 @@ module amm::interest_pool {
 
   use amm::errors;
   use amm::curves::assert_is_curve;
+  use amm::hooks::{HookMap, no_hook_map};
 
   friend amm::stable_pair_core;
 
@@ -15,11 +16,17 @@ module amm::interest_pool {
 
   struct Pool<phantom Curve, phantom Label, phantom HookWitness> has key, store {
     id: UID,
+    hook_map: HookMap,
     coins: VecSet<TypeName>
   }
 
   public fun view_coins<Curve, Label, HookWitness>(pool: &Pool<Curve, Label, HookWitness>): vector<TypeName> {
     *vec_set::keys(&pool.coins)
+  }
+
+
+  public fun view_hooks<Curve, Label, HookWitness>(pool: &Pool<Curve, Label, HookWitness>): &HookMap {
+    &pool.hook_map
   }
 
   public(friend) fun borrow_mut_uid<Curve, Label, HookWitness>(pool: &mut Pool<Curve, Label, HookWitness>): &mut UID {
@@ -34,12 +41,14 @@ module amm::interest_pool {
     assert_is_curve<Curve>();
     Pool {
       id: object::new(ctx),
+      hook_map: no_hook_map(),
       coins
     }
   }
 
   public(friend) fun new_pool_hooks<HookWitness: drop, Curve, Label>(
     otw: HookWitness, 
+    hook_map: HookMap,
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
   ): Pool<Curve, Label, HookWitness> {
@@ -47,6 +56,7 @@ module amm::interest_pool {
     assert!(is_one_time_witness(&otw), errors::invalid_one_time_witness());
     Pool {
       id: object::new(ctx),
+      hook_map,
       coins
     }
   }
