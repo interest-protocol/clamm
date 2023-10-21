@@ -21,7 +21,7 @@ module amm::stable_pair_core {
     Pool,
     Nothing,
     new_stable_pair, 
-    new_stable_pair_with_hooks
+    new_stable_pair_with_hook
   };
 
   const MINIMUM_LIQUIDITY: u64 = 100;
@@ -70,7 +70,7 @@ module amm::stable_pair_core {
     (pool, lp_coin)
   }
 
-  public fun new_with_hooks<HookWitness:drop, Label, CoinX, CoinY, LpCoin>(
+  public fun new_with_hook<HookWitness:drop, Label, CoinX, CoinY, LpCoin>(
     otw: HookWitness, 
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
@@ -79,7 +79,7 @@ module amm::stable_pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,      
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, HookWitness>, Coin<LpCoin>) {
-    let pool = new_stable_pair_with_hooks<HookWitness, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
+    let pool = new_stable_pair_with_hook<HookWitness, Label>(otw, make_coins<CoinX, CoinY>(), ctx);
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
