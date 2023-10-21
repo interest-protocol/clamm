@@ -27,4 +27,8 @@ module amm::errors {
   public fun invalid_invariant(): u64 {
     6
   }  
+
+  public fun invalid_one_time_witness(): u64 {
+    7
+  }
 }
