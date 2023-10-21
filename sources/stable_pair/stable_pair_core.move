@@ -15,7 +15,11 @@ module amm::stable_pair_core {
   use amm::errors;
   use amm::asserts;
   use amm::curves::StablePair;
-  use amm::stable_pair_math::{invariant_, calculate_amount_out};
+  use amm::stable_pair_math::{
+    invariant_, 
+    calculate_amount_out, 
+    calculate_optimal_add_liquidity
+  };
   use amm::interest_pool::{
     Self as core,
     Pool,
@@ -27,6 +31,7 @@ module amm::stable_pair_core {
   const MINIMUM_LIQUIDITY: u64 = 100;
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
   struct StateKey has drop, copy, store {}
 
@@ -46,7 +51,8 @@ module amm::stable_pair_core {
     balance_y: Balance<CoinY>,
     decimals_x: u64,
     decimals_y: u64,
-    fee: Balance<LpCoin>,
+    fee_x: Balance<CoinX>,
+    fee_y: Balance<CoinY>,
     seed_liquidity: Balance<LpCoin>,
     fee_percent: u256    
   }
@@ -118,6 +124,19 @@ module amm::stable_pair_core {
 
   }
 
+  // public(friend) fun add_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(
+  //   pool: &mut Pool<StablePair, Label, HookWitness>,
+  //   coin_x: Coin<X>,
+  //   coin_y: Coin<Y>,
+  //   vlp_coin_min_amount: u64,
+  //   ctx: &mut TxContext 
+  // ): Coin<LpCoin> {
+  //   let coin_x_value = coin::value(&coin_x);
+  //   let coin_y_value = coin::value(&coin_y);       
+  // }
+
+  // * Private Functions
+
   fun swap_coin_x<Label, HookWitness, CoinX, CoinY, LpCoin>(
     pool: &mut Pool<StablePair, Label, HookWitness>, 
     coin_x: Coin<CoinX>,
@@ -129,10 +148,20 @@ module amm::stable_pair_core {
     let swap_state = make_swap_state(state, true);
 
     let coin_in_amount = coin::value(&coin_x);
+    
+    let (amount_out, fee_x, fee_y) = swap_amounts(swap_state, coin_in_amount, coin_y_min_value);
+
+    if (fee_x != 0) {
+      balance::join(&mut state.fee_x, coin::into_balance(coin::split(&mut coin_x, fee_x, ctx)));
+    };
+
+    if (fee_y != 0) {
+      balance::join(&mut state.fee_y, balance::split(&mut state.balance_y, fee_y));  
+    };
 
     balance::join(&mut state.balance_x, coin::into_balance(coin_x));
 
-    coin::take(&mut state.balance_y, swap_amount_out(swap_state, coin_in_amount, coin_y_min_value), ctx) 
+    coin::take(&mut state.balance_y, amount_out, ctx) 
   }
 
   fun swap_coin_y<Label, HookWitness, CoinX, CoinY, LpCoin>(
@@ -147,17 +176,31 @@ module amm::stable_pair_core {
 
     let coin_in_amount = coin::value(&coin_y);
 
+    let (amount_out, fee_y, fee_x) = swap_amounts(swap_state, coin_in_amount, coin_x_min_value);
+
+    if (fee_y != 0) {
+      balance::join(&mut state.fee_y, coin::into_balance(coin::split(&mut coin_y, fee_y, ctx)));
+    };
+      
+
+    if (fee_x != 0) {
+      balance::join(&mut state.fee_x, balance::split(&mut state.balance_x, fee_x)); 
+    };
+
     balance::join(&mut state.balance_y, coin::into_balance(coin_y));
 
-    coin::take(&mut state.balance_x, swap_amount_out(swap_state, coin_in_amount, coin_x_min_value), ctx) 
+    coin::take(&mut state.balance_x, amount_out, ctx) 
   }
 
-  fun swap_amount_out(
+  fun swap_amounts(
     state: SwapState,
     coin_in_amount: u64,
     coin_out_min_value: u64 
-  ): u64 {
+  ): (u64, u64, u64) {
     let prev_k = invariant_(state.coin_x_reserve, state.coin_y_reserve, state.decimals_x, state.decimals_y);
+
+    let fee_in = calculate_fee(coin_in_amount, state.fee_percent);
+    let coin_in_amount = coin_in_amount - fee_in;
 
     let amount_out = calculate_amount_out(
       prev_k,
@@ -166,9 +209,11 @@ module amm::stable_pair_core {
       state.coin_y_reserve, 
       state.decimals_x, 
       state.decimals_y, 
-      state.fee_percent, 
       state.is_x
     );
+
+    let fee_out = calculate_fee(amount_out, state.fee_percent);
+    let amount_out = amount_out - fee_out;
 
     assert!(amount_out >= coin_out_min_value, errors::slippage());
 
@@ -179,7 +224,8 @@ module amm::stable_pair_core {
 
     assert!(new_k >= prev_k, errors::invalid_invariant());
 
-    amount_out    
+    // Protocol takes 1/5 of the fees
+    (amount_out, fee_in / 5, fee_out / 5)    
   }
 
   fun get_amounts_internal<CoinX, CoinY, LpCoin>(state: &State<CoinX, CoinY, LpCoin>): (u64, u64, u64) {
@@ -223,7 +269,8 @@ module amm::stable_pair_core {
         balance_y: coin::into_balance(coin_y),
         decimals_x,
         decimals_y,
-        fee: balance::zero(),
+        fee_x: balance::zero(),
+        fee_y: balance::zero(),
         seed_liquidity,
         fee_percent: INITIAL_FEE_PERCENT       
       }
@@ -260,6 +307,10 @@ module amm::stable_pair_core {
     let coins = vec_set::singleton(get<CoinX>());
     vec_set::insert(&mut coins, get<CoinY>());
     coins
+  }
+
+  fun calculate_fee(amount: u64, percent: u256): u64 {
+    ((((amount as u256) * percent) / PRECISION) as u64)
   }
 
   // * DAO LOGIC

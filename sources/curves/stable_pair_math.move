@@ -2,8 +2,7 @@
 module amm::stable_pair_math {
 
   use suitears::math256::diff;
-
-  use amm::utils::remove_fee;
+  use suitears::math64::mul_div_up;
 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
@@ -41,7 +40,6 @@ module amm::stable_pair_math {
     balance_y:u64,
     decimals_x: u64,
     decimals_y: u64,
-    fee_percent: u256,
     is_x: bool
   ): u64 {
     // Precision is used to scale the number for more precise calculations. 
@@ -55,26 +53,42 @@ module amm::stable_pair_math {
         (decimals_y as u256)
       );
 
-    // We calculate the amount being sold after the fee. 
-    // We calculate the amount being sold after the fee. 
-    let token_in_amount_minus_fees_adjusted = remove_fee(coin_amount, fee_percent, PRECISION);
-
     // Calculate the stable curve invariant k = x3y+y3x 
     // We need to consider stable coins with different decimal values
     let reserve_x = (balance_x * PRECISION) / decimals_x;
     let reserve_y = (balance_y * PRECISION) / decimals_y;
 
-    let amount_in = (token_in_amount_minus_fees_adjusted * PRECISION) / if (is_x) { decimals_x } else {decimals_y };
+    let amount_in = (coin_amount * PRECISION) / if (is_x) { decimals_x } else {decimals_y };
 
     let y = if (is_x) 
                 reserve_y - calculate_balance_out(amount_in + reserve_x, k, reserve_y) 
               else 
                 reserve_x - calculate_balance_out(amount_in + reserve_y, k, reserve_x);
 
-    let y = remove_fee(y, fee_percent, PRECISION);
-
     ((y * if (is_x) { decimals_y } else { decimals_x }) / PRECISION as u64)   
-  }      
+  } 
+
+  public fun calculate_optimal_add_liquidity(
+    desired_amount_x: u64,
+    desired_amount_y: u64,
+    reserve_x: u64,
+    reserve_y: u64
+  ): (u64, u64) {
+
+    if (reserve_x == 0 && reserve_y == 0) return (desired_amount_x, desired_amount_y);
+
+    let optimal_y_amount = quote_liquidity(desired_amount_x, reserve_x, reserve_y);
+    if (desired_amount_y >= optimal_y_amount) return (desired_amount_x, optimal_y_amount);
+
+    let optimal_x_amount = quote_liquidity(desired_amount_y, reserve_y, reserve_x);
+    (optimal_x_amount, desired_amount_y)
+  }  
+
+  fun quote_liquidity(amount_a: u64, reserves_a: u64, reserves_b: u64): u64 {
+    // @dev gie the propocol an edge
+    mul_div_up(amount_a, reserves_b, reserves_a)
+  }
+   
 
   /*
   * @param x0 New balance of the Token In
