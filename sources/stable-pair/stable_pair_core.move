@@ -40,7 +40,8 @@ module amm::stable_pair_core {
     decimals_y: u64,
     fee: Balance<LpCoin>,
     seed_liquidity: Balance<LpCoin>,
-    locked: bool    
+    locked: bool,
+    fee_percent: u256    
   }
 
   public(friend) fun new<Label, CoinX, CoinY, LpCoin>(
@@ -91,7 +92,7 @@ module amm::stable_pair_core {
     (pool, lp_coin)
   }
 
-  public fun swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(
+  public(friend) fun swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(
     pool: &mut Pool<StablePair, Label, HookWitness>, 
     coin_in: Coin<CoinIn>,
     coin_min_value: u64,
@@ -130,7 +131,7 @@ module amm::stable_pair_core {
 
     let coin_x_value = balance::value(&coin_x_balance);
 
-    let amount_out = calculate_amount_out(prev_k, coin_x_value, coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y, true);
+    let amount_out = calculate_amount_out(prev_k, coin_x_value, coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y, state.fee_percent, true);
 
     assert!(amount_out >= coin_y_min_value, errors::slippage());
 
@@ -164,7 +165,7 @@ module amm::stable_pair_core {
 
     let coin_y_value = balance::value(&coin_y_balance);
 
-    let amount_out = calculate_amount_out(prev_k, coin_y_value, coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y, false);
+    let amount_out = calculate_amount_out(prev_k, coin_y_value, coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y, state.fee_percent, false);
 
     assert!(amount_out >= coin_x_min_value, errors::slippage());
 
@@ -177,6 +178,40 @@ module amm::stable_pair_core {
     assert!(invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y) >= prev_k, errors::invalid_invariant());
 
     coin_out
+  }
+
+  #[allow(unused_function)]
+  fun mint_fee<CoinX, CoinY, LpCoin>(state: &mut State<CoinX, CoinY, LpCoin>): bool {
+    let is_fee_on = state.fee_percent != 0;
+
+    if (is_fee_on) {
+      // We need to know the last K to calculate how many fees were collected
+      if (state.k_last != 0) {
+        // Find the sqrt of the current K
+        let root_k = sqrt(invariant_(balance::value(&state.balance_x), balance::value(&state.balance_y), state.decimals_x, state.decimals_y));
+        // Find the sqrt of the previous K
+        let root_k_last = sqrt(state.k_last);
+
+        // If the current K is higher, trading fees were collected. It is the only way to increase the K. 
+        if (root_k > root_k_last) {
+        // Number of fees collected in shares
+        let numerator = (balance::supply_value(&state.lp_coin_supply) as u256) * (root_k - root_k_last);
+        // logic to collect 1/5
+        let denominator = (root_k * 5) + root_k_last;
+        let liquidity = numerator / denominator;
+        if (liquidity != 0) {
+          // Increase the shares supply
+          let new_balance = balance::increase_supply(&mut state.lp_coin_supply, (liquidity as u64));
+          balance::join(&mut state.fee, new_balance);
+        }
+      }
+    };
+      // If the protocol fees are off and we have k_last value, we remove it.  
+    } else if (state.k_last != 0) {
+      state.k_last = 0;
+    };
+
+    is_fee_on
   }
 
   fun add_state<CoinX, CoinY, LpCoin>(
@@ -214,6 +249,7 @@ module amm::stable_pair_core {
         decimals_y,
         fee: balance::zero(),
         seed_liquidity,
+        fee_percent: 250000000000000,
         locked: false         
       }
     );
