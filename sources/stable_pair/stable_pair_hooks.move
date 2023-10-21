@@ -16,6 +16,8 @@ module amm::stable_pair_hooks {
     HookConfig,
     StablePairPreSwap, 
     StablePairPostSwap,
+    StablePairPreAddLiquidity,
+    StablePairPostAddLiquidity
   }; 
 
   public fun new<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
@@ -64,5 +66,24 @@ module amm::stable_pair_hooks {
     events::emit_swap<Label, HookWitness, CoinIn, CoinOut>(object::id(pool), amount_in, coin::value(&coin_out), ctx);
 
     hooks::post_stable_pair_swap_action(coin_out)
+  }
+
+  public fun add_liquidity<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
+    pool: &mut Pool<StablePair, Label, HookWitness>,
+    action: StablePairPreAddLiquidity<HookWitness, CoinX, CoinY>,
+    ctx: &mut TxContext 
+  ): StablePairPostAddLiquidity<HookWitness, LpCoin, CoinX, CoinY> {
+    assert!(hooks::has_position_hook(interest_pool::view_hooks(pool)), errors::has_no_hook());
+
+    let (coin_x, coin_y, lp_coin_min_amount) = hooks::destroy_pre_add_liquidity_action(action);
+
+    let amount_x = coin::value(&coin_x);
+    let amount_y = coin::value(&coin_y);
+    
+    let (lp_coin, extra_x, extra_y) = core::add_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, coin_x, coin_y, lp_coin_min_amount, ctx);
+
+    events::emit_add_liquidity<Label, HookWitness, CoinX, CoinY>(object::id(pool), amount_x, amount_y, coin::value(&lp_coin), ctx);
+
+    hooks::post_stable_pair_add_liquidity_action(lp_coin, extra_x, extra_y)
   }
 }
