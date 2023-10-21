@@ -13,7 +13,7 @@ module amm::interest_pool {
 
   struct Nothing has drop {}
 
-  struct Pool<phantom Curve, phantom Label, phantom HookWitness> has key {
+  struct Pool<phantom Curve, phantom Label, phantom HookWitness> has key, store {
     id: UID,
     coins: VecSet<TypeName>
   }

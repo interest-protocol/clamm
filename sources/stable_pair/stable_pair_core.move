@@ -29,6 +29,8 @@ module amm::stable_pair_core {
     new_pool_hooks,
   };
 
+  friend amm::stable_pair;
+
   const MINIMUM_LIQUIDITY: u64 = 100;
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
@@ -349,6 +351,7 @@ module amm::stable_pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,  
     ctx: &mut TxContext   
   ): Coin<LpCoin> {
+    assert!(get<CoinX>() != get<CoinY>(), errors::coins_must_be_different());
     asserts::assert_supply_has_zero_value(&lp_coin_supply);
 
     let decimals_x = pow(10, coin::get_decimals(coin_x_metadata));
