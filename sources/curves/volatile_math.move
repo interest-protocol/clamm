@@ -67,7 +67,7 @@ module amm::volatile_math {
     }
   }
 
-  public fun newton_d(ann: u256, gamma: u256, x_unsorted: &vector<u256>): u256 {
+  public fun invariant_(ann: u256, gamma: u256, x_unsorted: &vector<u256>): u256 {
     let n_coins = vector::length(x_unsorted);
     assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_amplifier());
     assert!(gamma > MIN_GAMMA - 1 && gamma < MAX_GAMMA + 1, errors::invalid_gamma());
@@ -127,7 +127,7 @@ module amm::volatile_math {
     abort errors::failed_to_converge()
   }
 
-  public fun newton_y(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
+  public fun calculate_balance(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
     let n_coins = vector::length(x);
     
     assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_amplifier());
