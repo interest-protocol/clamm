@@ -15,10 +15,7 @@ module amm::stable_pair_core {
   use amm::errors;
   use amm::asserts;
   use amm::curves::StablePair;
-  use amm::stable_pair_math::{
-    invariant_,
-    calculate_amount_out
-  };
+  use amm::stable_pair_math::{invariant_, calculate_amount_out};
   use amm::interest_pool::{
     Self as core,
     Pool,
@@ -42,6 +39,11 @@ module amm::stable_pair_core {
     seed_liquidity: Balance<LpCoin>,
     locked: bool,
     fee_percent: u256    
+  }
+
+  public fun get_amounts<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>): (u64, u64, u64) {
+    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
+    get_amounts_internal(state)
   }
 
   public(friend) fun new<Label, CoinX, CoinY, LpCoin>(
@@ -104,14 +106,6 @@ module amm::stable_pair_core {
       swap_coin_y<Label, HookWitness, CoinOut, CoinIn, LpCoin>(pool, coin_in, coin_min_value, ctx)
   }
 
-  public fun get_amounts<CoinX, CoinY, LpCoin>(state: &State<CoinX, CoinY, LpCoin>): (u64, u64, u64) {
-    ( 
-      balance::value(&state.balance_x), 
-      balance::value(&state.balance_y),
-      balance::supply_value(&state.lp_coin_supply)
-    )
-  }
-
   fun swap_coin_x<Label, HookWitness, CoinX, CoinY, LpCoin>(
     pool: &mut Pool<StablePair, Label, HookWitness>, 
     coin_x: Coin<CoinX>,
@@ -125,7 +119,7 @@ module amm::stable_pair_core {
 
     let coin_x_balance = coin::into_balance(coin_x);
 
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts(state);  
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);  
 
     let prev_k = invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y);
 
@@ -139,7 +133,7 @@ module amm::stable_pair_core {
 
     let coin_out = coin::take(&mut state.balance_y, amount_out, ctx);
 
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts(state);
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
 
     assert!(invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y) >= prev_k, errors::invalid_invariant());
 
@@ -159,7 +153,7 @@ module amm::stable_pair_core {
 
     let coin_y_balance = coin::into_balance(coin_y);
 
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts(state); 
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state); 
 
     let prev_k = invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y);
 
@@ -173,7 +167,7 @@ module amm::stable_pair_core {
 
     let coin_out = coin::take(&mut state.balance_x, amount_out, ctx);
 
-    let (coin_x_reserve, coin_y_reserve, _) = get_amounts(state);
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
 
     assert!(invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y) >= prev_k, errors::invalid_invariant());
 
@@ -214,6 +208,14 @@ module amm::stable_pair_core {
     is_fee_on
   }
 
+  fun get_amounts_internal<CoinX, CoinY, LpCoin>(state: &State<CoinX, CoinY, LpCoin>): (u64, u64, u64) {
+    ( 
+      balance::value(&state.balance_x), 
+      balance::value(&state.balance_y),
+      balance::supply_value(&state.lp_coin_supply)
+    )
+  }
+
   fun add_state<CoinX, CoinY, LpCoin>(
     id: &mut UID,
     coin_x: Coin<CoinX>,
@@ -249,7 +251,7 @@ module amm::stable_pair_core {
         decimals_y,
         fee: balance::zero(),
         seed_liquidity,
-        fee_percent: 250000000000000,
+        fee_percent: 250000000000000, // 0.025%
         locked: false         
       }
     );
@@ -257,7 +259,6 @@ module amm::stable_pair_core {
     coin::from_balance(sender_balance, ctx)
   }
 
-  #[allow(unused_function)]
   fun load_state<CoinX, CoinY, LpCoin>(id: &UID): &State<CoinX, CoinY, LpCoin> {
     df::borrow(id, StateKey {})
   }

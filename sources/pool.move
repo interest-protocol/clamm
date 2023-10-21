@@ -26,6 +26,10 @@ module amm::interest_pool {
     &mut pool.id
   }
 
+  public(friend) fun borrow_uid<Curve, Label, HookWitness>(pool: &Pool<Curve, Label, HookWitness>): &UID {
+    &pool.id
+  }
+
   public(friend) fun new_stable_pair<Label>(coins: VecSet<TypeName>, ctx: &mut TxContext): Pool<StablePair, Label, Nothing>  {
     Pool {
       id: object::new(ctx),
