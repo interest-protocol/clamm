@@ -4,9 +4,7 @@ module amm::interest_pool {
   use sui::object::{Self, UID};
   use sui::tx_context::TxContext;
   use sui::vec_set::{Self, VecSet};
-  use sui::types::is_one_time_witness;
 
-  use amm::errors;
   use amm::curves::assert_is_curve;
   use amm::hooks::{HookMap, no_hook_map};
 
@@ -47,13 +45,12 @@ module amm::interest_pool {
   }
 
   public(friend) fun new_pool_hooks<HookWitness: drop, Curve, Label>(
-    otw: HookWitness, 
+    _: HookWitness, 
     hook_map: HookMap,
     coins: VecSet<TypeName>, 
     ctx: &mut TxContext
   ): Pool<Curve, Label, HookWitness> {
     assert_is_curve<Curve>();
-    assert!(is_one_time_witness(&otw), errors::invalid_one_time_witness());
     Pool {
       id: object::new(ctx),
       hook_map,

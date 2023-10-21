@@ -27,11 +27,7 @@ module amm::errors {
   public fun invalid_invariant(): u64 {
     6
   }  
-
-  public fun invalid_one_time_witness(): u64 {
-    7
-  }
-
+  
   public fun supply_must_have_zero_value(): u64 {
     8
   }

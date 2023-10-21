@@ -19,7 +19,7 @@ module amm::stable_pair_hooks {
   }; 
 
   public fun new<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
-    otw: HookWitness, // OTW forces it to have a pre-creation hook
+    witness: HookWitness, // OTW forces it to have a pre-creation hook
     hook_config: HookConfig,
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
@@ -32,7 +32,7 @@ module amm::stable_pair_hooks {
     let amount_y = coin::value(&coin_y);
     
     let (pool, lp_coin) = core::new_with_hooks<Label, HookWitness, CoinX, CoinY, LpCoin>(
-      otw, 
+      witness, 
       hooks::convert_config_to_map(hook_config),
       coin_x, 
       coin_y, 

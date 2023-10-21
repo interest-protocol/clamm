@@ -136,7 +136,7 @@ module amm::stable_pair_core {
   }
 
   public(friend) fun new_with_hooks<Label, HookWitness:drop, CoinX, CoinY, LpCoin>(
-    otw: HookWitness, 
+    witness: HookWitness, 
     hook_map: HookMap,
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
@@ -145,7 +145,7 @@ module amm::stable_pair_core {
     coin_y_metadata: &CoinMetadata<CoinY>,      
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, HookWitness>, Coin<LpCoin>) {
-    let pool = new_pool_hooks<HookWitness, StablePair, Label>(otw, hook_map, make_coins<CoinX, CoinY>(), ctx);
+    let pool = new_pool_hooks<HookWitness, StablePair, Label>(witness, hook_map, make_coins<CoinX, CoinY>(), ctx);
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
