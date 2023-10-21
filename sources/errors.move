@@ -51,4 +51,8 @@ module amm::errors {
   public fun invalid_fee(): u64 {
     12
   }
+
+  public fun no_zero_liquidity_amounts(): u64 {
+    13
+  }
 }

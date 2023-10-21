@@ -11,6 +11,7 @@ module amm::stable_pair_core {
   use sui::balance::{Self, Supply, Balance};
 
   use suitears::math256::sqrt;
+  use suitears::math64::{min, mul_div_down};
 
   use amm::errors;
   use amm::asserts;
@@ -51,6 +52,7 @@ module amm::stable_pair_core {
     balance_y: Balance<CoinY>,
     decimals_x: u64,
     decimals_y: u64,
+    // @dev We need to keep the fees seperate to prevent hooks from stealing the protocol
     fee_x: Balance<CoinX>,
     fee_y: Balance<CoinY>,
     seed_liquidity: Balance<LpCoin>,
@@ -124,16 +126,45 @@ module amm::stable_pair_core {
 
   }
 
-  // public(friend) fun add_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(
-  //   pool: &mut Pool<StablePair, Label, HookWitness>,
-  //   coin_x: Coin<X>,
-  //   coin_y: Coin<Y>,
-  //   vlp_coin_min_amount: u64,
-  //   ctx: &mut TxContext 
-  // ): Coin<LpCoin> {
-  //   let coin_x_value = coin::value(&coin_x);
-  //   let coin_y_value = coin::value(&coin_y);       
-  // }
+  public(friend) fun add_liquidity<Label, HookWitness, CoinX, CoinY, LpCoin>(
+    pool: &mut Pool<StablePair, Label, HookWitness>,
+    coin_x: Coin<CoinX>,
+    coin_y: Coin<CoinY>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext 
+  ): (Coin<LpCoin>, Coin<CoinX>, Coin<CoinY>) {
+    let coin_x_value = coin::value(&coin_x);
+    let coin_y_value = coin::value(&coin_y);       
+
+    assert!(coin_x_value != 0 && coin_y_value != 0, errors::no_zero_liquidity_amounts());
+
+    let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
+
+    let (coin_x_reserve, coin_y_reserve, supply) = get_amounts_internal(state);
+
+    let (optimal_x_amount, optimal_y_amount) = calculate_optimal_add_liquidity(
+      coin_x_value,
+      coin_y_value,
+      coin_x_reserve,
+      coin_y_reserve
+    );   
+
+    let extra_x = if (coin_x_value > optimal_x_amount) coin::split(&mut coin_x, coin_x_value - optimal_x_amount, ctx) else coin::zero<CoinX>(ctx); 
+    let extra_y = if (coin_y_value > optimal_y_amount) coin::split(&mut coin_y, coin_y_value - optimal_y_amount, ctx) else coin::zero<CoinY>(ctx); 
+
+    // round down to give the protocol an edge
+    let share_to_mint = min(
+      mul_div_down(coin::value(&coin_x), supply, coin_x_reserve),
+      mul_div_down(coin::value(&coin_y), supply, coin_y_reserve)
+    );
+
+    assert!(share_to_mint >= lp_coin_min_amount, errors::slippage());
+
+    balance::join(&mut state.balance_x, coin::into_balance(coin_x));
+    balance::join(&mut state.balance_y, coin::into_balance(coin_y));
+
+    (coin::from_balance(balance::increase_supply(&mut state.lp_coin_supply, share_to_mint), ctx), extra_x, extra_y)
+  }
 
   // * Private Functions
 
