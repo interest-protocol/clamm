@@ -1,6 +1,11 @@
+/*
+* TODO Hook Contracts should implement a standarded interface
+*/
 module amm::interest_pool {
-  use std::type_name::TypeName;
+  use std::ascii;
+  use std::type_name::{get, get_address, TypeName};
 
+  use sui::address::from_bytes;
   use sui::object::{Self, UID};
   use sui::tx_context::TxContext;
   use sui::vec_set::{Self, VecSet};
@@ -15,6 +20,7 @@ module amm::interest_pool {
   struct Pool<phantom Curve, phantom Label, phantom HookWitness> has key, store {
     id: UID,
     hook_map: HookMap,
+    hook_address: address,
     coins: VecSet<TypeName>
   }
 
@@ -22,6 +28,9 @@ module amm::interest_pool {
     *vec_set::keys(&pool.coins)
   }
 
+  public fun view_hook_address<Curve, Label, HookWitness>(pool: &Pool<Curve, Label, HookWitness>): address {
+    pool.hook_address
+  }
 
   public fun view_hooks<Curve, Label, HookWitness>(pool: &Pool<Curve, Label, HookWitness>): &HookMap {
     &pool.hook_map
@@ -40,6 +49,7 @@ module amm::interest_pool {
     Pool {
       id: object::new(ctx),
       hook_map: no_hook_map(),
+      hook_address: @0x0, // No Hook
       coins
     }
   }
@@ -54,6 +64,7 @@ module amm::interest_pool {
     Pool {
       id: object::new(ctx),
       hook_map,
+      hook_address: from_bytes(ascii::into_bytes(get_address(&get<HookWitness>()))), // No Hook
       coins
     }
   }
