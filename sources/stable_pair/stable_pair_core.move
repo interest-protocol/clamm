@@ -468,9 +468,9 @@ module amm::stable_pair_core {
   }
 
   // * HOOK LOGIC
-
-  // @dev The hook contract can mutate the state at will
-  public(friend) fun hooks_get_mut_state<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
+  // * Users need to make sure the hook contracts are not malicious!!!!
+  // * @dev The hook contract can mutate the state at will
+  public fun hooks_get_mut_state<Label, HookWitness: drop, CoinX, CoinY, LpCoin>(
     _: HookWitness,
     pool: &mut Pool<StablePair, Label, HookWitness>
   ): (u256, &mut Supply<LpCoin>, &mut Balance<CoinX>, &mut Balance<CoinY>, u64, u64) {
@@ -478,7 +478,7 @@ module amm::stable_pair_core {
     (state.k_last, &mut state.lp_coin_supply, &mut state.balance_x, &mut state.balance_y, state.decimals_x, state.decimals_y)
   }
 
-  public(friend) fun hooks_borrow_mut_uid<Label, HookWitness: drop>(_: HookWitness, pool: &mut Pool<StablePair, Label, HookWitness>): &mut UID {
+  public fun hooks_borrow_mut_uid<Label, HookWitness: drop>(_: HookWitness, pool: &mut Pool<StablePair, Label, HookWitness>): &mut UID {
     core::borrow_mut_uid(pool)
   }
 }   
