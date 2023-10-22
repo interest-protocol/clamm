@@ -1,3 +1,7 @@
+/*
+* TODO Need to make a standard hook Action interface with dyanmic fields
+* We verify pool_id to make sure no mixes 
+*/
 module amm::hooks {
 
   use sui::coin::Coin;
