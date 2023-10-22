@@ -14,6 +14,7 @@ module amm::interest_pool {
   use amm::hooks::{HookMap, no_hook_map};
 
   friend amm::stable_pair_core;
+  friend amm::stable_tuple_core;
 
   struct Nothing has drop {}
 
