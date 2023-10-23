@@ -2,12 +2,13 @@
 module amm::stable_pair {
   use sui::object;
   use sui::balance::Supply;
+  use sui::coin::{Self, Coin};
   use sui::tx_context::TxContext;
   use sui::transfer::public_share_object;
-  use sui::coin::{Self, CoinMetadata, Coin};
 
   use amm::hooks; 
   use amm::errors;
+  use amm::metadata::Metadata;
   use amm::curves::StablePair;
   use amm::stable_pair_core as core;
   use amm::stable_pair_events as events;
@@ -17,14 +18,13 @@ module amm::stable_pair {
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
-    coin_x_metadata: &CoinMetadata<CoinX>,
-    coin_y_metadata: &CoinMetadata<CoinY>,      
+    metadata: &Metadata,        
     ctx: &mut TxContext
   ): Coin<LpCoin> {
     let amount_x = coin::value(&coin_x);
     let amount_y = coin::value(&coin_y);
     
-    let (pool, lp_coin) = core::new<Label, CoinX, CoinY, LpCoin>(coin_x, coin_y, lp_coin_supply, coin_x_metadata, coin_y_metadata, ctx);
+    let (pool, lp_coin) = core::new<Label, CoinX, CoinY, LpCoin>(coin_x, coin_y, lp_coin_supply, metadata, ctx);
 
     events::emit_new_pair<Label, Nothing>(object::id(&pool), amount_x, amount_y, ctx);
 

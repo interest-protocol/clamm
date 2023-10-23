@@ -1,7 +1,7 @@
 module amm::curves {
+  use std::type_name::get;
 
   use amm::errors;
-  use amm::utils::are_types_equal;
 
   /*
   * We have decided to use Curve V2 formula instead of Uniswap V3 for the following reasons
@@ -61,5 +61,9 @@ module amm::curves {
 
   public fun assert_is_curve<Type>() {
     assert!(is_curve<Type>(), errors::invalid_curve());
+  }
+
+  fun are_types_equal<A, B>(): bool {
+    get<A>() == get<B>()
   }
 }

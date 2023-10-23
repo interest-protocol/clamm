@@ -2,21 +2,22 @@ module amm::stable_pair_core {
   use std::vector;
   use std::type_name::{TypeName, get};
 
-  use sui::math::pow;
   use sui::object::UID;
+  use sui::coin::{Self, Coin};
   use sui::dynamic_field as df;
   use sui::tx_context::TxContext;
   use sui::vec_set::{Self, VecSet};
-  use sui::coin::{Self, CoinMetadata, Coin};
   use sui::balance::{Self, Supply, Balance};
 
   use suitears::math256::sqrt;
   use suitears::math64::{min, mul_div_down};
+  use suitears::fixed_point_ray::ray_mul_up;
 
   use amm::errors;
   use amm::asserts;
   use amm::hooks::HookMap;
   use amm::curves::StablePair;
+  use amm::metadata::{get_decimals_scalar, Metadata};
   use amm::stable_pair_math::{
     invariant_, 
     calculate_amount_out, 
@@ -36,7 +37,6 @@ module amm::stable_pair_core {
   const MINIMUM_LIQUIDITY: u64 = 100;
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
   struct StateKey has drop, copy, store {}
 
@@ -116,8 +116,7 @@ module amm::stable_pair_core {
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
-    coin_x_metadata: &CoinMetadata<CoinX>,
-    coin_y_metadata: &CoinMetadata<CoinY>,      
+    metadata: &Metadata,    
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, Nothing>, Coin<LpCoin>) {
     let pool = new_pool<StablePair, Label>(make_coins<CoinX, CoinY>(), ctx);
@@ -127,8 +126,7 @@ module amm::stable_pair_core {
       coin_x,
       coin_y,
       lp_coin_supply,
-      coin_x_metadata,
-      coin_y_metadata,
+      metadata,
       ctx  
     );
 
@@ -141,8 +139,7 @@ module amm::stable_pair_core {
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
-    coin_x_metadata: &CoinMetadata<CoinX>,
-    coin_y_metadata: &CoinMetadata<CoinY>,      
+    metadata: &Metadata,        
     ctx: &mut TxContext
   ): (Pool<StablePair, Label, HookWitness>, Coin<LpCoin>) {
     let pool = new_pool_hooks<HookWitness, StablePair, Label>(witness, hook_map, make_coins<CoinX, CoinY>(), ctx);
@@ -152,8 +149,7 @@ module amm::stable_pair_core {
       coin_x,
       coin_y,
       lp_coin_supply,
-      coin_x_metadata,
-      coin_y_metadata,
+      metadata,
       ctx  
     );
 
@@ -308,7 +304,7 @@ module amm::stable_pair_core {
   ): (u64, u64, u64) {
     let prev_k = invariant_(state.coin_x_reserve, state.coin_y_reserve, state.decimals_x, state.decimals_y);
 
-    let fee_in = calculate_fee(coin_in_amount, state.fee_percent);
+    let fee_in = fmul(coin_in_amount, state.fee_percent);
     let coin_in_amount = coin_in_amount - fee_in;
 
     let amount_out = calculate_amount_out(
@@ -321,7 +317,7 @@ module amm::stable_pair_core {
       state.is_x
     );
 
-    let fee_out = calculate_fee(amount_out, state.fee_percent);
+    let fee_out = fmul(amount_out, state.fee_percent);
     let amount_out = amount_out - fee_out;
 
     assert!(amount_out >= coin_out_min_value, errors::slippage());
@@ -350,15 +346,11 @@ module amm::stable_pair_core {
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
-    coin_x_metadata: &CoinMetadata<CoinX>,
-    coin_y_metadata: &CoinMetadata<CoinY>,  
+    metadata: &Metadata,    
     ctx: &mut TxContext   
   ): Coin<LpCoin> {
     assert!(get<CoinX>() != get<CoinY>(), errors::coins_must_be_different());
     asserts::assert_supply_has_zero_value(&lp_coin_supply);
-
-    let decimals_x = pow(10, coin::get_decimals(coin_x_metadata));
-    let decimals_y = pow(10, coin::get_decimals(coin_y_metadata));
 
     let coin_x_value = coin::value(&coin_x);
     let coin_y_value = coin::value(&coin_y);
@@ -377,8 +369,8 @@ module amm::stable_pair_core {
         lp_coin_supply,
         balance_x: coin::into_balance(coin_x),
         balance_y: coin::into_balance(coin_y),
-        decimals_x,
-        decimals_y,
+        decimals_x: get_decimals_scalar<CoinX>(metadata),
+        decimals_y: get_decimals_scalar<CoinY>(metadata),
         fee_x: balance::zero(),
         fee_y: balance::zero(),
         seed_liquidity,
@@ -419,15 +411,11 @@ module amm::stable_pair_core {
     coins
   }
 
-  fun calculate_fee(amount: u64, percent: u256): u64 {
-    ((((amount as u256) * percent) / PRECISION) as u64)
-  }
-
   fun quote_swap_logic<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64, is_x: bool): (u64, u64, u64) {
     let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
     let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
 
-    let fee_in = calculate_fee(amount_in, state.fee_percent);
+    let fee_in = fmul(amount_in, state.fee_percent);
     
     let amount_out = calculate_amount_out(
       invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y),
@@ -439,8 +427,12 @@ module amm::stable_pair_core {
       is_x
     );
 
-    let fee_out = calculate_fee(amount_out, state.fee_percent);
+    let fee_out = fmul(amount_out, state.fee_percent);
     ((amount_out - fee_out), fee_in, fee_out)
+  }
+
+  fun fmul(x: u64, percent: u256): u64 {
+    (ray_mul_up((x as u256), percent) as u64)
   }
 
   // * DAO LOGIC

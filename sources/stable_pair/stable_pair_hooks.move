@@ -2,11 +2,12 @@
 module amm::stable_pair_hooks {
   use sui::object;
   use sui::balance::Supply;
+  use sui::coin::{Self, Coin};
   use sui::tx_context::TxContext;
   use sui::transfer::public_share_object;
-  use sui::coin::{Self, CoinMetadata, Coin};
 
   use amm::errors;
+  use amm::metadata::Metadata;
   use amm::curves::StablePair;
   use amm::stable_pair_core as core;
   use amm::interest_pool::{Self, Pool};
@@ -28,8 +29,7 @@ module amm::stable_pair_hooks {
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
     lp_coin_supply: Supply<LpCoin>,
-    coin_x_metadata: &CoinMetadata<CoinX>,
-    coin_y_metadata: &CoinMetadata<CoinY>,      
+    metadata: &Metadata,        
     ctx: &mut TxContext
   ): StablePairPostSwap<HookWitness, LpCoin> {
     let amount_x = coin::value(&coin_x);
@@ -41,8 +41,7 @@ module amm::stable_pair_hooks {
       coin_x, 
       coin_y, 
       lp_coin_supply, 
-      coin_x_metadata, 
-      coin_y_metadata, 
+      metadata,
       ctx
     );
 

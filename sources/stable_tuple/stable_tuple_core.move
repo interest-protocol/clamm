@@ -2,18 +2,22 @@ module amm::stable_tuple_core {
   use std::vector;
   use std::type_name::{TypeName, get};
   
-  use sui::math::pow;
   use sui::clock::Clock;
+  use sui::coin::{Self, Coin};
   use sui::object::{Self, UID};
   use sui::dynamic_field as df;
   use sui::tx_context::TxContext;
   use sui::vec_set::{Self, VecSet};
   use sui::dynamic_object_field as dof;
-  use sui::coin::{Self, Coin, CoinMetadata};
   use sui::balance::{Self, Supply, Balance};
 
   use amm::errors;
+  use amm::asserts;
   use amm::curves::StableTuple;
+  use amm::metadata::{
+    Metadata,
+    get_decimals_scalar, 
+  };
   use amm::stable_tuple_math::{
     get_amp,
     invariant_
@@ -60,9 +64,7 @@ module amm::stable_tuple_core {
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
-    metadata_a: &CoinMetadata<CoinA>,
-    metadata_b: &CoinMetadata<CoinB>,
-    metadata_c: &CoinMetadata<CoinC>,    
+    metadata: &Metadata,     
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
   ): (Pool<StableTuple, Label, Nothing>, Coin<LpCoin>) {
@@ -75,9 +77,9 @@ module amm::stable_tuple_core {
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    register_coin<CoinA>(&mut state.id, metadata_a, 0);
-    register_coin<CoinB>(&mut state.id, metadata_b, 1);
-    register_coin<CoinC>(&mut state.id, metadata_c, 2);
+    register_coin<CoinA>(&mut state.id, metadata, 0);
+    register_coin<CoinB>(&mut state.id, metadata, 1);
+    register_coin<CoinC>(&mut state.id, metadata, 2);
 
     let lp_coin = add_liquidity_3_pool(&mut pool, c, coin_a, coin_b, coin_c, 0, ctx);
 
@@ -134,12 +136,12 @@ module amm::stable_tuple_core {
     balance::join(&mut coin_state.balance, coin::into_balance(coin_in));
   }
 
-  fun register_coin<CoinType>(id: &mut UID, metadata: &CoinMetadata<CoinType>, index: u64) {
+  fun register_coin<CoinType>(id: &mut UID, metadata: &Metadata, index: u64) {
     let coin_name = get<CoinType>();
 
     df::add(id, AdminCoinBalanceKey { type: coin_name }, balance::zero<CoinType>());
     df::add(id, CoinStatekey { type: coin_name }, CoinState {
-      decimals: (pow(10, coin::get_decimals(metadata)) as u256),
+      decimals: (get_decimals_scalar<CoinType>(metadata) as u256),
       balance: balance::zero<CoinType>(),
       index
     });
@@ -152,6 +154,7 @@ module amm::stable_tuple_core {
     n_coins: u64,
     ctx: &mut TxContext
   ) {
+    asserts::assert_supply_has_zero_value(&lp_coin_supply);
     dof::add(id, StateKey {}, 
       State {
         id: object::new(ctx),
