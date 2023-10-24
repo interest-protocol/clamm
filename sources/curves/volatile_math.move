@@ -118,7 +118,7 @@ module amm::volatile_math {
         let j = 0;
         while (j < n_coins) {
           let frac = *vector::borrow(&x, j) * PRECISION / d;
-          assert!(frac > 10000000000000000 - 1 && frac < 100000000000000000001, errors::unsafe_value());
+          assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
           j = j + 1;
         };
         return d
@@ -132,12 +132,12 @@ module amm::volatile_math {
     
     assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_amplifier());
     assert!(gamma > MIN_GAMMA - 1 && gamma < MAX_GAMMA + 1, errors::invalid_gamma());
-    assert!(d > 100000000000000000 - 1 && d < 1000000000000000 * PRECISION + 1, errors::invalid_invariant());
+    assert!(d > 99999999999999999 && d < 1000000000000000000000000000000001, errors::invalid_invariant());
 
     let j = 0;
     while (j < 3) {
       let frac = *vector::borrow(x, j) * PRECISION / d;
-      assert!(frac > 10000000000000000 - 1 && frac < 100000000000000000001, errors::unsafe_value());
+      assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
       j = j + 1;
     };
 
@@ -191,7 +191,7 @@ module amm::volatile_math {
 
       if (diff < max(converge_limit, y / 100000000000000)) {
         let frac = y * PRECISION / d;
-        assert!(frac > 10000000000000000 - 1 && frac < 100000000000000000001, errors::unsafe_value());
+        assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
         return y
       };
     };
