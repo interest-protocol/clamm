@@ -63,12 +63,11 @@ module amm::stable_pair_core {
     fee_percent: u256    
   }
 
-  public fun quote_swap_x<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64): (u64, u64, u64) {
-    quote_swap_logic<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, amount_in, true)
-  }
-
-  public fun quote_swap_y<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64): (u64, u64, u64) {
-    quote_swap_logic<Label, HookWitness, CoinX, CoinY, LpCoin>(pool, amount_in, false)
+  public fun quote_swap<Label, HookWitness, CoinIn, CoinOut, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>, amount_in: u64): (u64, u64, u64) {
+    if (is_coin_x<CoinIn>(core::view_coins<StablePair, Label, HookWitness>(pool))) 
+      quote_swap_logic<Label, HookWitness, CoinIn, CoinOut, LpCoin>(pool, amount_in, true)
+    else
+      quote_swap_logic<Label, HookWitness, CoinOut, CoinIn, LpCoin>(pool, amount_in, false)
   }
 
   public fun get_amounts<Label, HookWitness, CoinX, CoinY, LpCoin>(pool: &Pool<StablePair, Label, HookWitness>): (u64, u64, u64) {
