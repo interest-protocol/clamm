@@ -20,7 +20,8 @@ module amm::stable_tuple_core {
   };
   use amm::stable_tuple_math::{
     get_amp,
-    invariant_
+    invariant_,
+    calculate_new_coin_balance
   };
   use amm::interest_pool::{
     Self as core,
@@ -187,6 +188,40 @@ module amm::stable_tuple_core {
       ), 
       ctx
     )
+  }
+
+  public(friend) fun remove_one_coin_liquidity<Label, HookWitness, CoinType, LpCoin>(
+    pool: &mut Pool<StableTuple, Label, HookWitness>, 
+    c: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amount: u64,
+    ctx: &mut TxContext    
+  ): Coin<CoinType> {
+    asserts::assert_coin_has_value(&lp_coin);
+    let lp_coin_value = coin::value(&lp_coin);
+
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    
+    let coin_state = load_coin_state<CoinType>(&mut state.id);
+
+    balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
+
+    let current_coin_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
+    let initial_coin_balance = *current_coin_balance;
+    
+    *current_coin_balance = calculate_new_coin_balance(
+      get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
+      (coin_state.index as u256),
+      &state.balances,
+      (coin::value(&lp_coin) as u256),
+      (balance::supply_value(&state.lp_coin_supply) as u256),
+    );
+
+    let amount_to_take = (((*current_coin_balance - initial_coin_balance) * coin_state.decimals / PRECISION) as u64);
+
+    assert!(amount_to_take >= min_amount, errors::slippage());
+
+    coin::take(&mut coin_state.balance, amount_to_take, ctx)
   }
 
   public(friend) fun remove_balanced_liquidity_3_pool<Label, HookWitness, CoinA, CoinB, CoinC, LpCoin>(

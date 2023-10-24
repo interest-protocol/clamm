@@ -101,7 +101,26 @@ module amm::stable_tuple_math {
     abort errors::failed_to_converge()
   }
 
-  public fun calculate_balance(amp: u256, i: u256, balances: &vector<u256>, _invariant: u256): u256 {
+  public fun calculate_new_coin_balance(
+    amp: u256, 
+    i: u256, 
+    balances: &vector<u256>, 
+    lp_burn_amount: u256,
+    lp_supply_value: u256,
+  ): u256 {
+    let prev_invariant = invariant_(amp, balances);
+    let new_invariant = prev_invariant - ((lp_burn_amount * prev_invariant) / lp_supply_value);
+
+
+    calculate_new_coin_balance_logic(
+      amp,
+      i,
+      balances,
+      new_invariant
+    )
+  }
+
+  fun calculate_new_coin_balance_logic(amp: u256, i: u256, balances: &vector<u256>, _invariant: u256): u256 {
 
     let c = 0;
     let s = 0;
