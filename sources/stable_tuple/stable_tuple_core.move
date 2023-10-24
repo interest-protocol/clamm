@@ -86,7 +86,47 @@ module amm::stable_tuple_core {
     (pool, lp_coin)
   }
 
-  // TODO add fees logic
+  public(friend) fun new_4_pool<Label, CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    c: &Clock,
+    initial_a: u256,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    metadata: &Metadata,     
+    lp_coin_supply: Supply<LpCoin>,
+    ctx: &mut TxContext
+  ): (Pool<StableTuple, Label, Nothing>, Coin<LpCoin>) {
+    assert!(
+      coin::value(&coin_a) != 0 
+      && coin::value(&coin_b) != 0 
+      && coin::value(&coin_c) != 0
+      && coin::value(&coin_d) != 0,
+      errors::no_zero_liquidity_amounts()
+    );
+
+    let pool = new_pool<StableTuple,  Label>(
+      make_coins(vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
+      ctx
+    );
+
+    // * IMPORTANT Make sure the n_coins argument is correct
+    add_state<LpCoin>(core::borrow_mut_uid(&mut pool), initial_a, lp_coin_supply, 4, ctx);
+
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
+
+    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
+    register_coin<CoinA>(&mut state.id, metadata, 0);
+    register_coin<CoinB>(&mut state.id, metadata, 1);
+    register_coin<CoinC>(&mut state.id, metadata, 2);
+    register_coin<CoinD>(&mut state.id, metadata, 3);
+
+    let lp_coin = add_liquidity_4_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, 0, ctx);
+
+    (pool, lp_coin)
+  }
+
+
   public(friend) fun add_liquidity_3_pool<Label, HookWitness, CoinA, CoinB, CoinC, LpCoin>(
     pool: &mut Pool<StableTuple, Label, HookWitness>,
     c: &Clock,
@@ -96,8 +136,7 @@ module amm::stable_tuple_core {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    let pool_id = core::borrow_mut_uid(pool);
-    let state = load_mut_state<LpCoin>(pool_id);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     
     let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
     let supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
@@ -108,15 +147,56 @@ module amm::stable_tuple_core {
     deposit_coin<CoinB, LpCoin>(state, coin_b);
     deposit_coin<CoinC, LpCoin>(state, coin_c);
 
+    coin::from_balance(
+      balance::increase_supply(
+        &mut state.lp_coin_supply, 
+        calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount)
+      ), 
+      ctx
+    )
+  }
+
+  public(friend) fun add_liquidity_4_pool<Label, HookWitness, CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    pool: &mut Pool<StableTuple, Label, HookWitness>,
+    c: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext     
+  ): Coin<LpCoin> {
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    
+    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
+    let prev_k = invariant_(amp, &state.balances);
+
+    deposit_coin<CoinA, LpCoin>(state, coin_a);
+    deposit_coin<CoinB, LpCoin>(state, coin_b);
+    deposit_coin<CoinC, LpCoin>(state, coin_c);
+    deposit_coin<CoinD, LpCoin>(state, coin_d);
+
+    coin::from_balance(
+      balance::increase_supply(
+        &mut state.lp_coin_supply, 
+        calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount)
+      ), 
+      ctx
+    )
+  }
+
+  fun calculate_mint_amount<LpCoin>(state: &State<LpCoin>, amp: u256, prev_k: u256, lp_coin_min_amount: u64): u64 {
     let new_k = invariant_(amp, &state.balances);
 
     assert!(new_k > prev_k, errors::invalid_invariant());
+
+    let supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
 
     let mint_amount = if (supply_value == 0) { (new_k as u64) } else { ((supply_value * (new_k - prev_k) / prev_k) as u64) };
 
     assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
 
-    coin::from_balance(balance::increase_supply(&mut state.lp_coin_supply, mint_amount), ctx)
+    mint_amount
   }
 
   fun deposit_coin<CoinType, LpCoin>(state: &mut State<LpCoin>, coin_in: Coin<CoinType>) {
