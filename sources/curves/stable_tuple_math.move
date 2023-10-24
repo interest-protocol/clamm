@@ -56,7 +56,13 @@ module amm::stable_tuple_math {
     abort errors::failed_to_converge()
   }
 
-  public fun calculate_amount_in(amp: u256, token_in_index: u256, token_out_index: u256, token_amount_out: u256, balances: &vector<u256>): u256 {
+  public fun calculate_out_balance_from_in_balance(
+    amp: u256, 
+    token_in_index: u256, 
+    token_out_index: u256,
+    new_balance_in: u256, 
+    balances: &vector<u256>
+  ): u256 {
     assert!(token_in_index != token_out_index, errors::same_coin_index());
 
     let d = invariant_(amp, balances);
@@ -70,7 +76,7 @@ module amm::stable_tuple_math {
 
     while (index < n_coins) {
       if (index == token_in_index) {
-        _x = token_amount_out;
+        _x = new_balance_in;
         s = s + _x;
         c = c * d / (_x * n_coins);
       } else if (index != token_out_index) {
@@ -101,7 +107,7 @@ module amm::stable_tuple_math {
     abort errors::failed_to_converge()
   }
 
-  public fun calculate_new_coin_balance(
+  public fun calculate_balance_from_reduced_lp_supply(
     amp: u256, 
     i: u256, 
     balances: &vector<u256>, 

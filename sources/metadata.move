@@ -4,9 +4,9 @@ module amm::metadata {
   use sui::math::pow;
   use sui::dynamic_field as df;
   use sui::object::{Self, UID};
+  use sui::tx_context::TxContext;
   use sui::transfer::share_object;
   use sui::coin::{Self, CoinMetadata};
-  use sui::tx_context::{Self, TxContext};
 
   struct CoinData has store, drop, copy {
     decimals: u8,
@@ -17,6 +17,7 @@ module amm::metadata {
     id: UID
   }
 
+  #[allow(unused_function)]
   fun init(ctx: &mut TxContext) {
     share_object(Metadata { id: object::new(ctx) });
   }

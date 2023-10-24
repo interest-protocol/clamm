@@ -11,12 +11,12 @@ module amm::stable_pair_core {
 
   use suitears::math256::sqrt;
   use suitears::math64::{min, mul_div_down};
-  use suitears::fixed_point_ray::ray_mul_up;
 
   use amm::errors;
   use amm::asserts;
   use amm::hooks::HookMap;
   use amm::curves::StablePair;
+  use amm::utils::calculate_fee_amount;
   use amm::metadata::{get_decimals_scalar, Metadata};
   use amm::stable_pair_math::{
     invariant_, 
@@ -304,7 +304,7 @@ module amm::stable_pair_core {
   ): (u64, u64, u64) {
     let prev_k = invariant_(state.coin_x_reserve, state.coin_y_reserve, state.decimals_x, state.decimals_y);
 
-    let fee_in = fmul(coin_in_amount, state.fee_percent);
+    let fee_in = calculate_fee_amount(coin_in_amount, state.fee_percent);
     let coin_in_amount = coin_in_amount - fee_in;
 
     let amount_out = calculate_amount_out(
@@ -317,7 +317,7 @@ module amm::stable_pair_core {
       state.is_x
     );
 
-    let fee_out = fmul(amount_out, state.fee_percent);
+    let fee_out = calculate_fee_amount(amount_out, state.fee_percent);
     let amount_out = amount_out - fee_out;
 
     assert!(amount_out >= coin_out_min_value, errors::slippage());
@@ -415,7 +415,7 @@ module amm::stable_pair_core {
     let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
     let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
 
-    let fee_in = fmul(amount_in, state.fee_percent);
+    let fee_in = calculate_fee_amount(amount_in, state.fee_percent);
     
     let amount_out = calculate_amount_out(
       invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y),
@@ -427,12 +427,8 @@ module amm::stable_pair_core {
       is_x
     );
 
-    let fee_out = fmul(amount_out, state.fee_percent);
+    let fee_out = calculate_fee_amount(amount_out, state.fee_percent);
     ((amount_out - fee_out), fee_in, fee_out)
-  }
-
-  fun fmul(x: u64, percent: u256): u64 {
-    (ray_mul_up((x as u256), percent) as u64)
   }
 
   // * DAO LOGIC

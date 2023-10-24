@@ -14,6 +14,7 @@ module amm::stable_tuple_core {
   use amm::errors;
   use amm::asserts;
   use amm::curves::StableTuple;
+  use amm::utils::calculate_fee_amount;
   use amm::metadata::{
     Metadata,
     get_decimals_scalar, 
@@ -21,7 +22,8 @@ module amm::stable_tuple_core {
   use amm::stable_tuple_math::{
     get_amp,
     invariant_,
-    calculate_new_coin_balance
+    calculate_out_balance_from_in_balance,
+    calculate_balance_from_reduced_lp_supply,
   };
   use amm::interest_pool::{
     Self as core,
@@ -127,6 +129,78 @@ module amm::stable_tuple_core {
     (pool, lp_coin)
   }
 
+// amp: u256, token_in_index: u256, token_out_index: u256, token_amount_out: u256, balances: &vector<u256>
+
+  public(friend) fun swap<Label, HookWitness, CoinIn, LpCoin, CoinOut>(
+    pool: &mut Pool<StableTuple, Label, HookWitness>,
+    c: &Clock,
+    coin_in: Coin<CoinIn>,
+    min_amount: u64,
+    ctx: &mut TxContext
+  ): Coin<CoinOut> {
+    asserts::assert_coin_has_value(&coin_in);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    let coin_in_state = load_coin_state<CoinIn>(&mut state.id);
+    let coin_out_state = load_coin_state<CoinOut>(&mut state.id);
+
+    let coin_in_value = coin::value(&coin_in);
+
+    let admin_coin_in = coin::split(&mut coin_in, calculate_fee_amount(coin_in_value, state.fee_percent), ctx);
+
+    // Has no admin fee
+    let normalized_value = (coin::value(&coin_in) as u256) * PRECISION / coin_in_state.decimals;
+
+    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);
+
+    let prev_k = invariant_(amp, &state.balances);
+
+    let new_out_balance = calculate_out_balance_from_in_balance(
+      amp,
+      (coin_in_state.index as u256),
+      (coin_out_state.index as u256),
+      *vector::borrow(&state.balances, coin_in_state.index) + normalized_value,
+      &state.balances
+    );
+
+    let amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
+    let normalized_amount_out = ((amount_out * coin_out_state.decimals / PRECISION) as u64);
+
+    let admin_amount_out = calculate_fee_amount(normalized_amount_out, state.fee_percent);
+
+    let normalized_amount_out = normalized_amount_out - admin_amount_out;
+
+    assert!(normalized_amount_out >= min_amount, errors::slippage());
+
+    // Update balances
+    let coin_in_balance = vector::borrow_mut(&mut state.balances, coin_in_state.index);
+    *coin_in_balance = *coin_in_balance + normalized_value;
+
+    let coin_out_balance = vector::borrow_mut(&mut state.balances, coin_out_state.index);
+    // We need to remove the admin fee from balance
+    *coin_out_balance = *coin_out_balance - ((((normalized_amount_out + admin_amount_out) as u256) * PRECISION / coin_out_state.decimals) as u256); 
+
+    // * Invariant must hold after all balances updates
+    assert!(invariant_(amp, &state.balances) >= prev_k, errors::invalid_invariant());
+
+    /*
+    * The admin fees are not part of the liquidity (do not accrue swap fees) and not counted on the invariant calculation
+    * Fees are applied both on coin in and coin out to keep the balance in the pool
+    * 1 - Deposit coin_in (without admin fees) to balance
+    * 2 - Deposit coin_admin_in (admin fees on coin)
+    * 3 - Deposit coin_admin_out (admin fees on coin out)
+    * 4 - Take coin_out for user
+    */
+    balance::join(&mut coin_in_state.balance, coin::into_balance(coin_in));
+    balance::join(load_admin_balance<CoinIn>(&mut state.id), coin::into_balance(admin_coin_in));
+
+    let coin_out_balance = &mut coin_out_state.balance;
+
+    balance::join(load_admin_balance<CoinOut>(&mut state.id), balance::split(coin_out_balance, admin_amount_out));
+
+    coin::take(coin_out_balance, normalized_amount_out, ctx)
+  }
+
 
   public(friend) fun add_liquidity_3_pool<Label, HookWitness, CoinA, CoinB, CoinC, LpCoin>(
     pool: &mut Pool<StableTuple, Label, HookWitness>,
@@ -209,7 +283,7 @@ module amm::stable_tuple_core {
     let current_coin_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
     let initial_coin_balance = *current_coin_balance;
     
-    *current_coin_balance = calculate_new_coin_balance(
+    *current_coin_balance = calculate_balance_from_reduced_lp_supply(
       get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_state.index as u256),
       &state.balances,
@@ -372,6 +446,11 @@ module amm::stable_tuple_core {
   fun load_coin_state<CoinType>(id: &mut UID): &mut CoinState<CoinType> {
     df::borrow_mut(id, CoinStatekey { type: get<CoinType>() })
   } 
+
+  fun load_admin_balance<CoinType>(id: &mut UID): &mut Balance<CoinType> {
+    df::borrow_mut(id, AdminCoinBalanceKey  { type: get<CoinType>() })
+  } 
+
 
   fun load_state<LpCoin>(id: &UID): &State<LpCoin> {
     dof::borrow(id, StateKey {})
