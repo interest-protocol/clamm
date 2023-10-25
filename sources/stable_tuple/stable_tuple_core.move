@@ -29,8 +29,7 @@ module amm::stable_tuple_core {
     Self as core,
     Pool,
     Nothing,
-    new_pool,
-    new_pool_hooks,
+    new_pool
   };
 
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
@@ -52,6 +51,7 @@ module amm::stable_tuple_core {
   struct State<phantom LpCoin> has key, store {
     id: UID,
     lp_coin_supply: Supply<LpCoin>,
+    lp_coin_decimals: u256,
     balances: vector<u256>,
     initial_a: u256,
     future_a: u256,
@@ -59,6 +59,50 @@ module amm::stable_tuple_core {
     future_a_time: u256,
     fee_percent: u256,
     n_coins: u64
+  }
+  
+  // @dev Price is returnedi n 1e18
+  public fun get_lp_coin_price_in_underlying<StableTuple, Label, HookWitness, LpCoin>(
+    pool: &mut Pool<StableTuple, Label, HookWitness>,
+    c: &Clock,
+  ): u256 {
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    let k = invariant_(
+      get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c), 
+      &state.balances
+    );
+
+    k * state.lp_coin_decimals / (balance::supply_value(&state.lp_coin_supply) as u256)
+  }
+
+  public fun quote_swap<Label, HookWitness, CoinIn, LpCoin, CoinOut>(
+    pool: &mut Pool<StableTuple, Label, HookWitness>,
+    c: &Clock,
+    amount: u64    
+  ): (u64, u64, u64) {
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    let coin_in_state = load_coin_state<CoinIn>(&mut state.id);
+    let coin_out_state = load_coin_state<CoinOut>(&mut state.id);
+
+    let fee_in = calculate_fee_amount(amount, state.fee_percent);
+
+    let normalized_value = ((amount - fee_in) as u256) * PRECISION / coin_in_state.decimals;
+
+    let new_out_balance = calculate_out_balance_from_in_balance(
+      get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
+      (coin_in_state.index as u256),
+      (coin_out_state.index as u256),
+      *vector::borrow(&state.balances, coin_in_state.index) + normalized_value,
+      &state.balances
+    );
+
+    let amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
+    let amount_out = ((amount_out * coin_out_state.decimals / PRECISION) as u64);
+    let fee_out = calculate_fee_amount(amount_out, state.fee_percent);
+
+    (amount - fee_out, fee_in, fee_out)
   }
 
   public(friend) fun new_3_pool<Label, CoinA, CoinB, CoinC, LpCoin>(
@@ -75,7 +119,14 @@ module amm::stable_tuple_core {
 
     let pool = new_pool<StableTuple,  Label>(make_coins(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), ctx);
     // * IMPORTANT Make sure the n_coins argument is correct
-    add_state<LpCoin>(core::borrow_mut_uid(&mut pool), initial_a, lp_coin_supply, 3, ctx);
+    add_state<LpCoin>(
+      core::borrow_mut_uid(&mut pool), 
+      metadata,
+      initial_a, 
+      lp_coin_supply, 
+      3, 
+      ctx
+    );
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
 
@@ -114,7 +165,14 @@ module amm::stable_tuple_core {
     );
 
     // * IMPORTANT Make sure the n_coins argument is correct
-    add_state<LpCoin>(core::borrow_mut_uid(&mut pool), initial_a, lp_coin_supply, 4, ctx);
+    add_state<LpCoin>(
+      core::borrow_mut_uid(&mut pool), 
+      metadata,
+      initial_a, 
+      lp_coin_supply, 
+      4, 
+      ctx
+    );
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
 
@@ -408,6 +466,7 @@ module amm::stable_tuple_core {
 
   fun add_state<LpCoin>(
     id: &mut UID,
+    metadata: &Metadata, 
     initial_a: u256,
     lp_coin_supply: Supply<LpCoin>,
     n_coins: u64,
@@ -424,6 +483,7 @@ module amm::stable_tuple_core {
         future_a_time: 0,
         fee_percent: INITIAL_FEE_PERCENT,
         lp_coin_supply,
+        lp_coin_decimals: (get_decimals_scalar<LpCoin>(metadata) as u256),
         n_coins
       }
     );
