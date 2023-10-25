@@ -6,7 +6,6 @@ module amm::stable_pair_events {
   use amm::curves::StablePair;
 
   friend amm::stable_pair;
-  friend amm::stable_pair_hooks;
 
   struct NewStablePair<phantom Curve, phantom Label, phantom HookWitness> has drop, copy {
     pool_id: ID,

@@ -59,12 +59,4 @@ module amm::errors {
   public fun coins_must_be_different(): u64 {
     15
   }
-
-  public fun hooks_not_allowed(): u64 {
-    16
-  }
-
-  public fun has_no_hook(): u64 {
-    16
-  }
 }
