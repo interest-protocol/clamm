@@ -7,9 +7,12 @@ module amm::stable_tuple {
   use sui::object::{Self, UID};
   use sui::dynamic_field as df;
   use sui::tx_context::TxContext;
+  use sui::transfer::share_object;
   use sui::vec_set::{Self, VecSet};
   use sui::dynamic_object_field as dof;
   use sui::balance::{Self, Supply, Balance};
+
+  use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
 
   use amm::errors;
   use amm::asserts;
@@ -17,10 +20,6 @@ module amm::stable_tuple {
   use amm::curves::StableTuple;
   use amm::utils::calculate_fee_amount;
   use amm::stable_tuple_events as events;
-  use amm::metadata::{
-    Metadata,
-    get_decimals_scalar, 
-  };
   use amm::interest_pool::{
     Self as core,
     Pool,
@@ -116,17 +115,17 @@ module amm::stable_tuple {
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
-    metadata: &Metadata,     
+    coin_decimals: &CoinDecimals,     
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Pool, Coin<LpCoin>) {
+  ): Coin<LpCoin> {
     assert!(coin::value(&coin_a) != 0 && coin::value(&coin_b) != 0 && coin::value(&coin_c) != 0, errors::no_zero_liquidity_amounts());
 
     let pool = new_pool<StableTuple>(make_coins(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), ctx);
     // * IMPORTANT Make sure the n_coins argument is correct
     add_state<LpCoin>(
       core::borrow_mut_uid(&mut pool), 
-      metadata,
+      coin_decimals,
       initial_a, 
       lp_coin_supply, 
       3, 
@@ -136,15 +135,17 @@ module amm::stable_tuple {
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    register_coin<CoinA>(&mut state.id, metadata, 0);
-    register_coin<CoinB>(&mut state.id, metadata, 1);
-    register_coin<CoinC>(&mut state.id, metadata, 2);
+    register_coin<CoinA>(&mut state.id, coin_decimals, 0);
+    register_coin<CoinB>(&mut state.id, coin_decimals, 1);
+    register_coin<CoinC>(&mut state.id, coin_decimals, 2);
 
     let lp_coin = add_liquidity_3_pool(&mut pool, c, coin_a, coin_b, coin_c, 0, ctx);
 
     events::emit_new_stable_3_pool<CoinA, CoinB, CoinC, LpCoin>(object::id(&pool));
 
-    (pool, lp_coin)
+    share_object(pool);
+
+    lp_coin
   }
 
   public fun new_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
@@ -154,10 +155,10 @@ module amm::stable_tuple {
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
     coin_d: Coin<CoinD>,
-    metadata: &Metadata,     
+    coin_decimals: &CoinDecimals,      
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Pool, Coin<LpCoin>) {
+  ): Coin<LpCoin> {
     assert!(
       coin::value(&coin_a) != 0 
       && coin::value(&coin_b) != 0 
@@ -174,7 +175,7 @@ module amm::stable_tuple {
     // * IMPORTANT Make sure the n_coins argument is correct
     add_state<LpCoin>(
       core::borrow_mut_uid(&mut pool), 
-      metadata,
+      coin_decimals,
       initial_a, 
       lp_coin_supply, 
       4, 
@@ -184,16 +185,18 @@ module amm::stable_tuple {
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    register_coin<CoinA>(&mut state.id, metadata, 0);
-    register_coin<CoinB>(&mut state.id, metadata, 1);
-    register_coin<CoinC>(&mut state.id, metadata, 2);
-    register_coin<CoinD>(&mut state.id, metadata, 3);
+    register_coin<CoinA>(&mut state.id, coin_decimals, 0);
+    register_coin<CoinB>(&mut state.id, coin_decimals, 1);
+    register_coin<CoinC>(&mut state.id, coin_decimals, 2);
+    register_coin<CoinD>(&mut state.id, coin_decimals, 3);
 
     let lp_coin = add_liquidity_4_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, 0, ctx);
 
     events::emit_new_stable_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(object::id(&pool));
 
-    (pool, lp_coin)
+    share_object(pool);
+
+    lp_coin
   }
 
 // amp: u256, token_in_index: u256, token_out_index: u256, token_amount_out: u256, balances: &vector<u256>
@@ -530,12 +533,12 @@ module amm::stable_tuple {
     coin::take(&mut coin_state.balance, (balance_to_remove as u64), ctx)
   }
 
-  fun register_coin<CoinType>(id: &mut UID, metadata: &Metadata, index: u64) {
+  fun register_coin<CoinType>(id: &mut UID, coin_decimals: &CoinDecimals, index: u64) {
     let coin_name = get<CoinType>();
 
     df::add(id, AdminCoinBalanceKey { type: coin_name }, balance::zero<CoinType>());
     df::add(id, CoinStatekey { type: coin_name }, CoinState {
-      decimals: (get_decimals_scalar<CoinType>(metadata) as u256),
+      decimals: (get_decimals_scalar<CoinType>(coin_decimals) as u256),
       balance: balance::zero<CoinType>(),
       index
     });
@@ -543,7 +546,7 @@ module amm::stable_tuple {
 
   fun add_state<LpCoin>(
     id: &mut UID,
-    metadata: &Metadata, 
+    coin_decimals: &CoinDecimals,  
     initial_a: u256,
     lp_coin_supply: Supply<LpCoin>,
     n_coins: u64,
@@ -560,7 +563,7 @@ module amm::stable_tuple {
         future_a_time: 0,
         fee_percent: INITIAL_FEE_PERCENT,
         lp_coin_supply,
-        lp_coin_decimals: (get_decimals_scalar<LpCoin>(metadata) as u256),
+        lp_coin_decimals: (get_decimals_scalar<LpCoin>(coin_decimals) as u256),
         n_coins
       }
     );
