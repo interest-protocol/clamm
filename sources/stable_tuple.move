@@ -65,7 +65,7 @@ module amm::stable_tuple {
   
   // @dev Price is returnedi n 1e18
   public fun get_lp_coin_price_in_underlying<LpCoin>(
-    pool: &Pool,
+    pool: &Pool<StableTuple>,
     c: &Clock,
   ): u256 {
     let state = load_state<LpCoin>(core::borrow_uid(pool));
@@ -79,7 +79,7 @@ module amm::stable_tuple {
   }
 
   public fun quote_swap<CoinIn, CoinOut, LpCoin>(
-    pool: &Pool,
+    pool: &Pool<StableTuple>,
     c: &Clock,
     amount: u64    
   ): (u64, u64, u64) {
@@ -202,7 +202,7 @@ module amm::stable_tuple {
 // amp: u256, token_in_index: u256, token_out_index: u256, token_amount_out: u256, balances: &vector<u256>
 
   public fun swap<CoinIn, CoinOut, LpCoin>(
-    pool: &mut Pool,
+    pool: &mut Pool<StableTuple>,
     c: &Clock,
     coin_in: Coin<CoinIn>,
     min_amount: u64,
@@ -275,7 +275,7 @@ module amm::stable_tuple {
 
 
   public fun add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    pool: &mut Pool,
+    pool: &mut Pool<StableTuple>,
     c: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
@@ -283,6 +283,7 @@ module amm::stable_tuple {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
+    core::assert_is_3_pool(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     
     let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
@@ -314,7 +315,7 @@ module amm::stable_tuple {
   }
 
   public fun add_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
-    pool: &mut Pool,
+    pool: &mut Pool<StableTuple>,
     c: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
@@ -323,6 +324,7 @@ module amm::stable_tuple {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
+    core::assert_is_4_pool(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     
     let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
@@ -354,7 +356,7 @@ module amm::stable_tuple {
   }
 
   public fun remove_one_coin_liquidity<CoinType, LpCoin>(
-    pool: &mut Pool, 
+    pool: &mut Pool<StableTuple>, 
     c: &Clock,
     lp_coin: Coin<LpCoin>,
     min_amount: u64,
@@ -390,7 +392,7 @@ module amm::stable_tuple {
   }
 
   public fun remove_balanced_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    pool: &mut Pool, 
+    pool: &mut Pool<StableTuple>, 
     lp_coin: Coin<LpCoin>,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
@@ -420,7 +422,7 @@ module amm::stable_tuple {
   }
 
   public fun remove_balanced_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
-    pool: &mut Pool, 
+    pool: &mut Pool<StableTuple>, 
     lp_coin: Coin<LpCoin>,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
@@ -455,7 +457,7 @@ module amm::stable_tuple {
 
   public(friend) fun update_fee<LpCoin>(
     _: &Admin,
-    pool: &mut Pool,
+    pool: &mut Pool<StableTuple>,
     fee_percent: u256
   ) {
     assert!(MAX_FEE_PERCENT >= fee_percent, errors::invalid_fee());
@@ -467,7 +469,7 @@ module amm::stable_tuple {
 
   public(friend) fun take_fees<CoinType, LpCoin>(
     _: &Admin,
-    pool: &mut Pool,
+    pool: &mut Pool<StableTuple>,
     ctx: &mut TxContext
   ): Coin<CoinType> {
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));

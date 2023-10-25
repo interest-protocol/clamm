@@ -59,4 +59,12 @@ module amm::errors {
   public fun coins_must_be_different(): u64 {
     15
   }
+
+  public fun must_be_3_pool(): u64 {
+    16
+  }
+
+  public fun must_be_4_pool(): u64 {
+    17
+  }
 }
