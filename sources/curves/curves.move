@@ -47,18 +47,6 @@ module amm::curves {
     is_volatile<Type>() || is_stable_pair<Type>() || is_stable_tuple<Type>()
   }
 
-  public fun assert_is_volatile<Type>() {
-    assert!(is_volatile<Type>(), errors::invalid_curve());    
-  }
-
-  public fun assert_is_stable_pair<Type>() {
-    assert!(is_stable_pair<Type>(), errors::invalid_curve());
-  }
-
-  public fun assert_is_stable_tuple<Type>() {
-    assert!(is_stable_tuple<Type>(), errors::invalid_curve());
-  }
-
   public fun assert_is_curve<Type>() {
     assert!(is_curve<Type>(), errors::invalid_curve());
   }

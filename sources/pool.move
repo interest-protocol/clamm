@@ -15,7 +15,7 @@ module amm::interest_pool {
   friend amm::stable_pair;
   friend amm::stable_tuple;
 
-  struct Pool<phantom Curve> has key {
+  struct Pool<phantom Curve> has key, store {
     id: UID,
     coins: VecSet<TypeName>
   }
