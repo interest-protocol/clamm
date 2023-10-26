@@ -1,5 +1,6 @@
 module amm::stable_pair {
   use std::vector;
+  use std::option::Option;
   use std::type_name::{TypeName, get};
 
   use sui::coin::{Self, Coin};
@@ -18,8 +19,11 @@ module amm::stable_pair {
   use amm::asserts;
   use amm::amm_admin::Admin;
   use amm::curves::StablePair;
-  use amm::utils::calculate_fee_amount;
   use amm::stable_pair_events as events;
+  use amm::stable_fees::{
+    Self, 
+    StableFees,
+  };
   use amm::stable_pair_math::{
     invariant_, 
     calculate_amount_out, 
@@ -32,8 +36,6 @@ module amm::stable_pair {
   };
 
   const MINIMUM_LIQUIDITY: u64 = 100;
-  const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
-  const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
 
   struct StateKey has drop, copy, store {}
 
@@ -42,22 +44,21 @@ module amm::stable_pair {
     coin_y_reserve: u64,
     decimals_x: u64,
     decimals_y: u64,
-    fee_percent: u256,
+    fees: StableFees,
     is_x: bool,
   }
 
   struct State<phantom CoinX, phantom CoinY, phantom LpCoin> has store {
-    k_last: u256,
     lp_coin_supply: Supply<LpCoin>,
     balance_x: Balance<CoinX>,
     balance_y: Balance<CoinY>,
     decimals_x: u64,
     decimals_y: u64,
     // @dev We need to keep the fees seperate to prevent hooks from stealing the protocol
-    fee_x: Balance<CoinX>,
-    fee_y: Balance<CoinY>,
+    admin_fee_balance_x: Balance<CoinX>,
+    admin_fee_balance_y: Balance<CoinY>,
     seed_liquidity: Balance<LpCoin>,
-    fee_percent: u256    
+    fees: StableFees  
   }
 
   public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &Pool<StablePair>, amount_in: u64): (u64, u64, u64) {
@@ -230,12 +231,19 @@ module amm::stable_pair {
   public fun update_fee<CoinX, CoinY, LpCoin>(
     _: &Admin,
     pool: &mut Pool<StablePair>,
-    fee_percent: u256
+    fee_in_percent: Option<u256>,
+    fee_out_percent: Option<u256>, 
+    admin_fee_percent: Option<u256>,  
   ) {
-    assert!(MAX_FEE_PERCENT >= fee_percent, errors::invalid_fee());
     let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
-    state.fee_percent = fee_percent;
-    events::emit_update_fee(object::id(pool), fee_percent);
+
+    stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
+    stable_fees::update_admin_fee_percent(&mut state.fees, fee_out_percent);  
+    stable_fees::update_admin_fee_percent(&mut state.fees, admin_fee_percent);
+    
+    let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
+
+    events::emit_update_fee(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
   }
 
   public fun take_fees<CoinX, CoinY, LpCoin>(
@@ -246,14 +254,14 @@ module amm::stable_pair {
     let pool_id = object::id(pool);
 
     let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
-    let amount_x = balance::value(&state.fee_x);
-    let amount_y = balance::value(&state.fee_y);
+    let amount_x = balance::value(&state.admin_fee_balance_x);
+    let amount_y = balance::value(&state.admin_fee_balance_y);
 
     events::emit_take_fees<CoinX, CoinY>(pool_id, amount_x, amount_y);
 
     (
-      coin::take(&mut state.fee_x, amount_x, ctx),
-      coin::take(&mut state.fee_y, amount_y, ctx)
+      coin::take(&mut state.admin_fee_balance_x, amount_x, ctx),
+      coin::take(&mut state.admin_fee_balance_y, amount_y, ctx)
     )
   }
 
@@ -276,11 +284,11 @@ module amm::stable_pair {
     let (amount_out, fee_x, fee_y) = swap_amounts(swap_state, coin_in_amount, coin_y_min_value);
 
     if (fee_x != 0) {
-      balance::join(&mut state.fee_x, coin::into_balance(coin::split(&mut coin_x, fee_x, ctx)));
+      balance::join(&mut state.admin_fee_balance_x, coin::into_balance(coin::split(&mut coin_x, fee_x, ctx)));
     };
 
     if (fee_y != 0) {
-      balance::join(&mut state.fee_y, balance::split(&mut state.balance_y, fee_y));  
+      balance::join(&mut state.admin_fee_balance_y, balance::split(&mut state.balance_y, fee_y));  
     };
 
     balance::join(&mut state.balance_x, coin::into_balance(coin_x));
@@ -307,12 +315,12 @@ module amm::stable_pair {
     let (amount_out, fee_y, fee_x) = swap_amounts(swap_state, coin_in_amount, coin_x_min_value);
 
     if (fee_y != 0) {
-      balance::join(&mut state.fee_y, coin::into_balance(coin::split(&mut coin_y, fee_y, ctx)));
+      balance::join(&mut state.admin_fee_balance_y, coin::into_balance(coin::split(&mut coin_y, fee_y, ctx)));
     };
       
 
     if (fee_x != 0) {
-      balance::join(&mut state.fee_x, balance::split(&mut state.balance_x, fee_x)); 
+      balance::join(&mut state.admin_fee_balance_x, balance::split(&mut state.balance_x, fee_x)); 
     };
 
     balance::join(&mut state.balance_y, coin::into_balance(coin_y));
@@ -329,7 +337,9 @@ module amm::stable_pair {
   ): (u64, u64, u64) {
     let prev_k = invariant_(state.coin_x_reserve, state.coin_y_reserve, state.decimals_x, state.decimals_y);
 
-    let fee_in = calculate_fee_amount(coin_in_amount, state.fee_percent);
+    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_amount);
+    let admin_fee_in = stable_fees::calculate_admin_amount(&state.fees, fee_in);
+
     let coin_in_amount = coin_in_amount - fee_in;
 
     let amount_out = calculate_amount_out(
@@ -342,20 +352,23 @@ module amm::stable_pair {
       state.is_x
     );
 
-    let fee_out = calculate_fee_amount(amount_out, state.fee_percent);
+    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
+    let admin_fee_out = stable_fees::calculate_admin_amount(&state.fees, fee_out);
+
     let amount_out = amount_out - fee_out;
 
     assert!(amount_out >= coin_out_min_value, errors::slippage());
 
+    // @dev Admin fees r not part of the variant
     let new_k = if (state.is_x) 
-        invariant_(state.coin_x_reserve + coin_in_amount, state.coin_y_reserve - amount_out, state.decimals_x, state.decimals_y)
+        invariant_(state.coin_x_reserve + coin_in_amount + fee_in - admin_fee_in, state.coin_y_reserve - amount_out - admin_fee_out, state.decimals_x, state.decimals_y)
       else
-        invariant_(state.coin_x_reserve - amount_out, state.coin_y_reserve + coin_in_amount, state.decimals_x, state.decimals_y);
+        invariant_(state.coin_x_reserve - amount_out - admin_fee_out, state.coin_y_reserve + fee_in + coin_in_amount - admin_fee_in, state.decimals_x, state.decimals_y);
 
     assert!(new_k >= prev_k, errors::invalid_invariant());
 
     // Protocol takes 1/5 of the fees
-    (amount_out, fee_in / 5, fee_out / 5)    
+    (amount_out, admin_fee_in, admin_fee_out)    
   }
 
   fun get_amounts_internal<CoinX, CoinY, LpCoin>(state: &State<CoinX, CoinY, LpCoin>): (u64, u64, u64) {
@@ -389,16 +402,15 @@ module amm::stable_pair {
 
     df::add(id, StateKey {},
       State<CoinX, CoinY, LpCoin> {
-        k_last: 0,
         lp_coin_supply,
         balance_x: coin::into_balance(coin_x),
         balance_y: coin::into_balance(coin_y),
+        admin_fee_balance_x: balance::zero(),
+        admin_fee_balance_y: balance::zero(),
         decimals_x: get_decimals_scalar<CoinX>(coin_decimals),
         decimals_y: get_decimals_scalar<CoinY>(coin_decimals),
-        fee_x: balance::zero(),
-        fee_y: balance::zero(),
         seed_liquidity,
-        fee_percent: INITIAL_FEE_PERCENT       
+        fees: stable_fees::new()    
       }
     );
 
@@ -420,7 +432,7 @@ module amm::stable_pair {
       coin_y_reserve,
       decimals_x: state.decimals_x,
       decimals_y: state.decimals_y,
-      fee_percent: state.fee_percent,
+      fees: state.fees,
       is_x
     }
   }
@@ -439,7 +451,7 @@ module amm::stable_pair {
     let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
     let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
 
-    let fee_in = calculate_fee_amount(amount_in, state.fee_percent);
+    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, amount_in);
     
     let amount_out = calculate_amount_out(
       invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y),
@@ -451,7 +463,7 @@ module amm::stable_pair {
       is_x
     );
 
-    let fee_out = calculate_fee_amount(amount_out, state.fee_percent);
+    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
     ((amount_out - fee_out), fee_in, fee_out)
   }
 }   

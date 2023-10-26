@@ -1,5 +1,6 @@
 module amm::stable_tuple {
   use std::vector;
+  use std::option::Option;
   use std::type_name::{TypeName, get};
   
   use sui::clock::Clock;
@@ -18,8 +19,11 @@ module amm::stable_tuple {
   use amm::asserts;
   use amm::amm_admin::Admin;
   use amm::curves::StableTuple;
-  use amm::utils::calculate_fee_amount;
   use amm::stable_tuple_events as events;
+  use amm::stable_fees::{
+    Self, 
+    StableFees,
+  };
   use amm::interest_pool::{
     Self as core,
     Pool,
@@ -32,8 +36,6 @@ module amm::stable_tuple {
     calculate_balance_from_reduced_lp_supply,
   };
 
-  const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
-  const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
   struct StateKey has drop, copy, store {}
@@ -57,8 +59,8 @@ module amm::stable_tuple {
     future_a: u256,
     initial_a_time: u256,
     future_a_time: u256,
-    fee_percent: u256,
-    n_coins: u64
+    n_coins: u64,
+    fees: StableFees
   }
 
   // * View Functions
@@ -88,7 +90,7 @@ module amm::stable_tuple {
     let coin_in_state = load_coin_state<CoinIn>(&state.id);
     let coin_out_state = load_coin_state<CoinOut>(&state.id);
 
-    let fee_in = calculate_fee_amount(amount, state.fee_percent);
+    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, amount);
 
     let normalized_value = ((amount - fee_in) as u256) * PRECISION / coin_in_state.decimals;
 
@@ -102,7 +104,8 @@ module amm::stable_tuple {
 
     let amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
     let amount_out = ((amount_out * coin_out_state.decimals / PRECISION) as u64);
-    let fee_out = calculate_fee_amount(amount_out, state.fee_percent);
+
+    let fee_out = stable_fees::calculate_fee_in_amount(&state.fees, amount_out);
 
     (amount - fee_out, fee_in, fee_out)
   }
@@ -216,10 +219,17 @@ module amm::stable_tuple {
 
     let coin_in_value = coin::value(&coin_in);
 
-    let admin_coin_in = coin::split(&mut coin_in, calculate_fee_amount(coin_in_value, state.fee_percent), ctx);
+    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_value);
+    let admin_fee_in = stable_fees::calculate_admin_amount(&state.fees, fee_in);
 
-    // Has no admin fee
-    let normalized_value = (coin::value(&coin_in) as u256) * PRECISION / coin_in_state.decimals;
+    let admin_coin_in = coin::split(
+      &mut coin_in, 
+      admin_fee_in, 
+      ctx
+    );
+
+    // Has no fees to properly calculate new out balance
+    let normalized_value = ((coin_in_value - fee_in) as u256) * PRECISION / coin_in_state.decimals;
 
     let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);
 
@@ -235,20 +245,21 @@ module amm::stable_tuple {
 
     let normalized_amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
     let amount_out = ((normalized_amount_out * coin_out_state.decimals / PRECISION) as u64);
+    
+    let fee_out = stable_fees::calculate_fee_in_amount(&state.fees, amount_out);
+    let admin_fee_out = stable_fees::calculate_admin_amount(&state.fees, fee_out);
 
-    let admin_amount_out = calculate_fee_amount(amount_out, state.fee_percent);
-
-    let amount_out = amount_out - admin_amount_out;
+    let amount_out = amount_out - fee_out;
 
     assert!(amount_out >= min_amount, errors::slippage());
 
     // Update balances
     let coin_in_balance = vector::borrow_mut(&mut state.balances, coin_in_state.index);
-    *coin_in_balance = *coin_in_balance + normalized_value;
+    *coin_in_balance = *coin_in_balance + normalized_value + ((fee_in - admin_fee_in as u256) * PRECISION / coin_in_state.decimals);
 
     let coin_out_balance = vector::borrow_mut(&mut state.balances, coin_out_state.index);
     // We need to remove the admin fee from balance
-    *coin_out_balance = *coin_out_balance - ((((amount_out + admin_amount_out) as u256) * PRECISION / coin_out_state.decimals) as u256); 
+    *coin_out_balance = *coin_out_balance - ((((amount_out + admin_fee_out) as u256) * PRECISION / coin_out_state.decimals) as u256); 
 
     // * Invariant must hold after all balances updates
     assert!(invariant_(amp, &state.balances) >= prev_k, errors::invalid_invariant());
@@ -266,11 +277,11 @@ module amm::stable_tuple {
     balance::join(&mut coin_in_state.balance, coin::into_balance(coin_in));
     balance::join(load_mut_admin_balance<CoinIn>(&mut state.id), coin::into_balance(admin_coin_in));
 
-       let coin_out_state = load_mut_coin_state<CoinOut>(&mut state.id);
+    let coin_out_state = load_mut_coin_state<CoinOut>(&mut state.id);
 
     let coin_out_balance = &mut coin_out_state.balance;
 
-    let admin_balance_in = balance::split(coin_out_balance, admin_amount_out);
+    let admin_balance_in = balance::split(coin_out_balance, admin_fee_out);
 
     let coin_out = coin::take(coin_out_balance, amount_out, ctx);
 
@@ -469,13 +480,18 @@ module amm::stable_tuple {
   public fun update_fee<LpCoin>(
     _: &Admin,
     pool: &mut Pool<StableTuple>,
-    fee_percent: u256
+    fee_in_percent: Option<u256>,
+    fee_out_percent: Option<u256>, 
+    admin_fee_percent: Option<u256>,  
   ) {
-    assert!(MAX_FEE_PERCENT >= fee_percent, errors::invalid_fee());
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
-    state.fee_percent = fee_percent;
+    stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
+    stable_fees::update_admin_fee_percent(&mut state.fees, fee_out_percent);  
+    stable_fees::update_admin_fee_percent(&mut state.fees, admin_fee_percent);
+    
+    let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
 
-    events::emit_update_fee<LpCoin>(object::id(pool), fee_percent);
+    events::emit_update_fee(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
   }
 
   public fun take_fees<CoinType, LpCoin>(
@@ -576,10 +592,10 @@ module amm::stable_tuple {
         future_a: initial_a,
         initial_a_time: 0,
         future_a_time: 0,
-        fee_percent: INITIAL_FEE_PERCENT,
         lp_coin_supply,
         lp_coin_decimals: (get_decimals_scalar<LpCoin>(coin_decimals) as u256),
-        n_coins
+        n_coins,
+        fees: stable_fees::new()
       }
     );
   }

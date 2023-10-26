@@ -40,7 +40,9 @@ module amm::stable_pair_events {
 
   struct UpdateFee<phantom Curve> has copy, drop {
     pool_id: ID,
-    amount: u256
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,     
   }
 
   struct TakeFees<phantom Curve, phantom CoinX, phantom CoinY> has copy, drop {
@@ -65,8 +67,13 @@ module amm::stable_pair_events {
     emit(RemoveLiquidity<StablePair, CoinX, CoinY>{ pool_id, amount_x, amount_y, shares, sender: tx_context::sender(ctx) });
   }
 
-  public(friend) fun emit_update_fee(pool_id: ID, percent: u256) {
-    emit(UpdateFee<StablePair> { pool_id, amount: percent });
+  public(friend) fun emit_update_fee(
+    pool_id: ID, 
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,     
+  ) {
+    emit(UpdateFee<StablePair> { pool_id,fee_in_percent, fee_out_percent, admin_fee_percent });
   }
 
   public(friend) fun emit_take_fees<CoinX, CoinY>(pool_id: ID, amount_x: u64, amount_y: u64 ) {

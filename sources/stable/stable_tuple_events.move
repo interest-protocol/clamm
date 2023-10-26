@@ -60,9 +60,11 @@ module amm::stable_tuple_events {
     sender: address,
   }
 
-  struct UpdateFee<phantom LpCoin> has copy, drop {
+  struct UpdateFee has copy, drop {
     pool_id: ID,
-    amount: u256
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,  
   }
 
   struct TakeFee<phantom CoinType, phantom LpCoin> has copy, drop {
@@ -129,8 +131,13 @@ module amm::stable_tuple_events {
     emit(RemoveBalancedLiquidity4Pool<CoinA, CoinB, CoinC, CoinD, LpCoin> { pool_id: id, sender: tx_context::sender(ctx), amount_a, amount_b, amount_c, amount_d });
   }
 
-  public(friend) fun emit_update_fee<LpCoin>(id: ID, amount: u256) {
-    emit(UpdateFee<LpCoin> { pool_id: id, amount });
+  public(friend) fun emit_update_fee(
+    id: ID, 
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,  
+  ) {
+    emit(UpdateFee { pool_id: id, fee_in_percent, fee_out_percent, admin_fee_percent });
   }
 
   public(friend) fun emit_take_fee<CoinType, LpCoin>(id: ID, amount: u64) {

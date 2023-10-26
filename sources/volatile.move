@@ -1,1 +1,0 @@
-module amm::volatile {}
