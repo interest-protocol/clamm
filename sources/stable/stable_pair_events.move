@@ -73,7 +73,7 @@ module amm::stable_pair_events {
     fee_out_percent: u256, 
     admin_fee_percent: u256,     
   ) {
-    emit(UpdateFee<StablePair> { pool_id,fee_in_percent, fee_out_percent, admin_fee_percent });
+    emit(UpdateFee<StablePair> { pool_id, fee_in_percent, fee_out_percent, admin_fee_percent });
   }
 
   public(friend) fun emit_take_fees<CoinX, CoinY>(pool_id: ID, amount_x: u64, amount_y: u64 ) {

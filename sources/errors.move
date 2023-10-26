@@ -63,4 +63,16 @@ module amm::errors {
   public fun must_be_4_pool(): u64 {
     16
   }
+
+  public fun value_overflow(): u64 {
+    17
+  }
+
+  public fun vector_too_big_to_pack(): u64 {
+    18
+  }
+
+  public fun invalid_unpack_length(): u64 {
+    19
+  }
 }
