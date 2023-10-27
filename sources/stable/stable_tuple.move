@@ -8,9 +8,8 @@ module amm::stable_tuple {
   use sui::object::{Self, UID};
   use sui::dynamic_field as df;
   use sui::tx_context::TxContext;
-  use sui::transfer::public_share_object;
-  use sui::vec_set::{Self, VecSet};
   use sui::dynamic_object_field as dof;
+  use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
 
   use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
@@ -19,6 +18,7 @@ module amm::stable_tuple {
   use amm::asserts;
   use amm::amm_admin::Admin;
   use amm::curves::StableTuple;
+  use amm::utils::make_coins_from_vector;
   use amm::stable_tuple_events as events;
   use amm::stable_fees::{
     Self, 
@@ -124,7 +124,7 @@ module amm::stable_tuple {
   ): Coin<LpCoin> {
     assert!(coin::value(&coin_a) != 0 && coin::value(&coin_b) != 0 && coin::value(&coin_c) != 0, errors::no_zero_liquidity_amounts());
 
-    let pool = new_pool<StableTuple>(make_coins(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), ctx);
+    let pool = new_pool<StableTuple>(make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), ctx);
     // * IMPORTANT Make sure the n_coins argument is correct
     add_state<LpCoin>(
       core::borrow_mut_uid(&mut pool), 
@@ -171,7 +171,7 @@ module amm::stable_tuple {
     );
 
     let pool = new_pool<StableTuple>(
-      make_coins(vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
+      make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
       ctx
     );
 
@@ -598,20 +598,6 @@ module amm::stable_tuple {
         fees: stable_fees::new()
       }
     );
-  }
-
-  // @dev It makes sure that all coins are unique
-  fun make_coins(data: vector<TypeName>): VecSet<TypeName> {
-    let len = vector::length(&data);
-    let set = vec_set::empty();
-    let i = 0;
-
-    while (len > i) {
-      vec_set::insert(&mut set, *vector::borrow(&data, i));
-      i = i + 1;
-    };
-
-    set
   }
 
   fun load_mut_coin_state<CoinType>(id: &mut UID): &mut CoinState<CoinType> {

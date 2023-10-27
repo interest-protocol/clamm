@@ -72,7 +72,11 @@ module amm::errors {
     18
   }
 
-  public fun invalid_unpack_length(): u64 {
+  public fun must_have_3_values(): u64 {
     19
+  }
+
+  public fun wrong_configuration(): u64 {
+    20
   }
 }
