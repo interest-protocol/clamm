@@ -87,4 +87,8 @@ module amm::errors {
   public fun incorrect_first_coin(): u64 {
     22
   }
+
+  public fun expected_a_non_zero_value(): u64 {
+    24
+  }
 }

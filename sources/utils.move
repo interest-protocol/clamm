@@ -16,4 +16,31 @@ module amm::utils {
 
     set
   }
+
+  public fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
+    (
+      *vector::borrow(&x, 0),
+      *vector::borrow(&x, 1),
+      *vector::borrow(&x, 2)
+    )
+  }
+
+  public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
+    (
+      *vector::borrow(&x, 0),
+      *vector::borrow(&x, 1),
+    )
+  }
+
+  public fun empty_vector(x: u256): vector<u256> {
+    let data = vector::empty();
+
+    let i = 0;
+    while (x > i) {
+      vector::push_back(&mut data, 0);
+      i = i + 1;
+    };
+
+    data
+  }
 }
