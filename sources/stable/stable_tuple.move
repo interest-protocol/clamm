@@ -202,6 +202,60 @@ module amm::stable_tuple {
     lp_coin
   }
 
+  public fun new_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    c: &Clock,
+    initial_a: u256,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    coin_e: Coin<CoinE>,
+    coin_decimals: &CoinDecimals,      
+    lp_coin_supply: Supply<LpCoin>,
+    ctx: &mut TxContext
+  ): Coin<LpCoin> {
+    assert!(
+      coin::value(&coin_a) != 0 
+      && coin::value(&coin_b) != 0 
+      && coin::value(&coin_c) != 0
+      && coin::value(&coin_d) != 0
+      && coin::value(&coin_e) != 0,
+      errors::no_zero_liquidity_amounts()
+    );
+
+    let pool = new_pool<StableTuple>(
+      make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>(), get<CoinE>()]), 
+      ctx
+    );
+
+    // * IMPORTANT Make sure the n_coins argument is correct
+    add_state<LpCoin>(
+      core::borrow_mut_uid(&mut pool), 
+      coin_decimals,
+      initial_a, 
+      lp_coin_supply, 
+      5, 
+      ctx
+    );
+
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
+
+    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
+    register_coin<CoinA>(&mut state.id, coin_decimals, 0);
+    register_coin<CoinB>(&mut state.id, coin_decimals, 1);
+    register_coin<CoinC>(&mut state.id, coin_decimals, 2);
+    register_coin<CoinD>(&mut state.id, coin_decimals, 3);
+    register_coin<CoinE>(&mut state.id, coin_decimals, 4);
+
+    let lp_coin = add_liquidity_5_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
+
+    events::emit_new_stable_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(object::id(&pool));
+
+    public_share_object(pool);
+
+    lp_coin
+  }
+
 // amp: u256, token_in_index: u256, token_out_index: u256, token_amount_out: u256, balances: &vector<u256>
 
   public fun swap<CoinIn, CoinOut, LpCoin>(
@@ -375,6 +429,51 @@ module amm::stable_tuple {
     )
   }
 
+  public fun add_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    pool: &mut Pool<StableTuple>,
+    c: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    coin_e: Coin<CoinE>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext     
+  ): Coin<LpCoin> {
+    core::assert_is_5_pool(pool);
+
+    events::emit_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      object::id(pool), 
+      coin::value(&coin_a), 
+      coin::value(&coin_b), 
+      coin::value(&coin_c), 
+      coin::value(&coin_d), 
+      coin::value(&coin_e), 
+      ctx
+    );
+
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    
+    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
+    let prev_k = invariant_(amp, &state.balances);
+
+    deposit_coin<CoinA, LpCoin>(state, coin_a);
+    deposit_coin<CoinB, LpCoin>(state, coin_b);
+    deposit_coin<CoinC, LpCoin>(state, coin_c);
+    deposit_coin<CoinD, LpCoin>(state, coin_d);
+    deposit_coin<CoinE, LpCoin>(state, coin_e);
+
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+
+    coin::from_balance(
+      balance::increase_supply(
+        &mut state.lp_coin_supply, 
+        mint_amount
+      ), 
+      ctx
+    )
+  }
+
   public fun remove_one_coin_liquidity<CoinType, LpCoin>(
     pool: &mut Pool<StableTuple>, 
     c: &Clock,
@@ -473,6 +572,40 @@ module amm::stable_tuple {
     );
 
     (coin_a, coin_b, coin_c, coin_d)
+  }
+
+  public fun remove_balanced_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    pool: &mut Pool<StableTuple>, 
+    lp_coin: Coin<LpCoin>,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
+    asserts::assert_coin_has_value(&lp_coin);
+
+    let lp_coin_value = coin::value(&lp_coin);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    let (coin_a, coin_b, coin_c, coin_d, coin_e) = (
+      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinD, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinE, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+    );
+
+    balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
+
+    events::emit_remove_balance_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      object::id(pool), 
+      coin::value(&coin_a),
+      coin::value(&coin_b),
+      coin::value(&coin_c),
+            coin::value(&coin_d),
+            coin::value(&coin_e),
+      ctx
+    );
+
+    (coin_a, coin_b, coin_c, coin_d, coin_e)
   }
 
   // * Admin Function Functions

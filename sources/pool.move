@@ -32,6 +32,10 @@ module amm::interest_pool {
     assert!(vec_set::size(&pool.coins) == 4, errors::must_be_4_pool());
   }
 
+  public fun assert_is_5_pool<Curve>(pool: &Pool<Curve>) {
+    assert!(vec_set::size(&pool.coins) == 5, errors::must_be_5_pool());
+  }
+
   public(friend) fun borrow_mut_uid<Curve>(pool: &mut Pool<Curve>): &mut UID {
     &mut pool.id
   }

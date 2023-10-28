@@ -64,19 +64,27 @@ module amm::errors {
     16
   }
 
-  public fun value_overflow(): u64 {
+  public fun must_be_5_pool(): u64 {
     17
   }
 
-  public fun vector_too_big_to_pack(): u64 {
+  public fun value_overflow(): u64 {
     18
   }
 
-  public fun must_have_3_values(): u64 {
+  public fun vector_too_big_to_pack(): u64 {
     19
   }
 
-  public fun wrong_configuration(): u64 {
+  public fun must_have_3_values(): u64 {
     20
+  }
+
+  public fun wrong_configuration(): u64 {
+    21
+  }
+
+  public fun incorrect_first_coin(): u64 {
+    22
   }
 }
