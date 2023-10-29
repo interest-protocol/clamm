@@ -118,7 +118,7 @@ module amm::stable_pair {
   ): Coin<LpCoin> {
     let pool = new_pool<StablePair>(make_coins<CoinX, CoinY>(), ctx);
 
-    events::emit_new_pair(object::id(&pool), coin::value(&coin_x), coin::value(&coin_y), ctx);
+    events::emit_new_pair(object::id(&pool), coin::value(&coin_x), coin::value(&coin_y));
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
@@ -185,7 +185,7 @@ module amm::stable_pair {
 
     assert!(shares_to_mint >= lp_coin_min_amount, errors::slippage());
 
-    events::emit_add_liquidity<CoinX, CoinY>(pool_id, optimal_x_amount, optimal_y_amount, shares_to_mint, ctx);
+    events::emit_add_liquidity<CoinX, CoinY>(pool_id, optimal_x_amount, optimal_y_amount, shares_to_mint);
 
     balance::join(&mut state.balance_x, coin::into_balance(coin_x));
     balance::join(&mut state.balance_y, coin::into_balance(coin_y));
@@ -216,7 +216,7 @@ module amm::stable_pair {
     assert!(coin_x_removed >= coin_x_min_amount, errors::slippage());
     assert!(coin_y_removed >= coin_y_min_amount, errors::slippage());
 
-    events::emit_remove_liquidity<CoinX, CoinY>(pool_id, coin_x_removed, coin_y_removed, lp_coin_value, ctx);
+    events::emit_remove_liquidity<CoinX, CoinY>(pool_id, coin_x_removed, coin_y_removed, lp_coin_value);
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
@@ -293,7 +293,7 @@ module amm::stable_pair {
 
     balance::join(&mut state.balance_x, coin::into_balance(coin_x));
 
-    events::emit_swap<CoinX, CoinY>(pool_id, coin_in_amount, amount_out, ctx);
+    events::emit_swap<CoinX, CoinY>(pool_id, coin_in_amount, amount_out);
 
     coin::take(&mut state.balance_y, amount_out, ctx) 
   }
@@ -325,7 +325,7 @@ module amm::stable_pair {
 
     balance::join(&mut state.balance_y, coin::into_balance(coin_y));
 
-    events::emit_swap<CoinY, CoinX>(pool_id, coin_in_amount, amount_out, ctx);
+    events::emit_swap<CoinY, CoinX>(pool_id, coin_in_amount, amount_out);
 
     coin::take(&mut state.balance_x, amount_out, ctx) 
   }

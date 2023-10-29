@@ -211,6 +211,7 @@ module amm::volatile {
 
     let coin_states = vector::empty<CoinState>();
 
+    // TODO save coin-state in order?
     {  
       let i = 0;
       while (n_coins > i) {
@@ -286,8 +287,7 @@ module amm::volatile {
       // Remove fee
       d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, new_balances), d_token, 10000000000);
       let p = 0;
-      if (d_token > 100000) {
-        if (n_coins > ix) {
+      if (d_token > 100000 && n_coins > ix) {
           // local update
           let lp_supply = lp_coin_supply + d_token;
           let s = 0;
@@ -306,7 +306,6 @@ module amm::volatile {
 
           s = s * d_token / lp_supply;
           p = s * PRECISION / (*vector::borrow(&amounts, ix) - d_token * *vector::borrow(&xx, ix) / lp_supply);
-        };
       };
 
       tweak_prices(

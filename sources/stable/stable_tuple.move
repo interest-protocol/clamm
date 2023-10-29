@@ -341,7 +341,7 @@ module amm::stable_tuple {
 
     balance::join(load_mut_admin_balance<CoinOut>(&mut state.id), admin_balance_in);
 
-    events::emit_swap<CoinIn, CoinOut, LpCoin>(object::id(pool), coin_in_value, amount_out, ctx);
+    events::emit_swap<CoinIn, CoinOut, LpCoin>(object::id(pool), coin_in_value, amount_out);
 
     coin_out
   }
@@ -362,8 +362,7 @@ module amm::stable_tuple {
       object::id(pool), 
       coin::value(&coin_a), 
       coin::value(&coin_b), 
-      coin::value(&coin_c), 
-      ctx
+      coin::value(&coin_c)
     );
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
@@ -404,8 +403,7 @@ module amm::stable_tuple {
       coin::value(&coin_a), 
       coin::value(&coin_b), 
       coin::value(&coin_c), 
-      coin::value(&coin_d), 
-      ctx
+      coin::value(&coin_d)
     );
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
@@ -448,8 +446,7 @@ module amm::stable_tuple {
       coin::value(&coin_b), 
       coin::value(&coin_c), 
       coin::value(&coin_d), 
-      coin::value(&coin_e), 
-      ctx
+      coin::value(&coin_e)
     );
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
@@ -535,8 +532,7 @@ module amm::stable_tuple {
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
-      coin::value(&coin_c),
-      ctx
+      coin::value(&coin_c)
     );
 
     (coin_a, coin_b, coin_c)
@@ -567,8 +563,7 @@ module amm::stable_tuple {
       coin::value(&coin_a),
       coin::value(&coin_b),
       coin::value(&coin_c),
-            coin::value(&coin_d),
-      ctx
+      coin::value(&coin_d)
     );
 
     (coin_a, coin_b, coin_c, coin_d)
@@ -600,9 +595,8 @@ module amm::stable_tuple {
       coin::value(&coin_a),
       coin::value(&coin_b),
       coin::value(&coin_c),
-            coin::value(&coin_d),
-            coin::value(&coin_e),
-      ctx
+      coin::value(&coin_d),
+      coin::value(&coin_e),
     );
 
     (coin_a, coin_b, coin_c, coin_d, coin_e)
