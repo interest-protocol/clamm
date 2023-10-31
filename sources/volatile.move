@@ -383,9 +383,12 @@ module amm::volatile {
     };
 
     state.d = volatile_math::invariant_(a, gamma, &state.balances);
-    state.virtual_price = fdiv(get_xcp(state, coin_states, state.d), (balance::supply_value(&state.lp_coin_supply) as u256));
+    let d = state.d;
+    state.virtual_price = fdiv(get_xcp(state, coin_states, d), (balance::supply_value(&state.lp_coin_supply) as u256));
     state.xcp_profit_a = state.xcp_profit;
   }
+
+  // * Private functions
 
   fun add_liquidity<LpCoin>(
     state: &mut State<LpCoin>,
@@ -458,7 +461,7 @@ module amm::volatile {
        // local update
       let lp_supply = lp_coin_supply + d_token;
       let p = 0;
-      if (d_token > 100000 && n_coins_u64 > ix) {
+      if (d_token > 1000 && n_coins_u64 > ix) {
           let s = 0;
 
           let i = 0;
@@ -506,6 +509,64 @@ module amm::volatile {
       ctx
     )
   }
+
+  fun calculate_withdraw_one_coin<LpCoin>(
+    state: &mut State<LpCoin>,
+    c: &Clock,
+    coin_states: vector<CoinState>,
+    lp_coin_amount: u64,
+    i: u64,
+    update_d: bool,
+    calc_price: bool
+  ): (u256, u256, u256, vector<u256>) {
+    
+    let xp = state.balances;
+
+    let index = 1;
+    let price_scale_i = 0;
+    while ((state.n_coins as u64) > index) {
+      let v = vector::borrow_mut(&mut xp, index);
+      let coin_state = vector::borrow(&coin_states, index);
+      if (i == index) price_scale_i = coin_state.price;
+
+      *v = fmul(*v, coin_state.price);
+      index = index + 1;
+    };
+
+    let (a, gamma) = get_a_gamma(state, c);
+    let d0 = if (update_d) volatile_math::invariant_(a, gamma, &xp) else state.d;
+    let d = d0;
+
+    let fee = fee(state, xp);
+    let d_b = (lp_coin_amount as u256) * d / (balance::supply_value(&state.lp_coin_supply) as u256);
+    let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
+    let y = volatile_math::calculate_balance(a, gamma, &xp, d, (i as u256));
+    let dy = fdiv((*vector::borrow(&xp, i) - y), price_scale_i);  
+    let i_xp = vector::borrow_mut(&mut xp, i);
+    *i_xp = y;
+
+    let p = 0;
+    if (calc_price && dy > 1000 && lp_coin_amount > 1000) {
+      let s = 0;
+
+      let index = 0;
+      while((state.n_coins as u64) > index) {
+        if (index != i) {
+          s = if (index == 0) 
+            s + *vector::borrow(&state.balances, 0) 
+          else
+             s +  fmul(*vector::borrow(&state.balances, index), vector::borrow(&coin_states, index).last_price)  
+        };  
+
+        index = index + 1;
+      };
+
+      s = s * d_b / d0;
+      p = fdiv(s, dy - d_b * *vector::borrow(&state.balances, i) / d0);
+    };
+
+    (dy, p, d, xp)
+  } 
 
   fun deposit_coin<CoinType, LpCoin>(state: &mut State<LpCoin>, coin_in: Coin<CoinType>) {
     let coin_value = (coin::value(&coin_in) as u256);
@@ -633,7 +694,6 @@ module amm::volatile {
     df::add(id, CoinBalanceKey { type: coin_name }, balance::zero<CoinType>());    
   }
 
-  // * Private functions
 
   fun get_a_gamma<LpCoin>(state: &State<LpCoin>, c: &Clock): (u256, u256) {
     let t1 = state.a_gamma.future_time;
