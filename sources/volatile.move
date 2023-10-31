@@ -1,4 +1,5 @@
 // CurveV2 in Move - All logic from Curve
+// It is best to for the first coin to be a stable coin as all Coins r quoted from it
 module amm::volatile {
   use std::vector;
   use std::type_name::{get, TypeName};
@@ -178,6 +179,81 @@ module amm::volatile {
     lp_coin
   }
 
+    public fun new_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+    c: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_decimals: &CoinDecimals,     
+    lp_coin_supply: Supply<LpCoin>,
+    initial_a_gamma: vector<u256>,
+    rebalancing_params: vector<u256>,
+    price: vector<u256>, // @ on a pool with 3 coins, we only need 2 prices
+    fee_params: vector<u256>, 
+    ctx: &mut TxContext
+  ): Coin<LpCoin> {
+    assert!(
+      coin::value(&coin_a) != 0 
+      && coin::value(&coin_b) != 0
+      && coin::value(&coin_c) != 0, 
+      errors::no_zero_liquidity_amounts()
+    );
+
+    let pool = new_pool<Volatile>(
+      make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), 
+      ctx
+    );
+
+    add_state<LpCoin>(
+      core::borrow_mut_uid(&mut pool),
+      c,
+      coin_decimals,
+      lp_coin_supply,
+      vector[0, 0],
+      initial_a_gamma,
+      rebalancing_params,
+      fee_params,
+      ctx
+    );
+
+    // @dev This is the quote coin in the pool 
+    // So we do not need to pass a price
+    register_coin<CoinA>(
+      core::borrow_mut_uid(&mut pool), 
+      coin_decimals,
+      0,
+      0
+    );
+
+    register_coin<CoinB>(
+      core::borrow_mut_uid(&mut pool), 
+      coin_decimals,
+      *vector::borrow(&price, 0),
+      1
+    );
+
+    register_coin<CoinC>(
+      core::borrow_mut_uid(&mut pool), 
+      coin_decimals,
+      *vector::borrow(&price, 1),
+      2
+    );
+
+    let lp_coin =    add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+      &mut pool,
+      c,
+      coin_a,
+      coin_b,
+      coin_c,
+      0,
+      ctx
+    );
+
+    public_share_object(pool);
+
+    lp_coin
+  }
+
   public fun add_liquidity_2_pool<CoinA, CoinB, LpCoin>(
     pool: &mut Pool<Volatile>,
     c: &Clock,
@@ -193,15 +269,7 @@ module amm::volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>()]), errors::coins_must_be_in_order());
 
-    let (state, coin_states, coins) = load<LpCoin>(pool);
-    let (a, gamma) = get_a_gamma(state, c);
-
-
-    let n_coins_u64 = (state.n_coins as u64);
-    let amounts = vector[];
-    let amounts_p = empty_vector(state.n_coins);
-    let timestamp = clock::timestamp_ms(c);
-    let ix = INF_COINS;
+    let (state, coin_states) = load<LpCoin>(pool);
 
     let old_balances = state.balances;
 
@@ -209,8 +277,55 @@ module amm::volatile {
     deposit_coin<CoinA, LpCoin>(state, coin_a);
     deposit_coin<CoinB, LpCoin>(state, coin_b);
 
+    add_liquidity(state, c, coin_states, old_balances, lp_coin_min_amount, ctx)
+  }
+
+  public fun add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+    pool: &mut Pool<Volatile>,
+    c: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext      
+  ): Coin<LpCoin> {
+    let coin_a_value = coin::value(&coin_a);
+    let coin_b_value = coin::value(&coin_b);
+    let coin_c_value = coin::value(&coin_b);
+
+    assert!(coin_a_value != 0 || coin_b_value != 0 || coin_c_value != 0, errors::no_zero_coin());
+    // Make sure the second argument is in right order
+    assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
+
+    let (state, coin_states) = load<LpCoin>(pool);
+
+    let old_balances = state.balances;
+
+    // Update Balances
+    deposit_coin<CoinA, LpCoin>(state, coin_a);
+    deposit_coin<CoinB, LpCoin>(state, coin_b);
+    deposit_coin<CoinC, LpCoin>(state, coin_c);
+
+    add_liquidity(state, c, coin_states, old_balances, lp_coin_min_amount, ctx)
+  }
+
+  fun add_liquidity<LpCoin>(
+    state: &mut State<LpCoin>,
+    c: &Clock,
+    coin_states: vector<CoinState>,
+    old_balances: vector<u256>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext
+  ): Coin<LpCoin> {
+    let n_coins_u64 = (state.n_coins as u64);
+    let amounts = vector[];
+    let amounts_p = empty_vector(state.n_coins);
+    let timestamp = clock::timestamp_ms(c);
+    let ix = INF_COINS;
+    let n_coins_u64 = (state.n_coins as u64);
     let new_balances = state.balances;
     let xx = new_balances;
+    let (a, gamma) = get_a_gamma(state, c);
 
     // Convert balances to first coin price (usually Stable Coin USD)
     {
@@ -253,7 +368,7 @@ module amm::volatile {
     let d_token = if (old_d != 0)
       lp_coin_supply * new_d / old_d - lp_coin_supply
     else 
-      get_xcp(state, coins, new_d);
+      get_xcp(state, coin_states, new_d);
 
     // Insanity check - something is wrong if this occurs as we check that the user deposited coins
     assert!(d_token != 0, errors::expected_a_non_zero_value());
@@ -610,14 +725,13 @@ module amm::volatile {
     is_equal(&compare(&core::view_coins(pool), &coins))
   }
 
-  fun get_xcp<LpCoin>(state: &State<LpCoin>, coins: vector<TypeName>, d: u256): u256 {
+  fun get_xcp<LpCoin>(state: &State<LpCoin>, coin_states: vector<CoinState>, d: u256): u256 {
     let x = vector::singleton(d / state.n_coins);
 
     let index = 1;
-    let len = vector::length(&coins);
 
-    while (len > index) {
-      let coin_state = load_coin_state_with_key(&state.id, *vector::borrow(&coins, index));
+    while ((state.n_coins as u64) > index) {
+      let coin_state = *vector::borrow(&coin_states, index);
       vector::push_back(&mut x, fdiv(d, state.n_coins * coin_state.price));
 
       index = index + 1;
@@ -650,12 +764,12 @@ module amm::volatile {
 
   // * Load State Functions
 
-  fun load<LpCoin>(pool: &mut Pool<Volatile>): (&mut State<LpCoin>, vector<CoinState>, vector<TypeName>) {
+  fun load<LpCoin>(pool: &mut Pool<Volatile>): (&mut State<LpCoin>, vector<CoinState>) {
 
     let coins = core::view_coins(pool);    
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     let coin_states = load_coin_state_vector_in_order(state, coins);
-    (state, coin_states, coins)
+    (state, coin_states)
   }
 
   fun update_coin_state_prices<LpCoin>(state: &mut State<LpCoin>, new_coin_states: vector<CoinState>) {
