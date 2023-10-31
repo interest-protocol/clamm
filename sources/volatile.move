@@ -13,7 +13,8 @@ module amm::volatile {
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
   
-  use suitears::math256::{sum, diff, mul_div_up};
+  use suitears::math256::{Self, sum, diff, mul_div_up};
+  use suitears::comparator::{compare, is_equal};
   use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
   use suitears::fixed_point_ray::{ray_mul_down as fmul, ray_div_down as fdiv};
 
@@ -57,10 +58,11 @@ module amm::volatile {
 
   struct CoinState has store, copy, drop {
     index: u64,
-    price: u256,
-    price_oracle: u256,
-    last_price: u256,
-    decimals: u256
+    price: u256, // 1e18
+    price_oracle: u256, // 1e18
+    last_price: u256, // 1e18
+    decimals: u256,
+    type: TypeName
   }
 
   struct AGamma has store, copy {
@@ -106,6 +108,7 @@ module amm::volatile {
     last_prices_timestamp: u64,
     min_a: u256,
     max_a: u256,
+    not_adjusted: bool
   }
 
     // * Structs ---- END ----
@@ -187,18 +190,18 @@ module amm::volatile {
     let coin_b_value = coin::value(&coin_b);
 
     assert!(coin_a_value != 0 || coin_b_value != 0, errors::no_zero_coin());
-    // Price coins based on the first one
-    assert!(first_coin(pool) == get<CoinA>(), errors::incorrect_first_coin());
+    // Make sure the second argument is in right order
+    assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>()]), errors::coins_must_be_in_order());
 
-    let coins = core::view_coins(pool);    
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
-    let n_coins = (state.n_coins as u64);
-    let amounts = vector[];
+    let (state, coin_states, coins) = load<LpCoin>(pool);
     let (a, gamma) = get_a_gamma(state, c);
+
+
+    let n_coins_u64 = (state.n_coins as u64);
+    let amounts = vector[];
     let amounts_p = empty_vector(state.n_coins);
     let timestamp = clock::timestamp_ms(c);
     let ix = INF_COINS;
-
 
     let old_balances = state.balances;
 
@@ -209,22 +212,10 @@ module amm::volatile {
     let new_balances = state.balances;
     let xx = new_balances;
 
-    let coin_states = vector::empty<CoinState>();
-
-    // TODO save coin-state in order?
-    {  
-      let i = 0;
-      while (n_coins > i) {
-        let coin_key = *vector::borrow(&coins, i);
-        vector::push_back(&mut coin_states, *load_coin_state_with_key(&state.id, coin_key));
-        i = i + 1;
-      };
-    };
-
-    // Update the price scale for CoinB
+    // Convert balances to first coin price (usually Stable Coin USD)
     {
       let i: u64 = 1;
-      while (n_coins > i) {
+      while (n_coins_u64 > i) {
         let old_bal = vector::borrow_mut(&mut old_balances, i);
         let new_bal = vector::borrow_mut(&mut new_balances, i);
         vector::push_back(&mut amounts, *new_bal - *old_bal);
@@ -234,46 +225,31 @@ module amm::volatile {
         *old_bal = fmul(*old_bal, coin_state.price);
         *new_bal = fmul(*new_bal, coin_state.price);
 
-        i = i + 1;
-      };
-    };
+        let p = *new_bal - *old_bal;
 
+        // If amount was sent
+        if (p != 0) {
+          let new_p = vector::borrow_mut(&mut amounts, i);
+          *new_p = p;
 
-    // Update amount_p
-    {
-      let i: u64 = 0;
-      while (n_coins > i) {
-
-        let old_bal = vector::borrow(&old_balances, i);
-        let new_bal = vector::borrow(&new_balances, i);
-        let p = vector::borrow_mut(&mut amounts_p, i);
-
-        let coin_state = vector::borrow(&coin_states, i);
-
-        *p = *new_bal - *old_bal;
-
-        if (ix == INF_COINS) {
-           ix = i;
-        } else {
-          ix = INF_COINS - 1;
+          ix = if (ix == INF_COINS) i else INF_COINS - 1;
         };
 
         i = i + 1;
       };
     };
 
-
+    // Calculate the previous and new invariant with current prices
     let old_d = if (state.a_gamma.future_time != 0) {
       if (timestamp >= state.a_gamma.future_time) state.a_gamma.future_time = 1;
       volatile_math::invariant_(a, gamma, &old_balances)
     } else  state.d;
-
-
-
     let new_d = volatile_math::invariant_(a, gamma, &new_balances);
+
 
     let lp_coin_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
 
+    // Calculate how many tokens to mint to the user
     let d_token = if (old_d != 0)
       lp_coin_supply * new_d / old_d - lp_coin_supply
     else 
@@ -286,14 +262,14 @@ module amm::volatile {
     if (old_d != 0) {
       // Remove fee
       d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, new_balances), d_token, 10000000000);
+       // local update
+      let lp_supply = lp_coin_supply + d_token;
       let p = 0;
-      if (d_token > 100000 && n_coins > ix) {
-          // local update
-          let lp_supply = lp_coin_supply + d_token;
+      if (d_token > 100000 && n_coins_u64 > ix) {
           let s = 0;
 
           let i = 0;
-          while (n_coins > i) {
+          while (n_coins_u64 > i) {
             let coin_state = vector::borrow(&coin_states, i);
 
             if (i != ix)
@@ -305,19 +281,20 @@ module amm::volatile {
           };
 
           s = s * d_token / lp_supply;
-          p = s * PRECISION / (*vector::borrow(&amounts, ix) - d_token * *vector::borrow(&xx, ix) / lp_supply);
+          p = fdiv(s, (*vector::borrow(&amounts, ix) - d_token * *vector::borrow(&xx, ix) / lp_supply));
       };
 
       tweak_prices(
         state,
-        coins,
+        coin_states,
         timestamp,
         a,
         gamma,
         new_balances,
         ix,
         p,
-        new_d
+        new_d,
+        lp_supply
       );
 
     } else {
@@ -414,7 +391,8 @@ module amm::volatile {
         },
         last_prices_timestamp: timestamp,
         min_a: pow_n_coins  * A_MULTIPLIER / 100,
-        max_a: 1000 * A_MULTIPLIER * pow_n_coins 
+        max_a: 1000 * A_MULTIPLIER * pow_n_coins,
+        not_adjusted: false
       }
     );
   }
@@ -433,6 +411,7 @@ module amm::volatile {
       price_oracle: price,
       last_price: price,
       decimals: (get_decimals_scalar<CoinType>(coin_decimals) as u256),
+      type: coin_name
     });
     df::add(id, CoinBalanceKey { type: coin_name }, balance::zero<CoinType>());    
     df::add(id, AdminCoinBalanceKey { type: coin_name }, balance::zero<CoinType>());
@@ -465,7 +444,7 @@ module amm::volatile {
 
   fun tweak_prices<LpCoin>(
     state: &mut State<LpCoin>,
-    coins: vector<TypeName>,
+    coin_states: vector<CoinState>,
     timestamp: u64,
     a: u256, 
     gamma: u256, 
@@ -473,13 +452,10 @@ module amm::volatile {
     i: u64,
     p_i: u256,
     new_d: u256, 
+    lp_supply: u256
   ) {
 
-    //     index: u64,
-    // price: u256,
-    // price_oracle: u256,
-    // last_price: u256,
-    // decimals: u256
+    let new_coin_states = coin_states;
 
     // Update Moving Average
     
@@ -490,7 +466,7 @@ module amm::volatile {
       let index = 1;
 
       while ((state.n_coins as u64) > index) {
-        let coin_state = load_mut_coin_state_with_key(&mut state.id, *vector::borrow(&coins, index));
+        let coin_state = vector::borrow_mut(&mut new_coin_states, index);
         coin_state.price_oracle = (coin_state.last_price * (PRECISION - alpha) + coin_state.price_oracle * alpha) / PRECISION;
 
         index = index + 1;
@@ -500,12 +476,138 @@ module amm::volatile {
 
     let d_unadjusted = if (new_d == 0) volatile_math::invariant_(a, gamma, &balances) else new_d;
     
+    if (p_i != 0) {
+      if (i != 0) {
+        let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+        coin_state.last_price = p_i;
+        } else {
+          // We do not change the first coin
+          let i = 1;
+          while ((state.n_coins as u64) > i) {
+            let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+            coin_state.last_price = fdiv(coin_state.last_price, p_i);
+            i = i + 1;
+          };
+        };
+     } else {
+      let xp = balances;
+      let dx_price = *vector::borrow(&xp, 0) / 1000000;
+      let ref = vector::borrow_mut(&mut xp, 0);
+      *ref = *ref + dx_price;
+
+      // We do nt change the first coin
+      let i = 1;
+      while ((state.n_coins as u64) > i) {
+        let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+        coin_state.last_price = coin_state.price * dx_price / (*vector::borrow(&balances, i) - volatile_math::calculate_balance(a, gamma, &xp, d_unadjusted, (i as u256)));
+        i = i + 1;
+      };
+     };
+
+    let old_xcp_profit = state.xcp_profit;
+    let old_virtual_price = state.virtual_price;
+    let xp = vector[];
+    vector::push_back(&mut xp, d_unadjusted / state.n_coins);
+
+    // We do nt change the first coin
+    let i = 1;
+    while ((state.n_coins as u64) > i) {
+      let coin_state = vector::borrow(&new_coin_states, i);
+      vector::push_back(&mut xp, fdiv(d_unadjusted, state.n_coins * coin_state.price));
+      i = i + 1;
+    };
+
+    let xcp_profit = PRECISION;
+    let virtual_price = PRECISION;
+
+    if (old_virtual_price != 0) {
+      virtual_price = fdiv(volatile_math::geometric_mean(&xp, true), lp_supply);
+      xcp_profit = old_xcp_profit * virtual_price / old_virtual_price;
+      
+      if (old_virtual_price > virtual_price && state.a_gamma.future_time == 0) abort errors::incurred_a_loss();
+      if (state.a_gamma.future_time == 1) state.a_gamma.future_time = 0;
+    };
+
+    state.xcp_profit = xcp_profit;
+
+    let needs_adjustment = state.not_adjusted;
+
+    if (!needs_adjustment && (virtual_price * 2 - PRECISION > xcp_profit + 2 * state.rebalancing_params.extra_profit)) {
+      needs_adjustment = true;
+      state.not_adjusted = true;
+    };
+
+    if (needs_adjustment) {
+      let adjustment_step = state.rebalancing_params.adjustment_step;
+      let norm = 0;
+
+      // We do nt change the first coin
+      let i = 1;
+      while ((state.n_coins as u64) > i) {
+        let coin_state = vector::borrow(&new_coin_states, i);
+
+        let ratio = diff(PRECISION, fdiv(coin_state.price_oracle, coin_state.price));
+        norm = norm + math256::pow(ratio, 2);
+        i = i + 1;
+      };
+
+      if (norm > math256::pow(adjustment_step, 2) && old_virtual_price != 0) {
+        norm = volatile_math::sqrt(norm / PRECISION);
+
+        let p_new = empty_vector(state.n_coins);
+        let xp = balances;
+
+        // We do nt change the first coin
+        let i = 1;
+        while ((state.n_coins as u64) > i) {
+          let coin_state = vector::borrow(&new_coin_states, i);
+
+          let value = vector::borrow_mut(&mut p_new, i);
+          *value = (coin_state.price * (norm - adjustment_step) + adjustment_step * coin_state.price_oracle) / norm;
+
+          let x = vector::borrow_mut(&mut xp, i);
+          *x = *x + *value / coin_state.price;
+
+          i = i + 1;
+        };
+        let d = volatile_math::invariant_(a, gamma, &xp);
+        let x = vector::borrow_mut(&mut xp, 0);
+        *x = d / state.n_coins;
+
+        let i = 1;
+        while ((state.n_coins as u64) > i) {
+          let x = vector::borrow_mut(&mut xp, 0);
+          *x = fmul(d, state.n_coins * *vector::borrow(&p_new, i));
+          i = i + 1;
+        };
+
+        old_virtual_price = PRECISION * volatile_math::geometric_mean(&xp, true) / lp_supply;
+
+        if (old_virtual_price > PRECISION && (2 * (old_virtual_price - PRECISION) > xcp_profit - PRECISION)) {
+          state.d = d;
+          state.virtual_price = old_virtual_price;
+           let i = 1;
+           while ((state.n_coins as u64) > i) {
+            let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+            coin_state.price = *vector::borrow(&p_new, i);
+           };
+           update_coin_state_prices(state, new_coin_states);
+          return
+        } else {
+          state.not_adjusted = false;
+        };
+      };
+    };
+
+    update_coin_state_prices(state, new_coin_states);
+    state.d = d_unadjusted;
+    state.virtual_price = virtual_price;
   }
 
   // * Utilities
 
-  fun first_coin(pool: &Pool<Volatile>): TypeName {
-    *vector::borrow(&core::view_coins(pool), 0)
+  fun are_coins_ordered(pool: &Pool<Volatile>, coins: vector<TypeName>): bool {
+    is_equal(&compare(&core::view_coins(pool), &coins))
   }
 
   fun get_xcp<LpCoin>(state: &State<LpCoin>, coins: vector<TypeName>, d: u256): u256 {
@@ -516,7 +618,7 @@ module amm::volatile {
 
     while (len > index) {
       let coin_state = load_coin_state_with_key(&state.id, *vector::borrow(&coins, index));
-      vector::push_back(&mut x, d * PRECISION / (state.n_coins * coin_state.last_price));
+      vector::push_back(&mut x, fdiv(d, state.n_coins * coin_state.price));
 
       index = index + 1;
     };
@@ -530,7 +632,7 @@ module amm::volatile {
   }
 
   fun calculate_fee<LpCoin>(state: &State<LpCoin>, amounts: vector<u256>, balances: vector<u256>): u256 {
-    let fee = fee(state, balances) * state.n_coins / (4 * (state.n_coins - 1));
+    let fee = mul_div_up(fee(state, balances), state.n_coins, 4 * (state.n_coins - 1)); 
     let s = sum(&amounts);
     let avg = s / state.n_coins;
 
@@ -547,6 +649,37 @@ module amm::volatile {
   }
 
   // * Load State Functions
+
+  fun load<LpCoin>(pool: &mut Pool<Volatile>): (&mut State<LpCoin>, vector<CoinState>, vector<TypeName>) {
+
+    let coins = core::view_coins(pool);    
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let coin_states = load_coin_state_vector_in_order(state, coins);
+    (state, coin_states, coins)
+  }
+
+  fun update_coin_state_prices<LpCoin>(state: &mut State<LpCoin>, new_coin_states: vector<CoinState>) {
+    let i = 0;
+    while ((state.n_coins as u64) > i) {
+      let new_state = vector::borrow(&new_coin_states, i);
+      let current_state = load_mut_coin_state_with_key(&mut state.id, new_state.type);
+      current_state.last_price = new_state.last_price;
+      current_state.price = new_state.price;
+      current_state.price_oracle = new_state.price_oracle;
+      i = i + 1;
+    };
+  }
+
+  fun load_coin_state_vector_in_order<LpCoin>(state: &State<LpCoin>, coins: vector<TypeName>): vector<CoinState> {
+    let data = vector::empty();
+    let i = 0;
+    while ((state.n_coins as u64) > i) {
+        let coin_key = *vector::borrow(&coins, i);
+        vector::push_back(&mut data, *load_coin_state_with_key(&state.id, coin_key));
+        i = i + 1;
+    };
+    data
+  }
 
   fun load_coin_state<CoinType>(id: &UID): &CoinState {
     load_coin_state_with_key(id, get<CoinType>())

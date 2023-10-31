@@ -84,11 +84,15 @@ module amm::errors {
     21
   }
 
-  public fun incorrect_first_coin(): u64 {
+  public fun coins_must_be_in_order(): u64 {
     22
   }
 
   public fun expected_a_non_zero_value(): u64 {
     24
+  }
+
+  public fun incurred_a_loss(): u64 {
+    25
   }
 }

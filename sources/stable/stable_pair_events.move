@@ -1,7 +1,6 @@
 module amm::stable_pair_events {
   use sui::object::ID;
   use sui::event::emit;
-  use sui::tx_context::{Self, TxContext};
   
   use amm::curves::StablePair;
 

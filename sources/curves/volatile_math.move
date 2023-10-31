@@ -232,4 +232,23 @@ module amm::volatile_math {
     };
     abort errors::failed_to_converge()
   }
+
+  public fun sqrt(x: u256): u256 {
+    if (x == 0) return 0;
+
+    let z = (x + PRECISION) / 2;
+    let y = x;
+
+    let i = 0;
+    while (256 > i) {
+      if (z == y) return y;
+
+      y = z;
+      z = (x * PRECISION / z + z) / 2;
+
+      i = i + 1;
+    };
+
+     abort errors::failed_to_converge()
+  }
 }
