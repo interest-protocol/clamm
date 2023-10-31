@@ -35,17 +35,18 @@ module amm::volatile {
     make_coins_from_vector
   };
 
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
-  const A_MULTIPLIER: u256 = 10000;
-  const ADMIN_FEE: u256 = 5 * 1_000_000_000;
   const MIN_FEE: u256 = 5 * 100_000;
   const MAX_FEE: u256 = 10 * 1_000_000_000;
+  const INF_COINS: u64 = 15;
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  const ADMIN_FEE: u256 = 5 * 1_000_000_000;
   const NOISE_FEE: u256 = 100_000;
-  const MAX_A_CHANGE: u256 = 10;
   const MIN_GAMMA: u256 = 10_000_000_000;
   const MAX_GAMMA: u256 = 5 * 10_000_000_000_000_000;
+  const A_MULTIPLIER: u256 = 10000;
+  const MAX_A_CHANGE: u256 = 10;
   const MIN_RAMP_TIME: u256 = 86400000; // 1 day in milliseconds
-  const INF_COINS: u64 = 15;
+  const HALF_PRECISION: u256 = 1_000_000_000; // 1e9 - LpCoins have 9 decimals 
 
   // * Structs ---- START ----
 
@@ -421,7 +422,7 @@ module amm::volatile {
 
         // If amount was sent
         if (p != 0) {
-          let new_p = vector::borrow_mut(&mut amounts, i);
+          let new_p = vector::borrow_mut(&mut amounts_p, i);
           *new_p = p;
 
           ix = if (ix == INF_COINS) i else INF_COINS - 1;
@@ -473,7 +474,7 @@ module amm::volatile {
           };
 
           s = s * d_token / lp_supply;
-          p = fdiv(s, (*vector::borrow(&amounts, ix) - d_token * *vector::borrow(&xx, ix) / lp_supply));
+          p = fdiv(s, (*vector::borrow(&amounts, ix) * HALF_PRECISION - d_token * *vector::borrow(&xx, ix) * HALF_PRECISION / lp_supply));
       };
 
       tweak_prices(
@@ -736,7 +737,7 @@ module amm::volatile {
     let virtual_price = PRECISION;
 
     if (old_virtual_price != 0) {
-      virtual_price = fdiv(volatile_math::geometric_mean(&xp, true), lp_supply);
+      virtual_price = volatile_math::geometric_mean(&xp, true) * HALF_PRECISION / lp_supply;
       xcp_profit = old_xcp_profit * virtual_price / old_virtual_price;
       
       if (old_virtual_price > virtual_price && state.a_gamma.future_time == 0) abort errors::incurred_a_loss();
@@ -796,7 +797,7 @@ module amm::volatile {
           i = i + 1;
         };
 
-        old_virtual_price = PRECISION * volatile_math::geometric_mean(&xp, true) / lp_supply;
+        old_virtual_price = HALF_PRECISION * volatile_math::geometric_mean(&xp, true) / lp_supply;
 
         if (old_virtual_price > PRECISION && (2 * (old_virtual_price - PRECISION) > xcp_profit - PRECISION)) {
           state.d = d;
