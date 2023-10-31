@@ -16,7 +16,7 @@ module amm::volatile {
   
   use suitears::math256::{Self, sum, diff, mul_div_up};
   use suitears::comparator::{compare, is_equal};
-  use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
+  use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
   use suitears::fixed_point_ray::{ray_mul_down as fmul, ray_div_down as fdiv};
 
   use amm::errors;
@@ -49,7 +49,7 @@ module amm::volatile {
 
   // * Structs ---- START ----
 
-  struct AdminCoinBalanceKey has drop, copy, store { type: TypeName }
+  struct AdminCoinBalanceKey has drop, copy, store { }
 
   struct StateKey has drop, copy, store {}
 
@@ -97,7 +97,6 @@ module amm::volatile {
     id: UID,
     d: u256, // invariant
     lp_coin_supply: Supply<LpCoin>,
-    lp_coin_decimals: u256,
     n_coins: u256,
     balances: vector<u256>,
     a_gamma: AGamma,
@@ -309,6 +308,84 @@ module amm::volatile {
     add_liquidity(state, c, coin_states, old_balances, lp_coin_min_amount, ctx)
   }
 
+  public fun remove_liquidity_2_pool<CoinA, CoinB, LpCoin>(
+    pool: &mut Pool<Volatile>,
+    c: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>) {
+
+    assert!(coin::value(&lp_coin) != 0, errors::no_zero_coin());
+    // Make sure the second argument is in right order
+    assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>()]), errors::coins_must_be_in_order());
+
+    let (state, coin_states) = load<LpCoin>(pool);
+
+    admin_fees(state, coin_states, c);
+
+    let total_supply = balance::supply_value(&state.lp_coin_supply);
+    let lp_coin_amount = balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
+
+    // Empties the pool
+    state.d = state.d - state.d * (lp_coin_amount as u256) / (total_supply as u256);
+
+    (
+      take_coin<CoinA, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 0), total_supply, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 1), total_supply, ctx),
+    )
+  }
+
+  public fun remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+    pool: &mut Pool<Volatile>,
+    c: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
+
+    assert!(coin::value(&lp_coin) != 0, errors::no_zero_coin());
+    // Make sure the second argument is in right order
+    assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
+
+    let (state, coin_states) = load<LpCoin>(pool);
+
+    admin_fees(state, coin_states, c);
+
+    let total_supply = balance::supply_value(&state.lp_coin_supply);
+    let lp_coin_amount = balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
+
+    // Empties the pool
+    state.d = state.d - state.d * (lp_coin_amount as u256) / (total_supply as u256);
+
+    (
+      take_coin<CoinA, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 0), total_supply, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 1), total_supply, ctx),
+      take_coin<CoinC, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 2), total_supply, ctx),
+    )
+  }
+
+  public fun admin_fees<LpCoin>(state: &mut State<LpCoin>, coin_states: vector<CoinState>, c:&Clock) {
+    let (a, gamma) = get_a_gamma(state, c);
+
+    let total_supply = balance::supply_value(&state.lp_coin_supply);
+
+    if (state.xcp_profit_a >= state.xcp_profit || 1000000000 > total_supply) return;
+
+    let fees = state.xcp_profit - state.xcp_profit_a * ADMIN_FEE / (2 * 100000000000);
+
+    if (fees != 0) {
+      let frac = fdiv(state.virtual_price, state.virtual_price - fees) - PRECISION;
+      balance::join(df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey {}), balance::increase_supply(&mut state.lp_coin_supply, (frac as u64)));
+
+      state.xcp_profit = state.xcp_profit - fees * 2;
+    };
+
+    state.d = volatile_math::invariant_(a, gamma, &state.balances);
+    state.virtual_price = fdiv(get_xcp(state, coin_states, state.d), (balance::supply_value(&state.lp_coin_supply) as u256));
+    state.xcp_profit_a = state.xcp_profit;
+  }
+
   fun add_liquidity<LpCoin>(
     state: &mut State<LpCoin>,
     c: &Clock,
@@ -446,6 +523,26 @@ module amm::volatile {
     balance::join(load_mut_coin_balance(&mut state.id), coin::into_balance(coin_in));
   }
 
+  fun take_coin<CoinType, LpCoin>(
+    state: &mut State<LpCoin>, 
+    burn_amount: u64,
+    min_amount: u64,
+    supply: u64,
+    ctx: &mut TxContext
+    ): Coin<CoinType> {
+      let coin_state = load_mut_coin_state<CoinType>(&mut state.id);
+      let current_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
+      
+      let coin_amount = *current_balance * (burn_amount as u256) / (supply as u256);
+
+      *current_balance = *current_balance - coin_amount;
+
+      let remove_amount = (fmul(coin_amount, coin_state.decimals) as u64);
+      assert!(remove_amount >= min_amount, errors::slippage());
+
+      coin::take(load_mut_coin_balance(&mut state.id), remove_amount, ctx)
+    }
+
   fun add_state<LpCoin>(
     id: &mut UID,
     c: &Clock,
@@ -461,6 +558,10 @@ module amm::volatile {
     assert!(vector::length(&rebalancing_params) == 3, errors::must_have_3_values());
     assert!(vector::length(&fee_params) == 3, errors::must_have_3_values());
 
+    let lp_coin_decimals = get_decimals<LpCoin>(coin_decimals);
+
+    assert!(lp_coin_decimals == 9, errors::wrong_configuration());
+
     let n_coins = (vector::length(&balances) as u256);
 
     let pow_n_coins = (pow((n_coins as u64), (n_coins as u8)) as u256);
@@ -469,12 +570,12 @@ module amm::volatile {
     let (extra_profit, adjustment_step, ma_half_time) = vector_3_to_tuple(rebalancing_params);
     let (mid_fee, out_fee, gamma_fee) = vector_3_to_tuple(fee_params);
 
+    df::add(id, AdminCoinBalanceKey { }, balance::zero<LpCoin>());
     dof::add(id, StateKey {}, 
       State {
         id: object::new(ctx),
         d: 0,
         lp_coin_supply,
-        lp_coin_decimals: (get_decimals_scalar<LpCoin>(coin_decimals) as u256),
         n_coins,
         balances,
         a_gamma: AGamma { 
@@ -529,7 +630,6 @@ module amm::volatile {
       type: coin_name
     });
     df::add(id, CoinBalanceKey { type: coin_name }, balance::zero<CoinType>());    
-    df::add(id, AdminCoinBalanceKey { type: coin_name }, balance::zero<CoinType>());
   }
 
   // * Private functions
