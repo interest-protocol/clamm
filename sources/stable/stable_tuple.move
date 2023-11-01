@@ -509,7 +509,7 @@ module amm::stable_tuple {
     coin::take(&mut coin_state.balance, amount_to_take, ctx)
   }
 
-  public fun remove_balanced_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+  public fun remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
     pool: &mut Pool<StableTuple>, 
     lp_coin: Coin<LpCoin>,
     min_amounts: vector<u64>,
@@ -528,7 +528,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_balance_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+    events::emit_remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
@@ -538,7 +538,7 @@ module amm::stable_tuple {
     (coin_a, coin_b, coin_c)
   }
 
-  public fun remove_balanced_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+  public fun remove_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
     pool: &mut Pool<StableTuple>, 
     lp_coin: Coin<LpCoin>,
     min_amounts: vector<u64>,
@@ -558,7 +558,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_balance_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    events::emit_remove_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
@@ -569,7 +569,7 @@ module amm::stable_tuple {
     (coin_a, coin_b, coin_c, coin_d)
   }
 
-  public fun remove_balanced_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+  public fun remove_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     pool: &mut Pool<StableTuple>, 
     lp_coin: Coin<LpCoin>,
     min_amounts: vector<u64>,
@@ -590,7 +590,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_balance_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    events::emit_remove_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),

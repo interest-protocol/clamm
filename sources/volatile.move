@@ -9,8 +9,8 @@ module amm::volatile {
   use sui::coin::{Self, Coin};
   use sui::dynamic_field as df;
   use sui::clock::{Self, Clock};
+  use sui::tx_context::TxContext;
   use sui::dynamic_object_field as dof;
-  use sui::tx_context::{Self, TxContext};
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
   
@@ -165,7 +165,7 @@ module amm::volatile {
       1
     );
 
-    let lp_coin =    add_liquidity_2_pool<CoinA, CoinB, LpCoin>(
+    let lp_coin = add_liquidity_2_pool<CoinA, CoinB, LpCoin>(
       &mut pool,
       c,
       coin_a,
@@ -239,7 +239,7 @@ module amm::volatile {
       2
     );
 
-    let lp_coin =    add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+    let lp_coin = add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
       &mut pool,
       c,
       coin_a,
@@ -366,6 +366,60 @@ module amm::volatile {
     )
   }
 
+  public fun remove_one_coin_liquidity<CoinOut, LpCoin>(
+    pool: &mut Pool<Volatile>,
+    c: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amount: u64,
+    ctx: &mut TxContext    
+  ): Coin<CoinOut> {
+    let lp_coin_amount = coin::value(&lp_coin);
+
+    assert!(lp_coin_amount != 0, errors::no_zero_coin());
+
+    let (state, coin_states) = load<LpCoin>(pool);
+    let (a, gamma) = get_a_gamma(state, c);
+    let timestamp = clock::timestamp_ms(c);
+    let a_gamma_future_time = state.a_gamma.future_time;
+
+    let (dy, p, d, xp, index_in) = calculate_withdraw_one_coin<CoinOut, LpCoin>(
+      state,
+      a,
+      gamma,
+      coin_states,
+      lp_coin_amount,
+      a_gamma_future_time != 0,
+      true
+    );
+
+    if (timestamp >= a_gamma_future_time) state.a_gamma.future_time = 1;
+
+    balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
+
+    let current_balance = vector::borrow_mut(&mut state.balances, index_in);
+    *current_balance = *current_balance - dy;
+
+    let lp_supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
+
+    tweak_price(
+      state,
+      coin_states,
+      timestamp,
+      a,
+      gamma,
+      xp,
+      index_in,
+      p,
+    d,
+    lp_supply_value
+    );
+
+    let remove_amount = (fmul(dy, vector::borrow(&coin_states, index_in).decimals) as u64);
+    assert!(remove_amount >= min_amount, errors::slippage());
+
+    coin::take(load_mut_coin_balance(&mut state.id), remove_amount, ctx)
+  }
+
   public fun admin_fees<LpCoin>(state: &mut State<LpCoin>, coin_states: vector<CoinState>, c:&Clock) {
     let (a, gamma) = get_a_gamma(state, c);
 
@@ -398,7 +452,6 @@ module amm::volatile {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext
   ): Coin<LpCoin> {
-    let n_coins_u64 = (state.n_coins as u64);
     let amounts = vector[];
     let amounts_p = empty_vector(state.n_coins);
     let timestamp = clock::timestamp_ms(c);
@@ -480,7 +533,7 @@ module amm::volatile {
           p = fdiv(s, (*vector::borrow(&amounts, ix) * HALF_PRECISION - d_token * *vector::borrow(&xx, ix) * HALF_PRECISION / lp_supply));
       };
 
-      tweak_prices(
+      tweak_price(
         state,
         coin_states,
         timestamp,
@@ -510,39 +563,49 @@ module amm::volatile {
     )
   }
 
-  fun calculate_withdraw_one_coin<LpCoin>(
+  fun calculate_withdraw_one_coin<CoinOut, LpCoin>(
     state: &mut State<LpCoin>,
-    c: &Clock,
+    a: u256,
+    gamma: u256,
     coin_states: vector<CoinState>,
     lp_coin_amount: u64,
-    i: u64,
     update_d: bool,
     calc_price: bool
-  ): (u256, u256, u256, vector<u256>) {
+  ): (u256, u256, u256, vector<u256>, u64) {
     
     let xp = state.balances;
 
-    let index = 1;
+    let index = 0;
     let price_scale_i = 0;
+    let index_in: u64 = 300; // SENTINEL VALUE
     while ((state.n_coins as u64) > index) {
-      let v = vector::borrow_mut(&mut xp, index);
       let coin_state = vector::borrow(&coin_states, index);
-      if (i == index) price_scale_i = coin_state.price;
+      let v = vector::borrow_mut(&mut xp, index);
 
-      *v = fmul(*v, coin_state.price);
+      if (coin_state.type == get<CoinOut>()) {
+        price_scale_i = if (index == 0) *v else coin_state.price;
+        index_in = coin_state.index;
+      };
+
+      // we do not update the first coin price
+      if (index != 0) 
+        *v = fmul(*v, coin_state.price);
+      
       index = index + 1;
     };
 
-    let (a, gamma) = get_a_gamma(state, c);
+    // Invalid coin was provided
+    assert!(index_in != 300, errors::invalid_coin_type());
+
     let d0 = if (update_d) volatile_math::invariant_(a, gamma, &xp) else state.d;
     let d = d0;
 
     let fee = fee(state, xp);
     let d_b = (lp_coin_amount as u256) * d / (balance::supply_value(&state.lp_coin_supply) as u256);
     let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
-    let y = volatile_math::calculate_balance(a, gamma, &xp, d, (i as u256));
-    let dy = fdiv((*vector::borrow(&xp, i) - y), price_scale_i);  
-    let i_xp = vector::borrow_mut(&mut xp, i);
+    let y = volatile_math::calculate_balance(a, gamma, &xp, d, (index_in as u256));
+    let dy = fdiv((*vector::borrow(&xp, index_in) - y), price_scale_i);  
+    let i_xp = vector::borrow_mut(&mut xp, index_in);
     *i_xp = y;
 
     let p = 0;
@@ -551,7 +614,7 @@ module amm::volatile {
 
       let index = 0;
       while((state.n_coins as u64) > index) {
-        if (index != i) {
+        if (index != index_in) {
           s = if (index == 0) 
             s + *vector::borrow(&state.balances, 0) 
           else
@@ -562,10 +625,10 @@ module amm::volatile {
       };
 
       s = s * d_b / d0;
-      p = fdiv(s, dy - d_b * *vector::borrow(&state.balances, i) / d0);
+      p = fdiv(s, dy - d_b * *vector::borrow(&state.balances, index_in) / d0);
     };
 
-    (dy, p, d, xp)
+    (dy, p, d, xp, index_in)
   } 
 
   fun deposit_coin<CoinType, LpCoin>(state: &mut State<LpCoin>, coin_in: Coin<CoinType>) {
@@ -718,7 +781,7 @@ module amm::volatile {
     (a1, gamma1)
   }
 
-  fun tweak_prices<LpCoin>(
+  fun tweak_price<LpCoin>(
     state: &mut State<LpCoin>,
     coin_states: vector<CoinState>,
     timestamp: u64,

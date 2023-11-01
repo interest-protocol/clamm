@@ -53,14 +53,14 @@ module amm::stable_tuple_events {
     amount: u64
   }
 
-  struct RemoveBalancedLiquidity3Pool<phantom CoinA, phantom CoinB, phantom CoinC, phantom LpCoin> has copy, drop {
+  struct RemoveLiquidity3Pool<phantom CoinA, phantom CoinB, phantom CoinC, phantom LpCoin> has copy, drop {
     pool_id: ID,
     amount_a: u64,
     amount_b: u64,
     amount_c: u64,
   }
 
-  struct RemoveBalancedLiquidity4Pool<phantom CoinA, phantom CoinB, phantom CoinC, phantom CoinD, phantom LpCoin> has copy, drop {
+  struct RemoveLiquidity4Pool<phantom CoinA, phantom CoinB, phantom CoinC, phantom CoinD, phantom LpCoin> has copy, drop {
     pool_id: ID,
     amount_a: u64,
     amount_b: u64,
@@ -68,7 +68,7 @@ module amm::stable_tuple_events {
     amount_d: u64,
   }
 
-  struct RemoveBalancedLiquidity5Pool<phantom CoinA, phantom CoinB, phantom CoinC, phantom CoinD, phantom CoinE, phantom LpCoin> has copy, drop {
+  struct RemoveLiquidity5Pool<phantom CoinA, phantom CoinB, phantom CoinC, phantom CoinD, phantom CoinE, phantom LpCoin> has copy, drop {
     pool_id: ID,
     amount_a: u64,
     amount_b: u64,
@@ -140,26 +140,26 @@ module amm::stable_tuple_events {
     emit(RemoveLiquidity<CoinType, LpCoin> { pool_id: id, amount, sender: tx_context::sender(ctx) });
   }
 
-  public(friend) fun emit_remove_balance_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+  public(friend) fun emit_remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
     id: ID, 
     amount_a: u64,
     amount_b: u64,
     amount_c: u64,
   ) {
-    emit(RemoveBalancedLiquidity3Pool<CoinA, CoinB, CoinC, LpCoin> { pool_id: id, amount_a, amount_b, amount_c });
+    emit(RemoveLiquidity3Pool<CoinA, CoinB, CoinC, LpCoin> { pool_id: id, amount_a, amount_b, amount_c });
   }
 
-  public(friend) fun emit_remove_balance_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+  public(friend) fun emit_remove_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
     id: ID, 
     amount_a: u64,
     amount_b: u64,
     amount_c: u64,
     amount_d: u64
   ) {
-    emit(RemoveBalancedLiquidity4Pool<CoinA, CoinB, CoinC, CoinD, LpCoin> { pool_id: id, amount_a, amount_b, amount_c, amount_d });
+    emit(RemoveLiquidity4Pool<CoinA, CoinB, CoinC, CoinD, LpCoin> { pool_id: id, amount_a, amount_b, amount_c, amount_d });
   }
 
-  public(friend) fun emit_remove_balance_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+  public(friend) fun emit_remove_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     id: ID, 
     amount_a: u64,
     amount_b: u64,
@@ -167,7 +167,7 @@ module amm::stable_tuple_events {
     amount_d: u64,
     amount_e: u64,
   ) {
-    emit(RemoveBalancedLiquidity5Pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin> { pool_id: id, amount_a, amount_b, amount_c, amount_d, amount_e });
+    emit(RemoveLiquidity5Pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin> { pool_id: id, amount_a, amount_b, amount_c, amount_d, amount_e });
   }
 
   public(friend) fun emit_update_fee(

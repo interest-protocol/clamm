@@ -95,4 +95,8 @@ module amm::errors {
   public fun incurred_a_loss(): u64 {
     25
   }
+
+  public fun invalid_coin_type(): u64 {
+    26
+  }
 }
