@@ -20,7 +20,6 @@ module amm::volatile {
   use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
   
   use amm::errors;
-  use amm::asserts;
   use amm::volatile_math;
   use amm::curves::Volatile;
   use amm::interest_pool::{
@@ -787,7 +786,7 @@ module amm::volatile {
     fee_params: vector<u256>, 
     ctx: &mut TxContext
   ) {
-    asserts::assert_supply_has_zero_value(&lp_coin_supply);
+    assert!(balance::supply_value(&lp_coin_supply) == 0, errors::supply_must_have_zero_value());
     assert!(vector::length(&rebalancing_params) == 3, errors::must_have_3_values());
     assert!(vector::length(&fee_params) == 3, errors::must_have_3_values());
 

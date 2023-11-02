@@ -15,7 +15,6 @@ module amm::stable_tuple {
   use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
 
   use amm::errors;
-  use amm::asserts;
   use amm::amm_admin::Admin;
   use amm::curves::StableTuple;
   use amm::utils::make_coins_from_vector;
@@ -265,13 +264,14 @@ module amm::stable_tuple {
     min_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
-    asserts::assert_coin_has_value(&coin_in);
+    let coin_in_value = coin::value(&coin_in);
+    assert!(coin_in_value != 0, errors::cannot_swap_zero_value());
+
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
 
     let coin_in_state = load_coin_state<CoinIn>(&state.id);
     let coin_out_state = load_coin_state<CoinOut>(&state.id);
 
-    let coin_in_value = coin::value(&coin_in);
 
     let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_value);
     let admin_fee_in = stable_fees::calculate_admin_amount(&state.fees, fee_in);
@@ -478,7 +478,7 @@ module amm::stable_tuple {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinType> {
-    asserts::assert_coin_has_value(&lp_coin);
+    assert!(coin::value(&lp_coin) != 0, errors::no_zero_coin());
 
     let pool_id = object::id(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
@@ -515,9 +515,9 @@ module amm::stable_tuple {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
-    asserts::assert_coin_has_value(&lp_coin);
-
     let lp_coin_value = coin::value(&lp_coin);
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
 
     let (coin_a, coin_b, coin_c) = (
@@ -544,9 +544,9 @@ module amm::stable_tuple {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
-    asserts::assert_coin_has_value(&lp_coin);
-
     let lp_coin_value = coin::value(&lp_coin);
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
 
     let (coin_a, coin_b, coin_c, coin_d) = (
@@ -575,9 +575,9 @@ module amm::stable_tuple {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
-    asserts::assert_coin_has_value(&lp_coin);
-
     let lp_coin_value = coin::value(&lp_coin);
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
 
     let (coin_a, coin_b, coin_c, coin_d, coin_e) = (
@@ -710,7 +710,7 @@ module amm::stable_tuple {
     n_coins: u64,
     ctx: &mut TxContext
   ) {
-    asserts::assert_supply_has_zero_value(&lp_coin_supply);
+    assert!(balance::supply_value(&lp_coin_supply) == 0, errors::supply_must_have_zero_value());
     let lp_coin_decimals = get_decimals<LpCoin>(coin_decimals);
 
     assert!(lp_coin_decimals == 9, errors::must_have_9_decimals());

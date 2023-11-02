@@ -16,7 +16,6 @@ module amm::stable_pair {
   use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
 
   use amm::errors;
-  use amm::asserts;
   use amm::amm_admin::Admin;
   use amm::curves::StablePair;
   use amm::stable_pair_events as events;
@@ -140,7 +139,7 @@ module amm::stable_pair {
     coin_min_value: u64,
     ctx: &mut TxContext    
   ): Coin<CoinOut> {
-    asserts::assert_coin_has_value(&coin_in);
+    assert!(coin::value(&coin_in) != 0, errors::cannot_swap_zero_value());
 
     if (is_coin_x<CoinIn>(core::view_coins<StablePair>(pool))) 
       swap_coin_x<CoinIn, CoinOut, LpCoin>(pool, coin_in, coin_min_value, ctx)
@@ -202,7 +201,7 @@ module amm::stable_pair {
   ): (Coin<CoinX>, Coin<CoinY>) {
     let lp_coin_value = coin::value(&lp_coin);
 
-    asserts::assert_coin_has_value(&lp_coin);
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_id = object::id(pool);
 
@@ -387,7 +386,7 @@ module amm::stable_pair {
     coin_decimals: &CoinDecimals,    
     ctx: &mut TxContext   
   ): Coin<LpCoin> {
-    asserts::assert_supply_has_zero_value(&lp_coin_supply);
+    assert!(balance::supply_value(&lp_coin_supply) == 0, errors::supply_must_have_zero_value());
 
     let coin_x_value = coin::value(&coin_x);
     let coin_y_value = coin::value(&coin_y);
