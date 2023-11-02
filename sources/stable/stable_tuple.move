@@ -12,7 +12,7 @@ module amm::stable_tuple {
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
 
-  use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
+  use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
 
   use amm::errors;
   use amm::asserts;
@@ -711,6 +711,9 @@ module amm::stable_tuple {
     ctx: &mut TxContext
   ) {
     asserts::assert_supply_has_zero_value(&lp_coin_supply);
+    let lp_coin_decimals = get_decimals<LpCoin>(coin_decimals);
+
+    assert!(lp_coin_decimals == 9, errors::must_have_9_decimals());
     dof::add(id, StateKey {}, 
       State {
         id: object::new(ctx),

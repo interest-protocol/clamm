@@ -5,8 +5,8 @@ module amm::volatile {
   use std::type_name::{get, TypeName};
 
   use sui::math::pow;
-  use sui::object::{Self, UID};
   use sui::coin::{Self, Coin};
+  use sui::object::{Self, UID};
   use sui::dynamic_field as df;
   use sui::clock::{Self, Clock};
   use sui::tx_context::TxContext;
@@ -16,9 +16,9 @@ module amm::volatile {
   
   use suitears::math256::{Self, sum, diff, mul_div_up};
   use suitears::comparator::{compare, is_equal};
-  use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
   use suitears::fixed_point_ray::{ray_mul_down as fmul, ray_div_down as fdiv};
-
+  use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
+  
   use amm::errors;
   use amm::asserts;
   use amm::volatile_math;
@@ -252,6 +252,114 @@ module amm::volatile {
     public_share_object(pool);
 
     lp_coin
+  }
+
+  public fun swap<CoinIn, CoinOut, LpCoin>(
+    pool: &mut Pool<Volatile>,
+    c: &Clock,
+    coin_in: Coin<CoinIn>,
+    mint_amount: u64,
+    ctx: &mut TxContext
+  ): Coin<CoinOut> {
+    let coin_in_value = coin::value(&coin_in);
+
+    assert!(coin_in_value != 0, errors::no_zero_coin());
+
+    let (state, coin_states) = load<LpCoin>(pool);
+    let coin_in_index = load_coin_state<CoinIn>(&state.id).index;
+
+    let x0 = *vector::borrow(&state.balances, coin_in_index);
+
+    deposit_coin<CoinIn, LpCoin>(state, coin_in);
+    
+    let coin_in_state = vector::borrow(&coin_states, coin_in_index);
+    let coin_out_state = load_coin_state<CoinOut>(&state.id);
+
+    let (a, gamma) = get_a_gamma(state, c);
+    let ix = coin_out_state.index;
+    let p = 0;
+    let timestamp = clock::timestamp_ms(c);
+
+
+    let y = *vector::borrow(&state.balances, coin_out_state.index);
+    let xp = state.balances;
+
+    // Convert Balances in token => Balance in CoinA Price (usually USD)
+    let index = 1;
+    while ((state.n_coins as u64) > index) {
+
+      let bal = vector::borrow_mut(&mut xp, index);
+      *bal = fmul(*bal, vector::borrow(&coin_states, index).price);
+
+      index = index + 1;
+    };
+
+    // Block scope
+    {
+      let t = state.a_gamma.future_time;
+      if (t != 0) {
+        if (coin_in_state.index != 0) x0 = fmul(x0, coin_in_state.price);
+        let ref = vector::borrow_mut(&mut xp, coin_in_state.index);
+        let x1 = *ref;
+        *ref = x0;
+        state.d = volatile_math::invariant_(a, gamma, &xp);
+        let ref = vector::borrow_mut(&mut xp, coin_in_state.index);
+        *ref = x1;
+        if (timestamp >= t) state.a_gamma.future_time = 1;
+      }; 
+    };
+
+    let v = *vector::borrow(&xp, coin_out_state.index);
+    let dy = v - volatile_math::calculate_balance(a, gamma, &xp, state.d, (coin_out_state.index as u256));
+    let ref = vector::borrow_mut(&mut xp, coin_out_state.index);
+    *ref = *ref - dy;
+
+    dy = dy -1;
+
+    dy = if (coin_out_state.index != 0) fdiv(dy, coin_out_state.price) else dy;
+
+    dy = dy - fee(state, xp) * dy / 10000000000;
+
+    let amount_out = (fmul(dy, (coin_out_state.decimals as u256)) as u64);
+    assert!(amount_out >= mint_amount, errors::slippage());
+
+    let ref = vector::borrow_mut(&mut state.balances, coin_out_state.index);
+    *ref = *ref - dy;
+
+    y = y - dy;
+
+    if (coin_out_state.index != 0) y = fmul(y, coin_out_state.price);
+
+    let ref = vector::borrow_mut(&mut xp, coin_out_state.index);
+    *ref = y;
+
+    let dx = fdiv((coin_in_value as u256), (coin_in_state.decimals as u256));
+
+    if (coin_in_state.index != 0 && coin_out_state.index != 0) {
+      p = coin_in_state.last_price * dx / dy;
+    } else if (coin_in_state.index == 0) {
+      p = fdiv(dx, dy);
+    } else {
+       p = fdiv(dy, dx);
+       ix = coin_in_state.index; 
+    };
+
+    let lp_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
+     
+    tweak_price(
+      state,
+      coin_states,
+      timestamp,
+      a,
+      gamma,
+      xp,
+      ix,
+      p,
+      0,
+      lp_supply
+    ); 
+
+    coin::take(load_mut_coin_balance(&mut state.id), amount_out, ctx)
   }
 
   public fun add_liquidity_2_pool<CoinA, CoinB, LpCoin>(
@@ -685,7 +793,7 @@ module amm::volatile {
 
     let lp_coin_decimals = get_decimals<LpCoin>(coin_decimals);
 
-    assert!(lp_coin_decimals == 9, errors::wrong_configuration());
+    assert!(lp_coin_decimals == 9, errors::must_have_9_decimals());
 
     let n_coins = (vector::length(&balances) as u256);
 

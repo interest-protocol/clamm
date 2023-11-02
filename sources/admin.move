@@ -1,7 +1,7 @@
 module amm::amm_admin {
 
-  use sui::object::{Self, UID};
   use sui::transfer::transfer;
+  use sui::object::{Self, UID};
   use sui::tx_context::{Self, TxContext};
 
   // It needs key and store to store in a DAO contract later on

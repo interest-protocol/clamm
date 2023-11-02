@@ -99,4 +99,8 @@ module amm::errors {
   public fun invalid_coin_type(): u64 {
     26
   }
+
+  public fun must_have_9_decimals(): u64 {
+    27
+  }
 }
