@@ -1,7 +1,7 @@
 module amm::stable_fees {
   use std::option::{Self, Option};
 
-  use suitears::fixed_point_ray::ray_mul_up;
+  use suitears::fixed_point_wad::wad_mul_up;
 
   use amm::errors;
 
@@ -64,6 +64,6 @@ module amm::stable_fees {
   }
 
   fun calculate_fee_amount(x: u64, percent: u256): u64 {
-    (ray_mul_up((x as u256), percent) as u64)
+    (wad_mul_up((x as u256), percent) as u64)
   }
 }

@@ -103,4 +103,16 @@ module amm::errors {
   public fun must_have_9_decimals(): u64 {
     27
   }
+
+  public fun wait_one_day(): u64 {
+    28
+  }
+
+  public fun future_ramp_time_is_too_short(): u64 {
+    28
+  }
+
+  public fun value_out_of_range(): u64 {
+    29
+  }
 }

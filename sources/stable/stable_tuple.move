@@ -255,8 +255,6 @@ module amm::stable_tuple {
     lp_coin
   }
 
-// amp: u256, token_in_index: u256, token_out_index: u256, token_amount_out: u256, balances: &vector<u256>
-
   public fun swap<CoinIn, CoinOut, LpCoin>(
     pool: &mut Pool<StableTuple>,
     c: &Clock,
@@ -300,7 +298,7 @@ module amm::stable_tuple {
     let normalized_amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
     let amount_out = ((normalized_amount_out * coin_out_state.decimals / PRECISION) as u64);
     
-    let fee_out = stable_fees::calculate_fee_in_amount(&state.fees, amount_out);
+    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
     let admin_fee_out = stable_fees::calculate_admin_amount(&state.fees, fee_out);
 
     let amount_out = amount_out - fee_out;

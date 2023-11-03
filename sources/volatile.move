@@ -16,11 +16,21 @@ module amm::volatile {
   
   use suitears::math256::{Self, sum, diff, mul_div_up};
   use suitears::comparator::{compare, is_equal};
-  use suitears::fixed_point_ray::{ray_mul_down as fmul, ray_div_down as fdiv};
-  use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
-  
+  use suitears::coin_decimals::{
+    get_decimals_scalar, 
+    get_decimals, 
+    CoinDecimals
+  };
+  use suitears::fixed_point_wad::{
+    wad_mul_down as fmul_down, 
+    wad_div_down as fdiv_down, 
+    wad_div_up as fdiv_up,
+    wad_mul_up as fmul_up
+  };
+
   use amm::errors;
   use amm::volatile_math;
+  use amm::amm_admin::Admin;
   use amm::curves::Volatile;
   use amm::interest_pool::{
     Self as core,
@@ -44,8 +54,10 @@ module amm::volatile {
   const MAX_GAMMA: u256 = 5 * 10_000_000_000_000_000;
   const A_MULTIPLIER: u256 = 10000;
   const MAX_A_CHANGE: u256 = 10;
-  const MIN_RAMP_TIME: u256 = 86400000; // 1 day in milliseconds
-  const HALF_PRECISION: u256 = 1_000_000_000; // 1e9 - LpCoins have 9 decimals 
+  const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
+  const ROLL: u256 = 1_000_000; // 1e9 - LpCoins have 9 decimals 
+  const MAX_ADMIN_FEE: u256 = 10000000000;
+  const ONE_WEEK: u256 = 7 * 86400000; // 1 week in milliseconds
 
   // * Structs ---- START ----
 
@@ -79,18 +91,13 @@ module amm::volatile {
     extra_profit: u256,
     adjustment_step: u256,
     ma_half_time: u256,
-    future_extra_profit: u256,
-    future_adjustment_step: u256,
-    future_ma_half_time: u256
   }
 
   struct Fees has store, copy {
     mid_fee: u256,
     out_fee: u256,
     gamma_fee: u256,
-    future_mid_fee: u256,
-    future_out_fee: u256,
-    future_gamma_fee: u256
+    admin_fee: u256,
   }
 
   struct State<phantom LpCoin> has key, store {
@@ -111,7 +118,80 @@ module amm::volatile {
     not_adjusted: bool
   }
 
-    // * Structs ---- END ----
+  // * Structs ---- END ----
+
+  public fun a<LpCoin>(
+    pool: &Pool<Volatile>,
+    c: &Clock,
+  ): u256 {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let (a, _) = get_a_gamma(state, c);
+    a
+  }
+
+  public fun gamma<LpCoin>(
+    pool: &Pool<Volatile>,
+    c: &Clock,
+  ): u256 {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let (_, gamma) = get_a_gamma(state, c);
+    gamma
+  }
+
+  public fun prices<CoinType, LpCoin>(pool: &Pool<Volatile>): (u256, u256, u256) {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let coin_state = load_coin_state<CoinType>(&state.id);
+    (coin_state.price, coin_state.last_price, coin_state.price_oracle)
+  }
+
+  public fun balances_in_price<LpCoin>(pool: &Pool<Volatile>): vector<u256> {
+    let (state, coin_states) = load<LpCoin>(pool);
+
+    let balances = state.balances;
+
+    let i = 1;
+    while ((state.n_coins as u64) > i) {
+      let coin_state = vector::borrow(&coin_states, i);
+      let ref = vector::borrow_mut(&mut balances, i);
+      *ref = fmul_down(*ref, coin_state.price);
+      i = i + 1;
+    };
+
+    balances
+  }
+
+  public fun get_fee<LpCoin>(pool: &Pool<Volatile>): u256 {
+    let pool_id = core::borrow_uid(pool);
+    let balances_in_price = balances_in_price<LpCoin>(pool);
+    let state = load_state<LpCoin>(pool_id);
+    fee<LpCoin>(state, balances_in_price)
+  }
+
+  // get_xcp<LpCoin>(state: &State<LpCoin>, coin_states: vector<CoinState>, d: u256)
+
+  public fun get_lp_coin_price_in_coin0<LpCoin>(pool: &Pool<Volatile>): u256 {
+    let (state, coin_states) = load<LpCoin>(pool);
+    let supply = balance::supply_value(&state.lp_coin_supply);
+    ROLL * get_xcp(state, coin_states, state.d) / (supply as u256)
+  }
+
+  public fun calculate_withdraw_one_coin<CoinOut, LpCoin>(pool: &Pool<Volatile>, c:&Clock, lp_amount: u64): u64 {
+    let (state, coin_states) = load<LpCoin>(pool);
+    let (a, gamma) = get_a_gamma(state, c);
+    let (amount_out, _, _, _, index_out) = calculate_withdraw_one_coin_internal<CoinOut, LpCoin>(
+      state,
+      a,
+      gamma,
+      coin_states,
+      lp_amount,
+      true,
+      false
+    );
+
+    (fmul_down(amount_out, vector::borrow(&coin_states, index_out).decimals) as u64)
+  }
+
+  // * Structs ---- END ----
 
   public fun new_2_pool<CoinA, CoinB, LpCoin>(
     c: &Clock,
@@ -264,7 +344,7 @@ module amm::volatile {
 
     assert!(coin_in_value != 0, errors::no_zero_coin());
 
-    let (state, coin_states) = load<LpCoin>(pool);
+    let (state, coin_states) = load_mut<LpCoin>(pool);
     let coin_in_index = load_coin_state<CoinIn>(&state.id).index;
 
     let x0 = *vector::borrow(&state.balances, coin_in_index);
@@ -276,7 +356,6 @@ module amm::volatile {
 
     let (a, gamma) = get_a_gamma(state, c);
     let ix = coin_out_state.index;
-    let p = 0;
     let timestamp = clock::timestamp_ms(c);
 
 
@@ -288,7 +367,7 @@ module amm::volatile {
     while ((state.n_coins as u64) > index) {
 
       let bal = vector::borrow_mut(&mut xp, index);
-      *bal = fmul(*bal, vector::borrow(&coin_states, index).price);
+      *bal = fmul_down(*bal, vector::borrow(&coin_states, index).price);
 
       index = index + 1;
     };
@@ -297,7 +376,7 @@ module amm::volatile {
     {
       let t = state.a_gamma.future_time;
       if (t != 0) {
-        if (coin_in_state.index != 0) x0 = fmul(x0, coin_in_state.price);
+        if (coin_in_state.index != 0) x0 = fmul_down(x0, coin_in_state.price);
         let ref = vector::borrow_mut(&mut xp, coin_in_state.index);
         let x1 = *ref;
         *ref = x0;
@@ -315,11 +394,11 @@ module amm::volatile {
 
     dy = dy -1;
 
-    dy = if (coin_out_state.index != 0) fdiv(dy, coin_out_state.price) else dy;
+    dy = if (coin_out_state.index != 0) fdiv_down(dy, coin_out_state.price) else dy;
 
     dy = dy - fee(state, xp) * dy / 10000000000;
 
-    let amount_out = (fmul(dy, (coin_out_state.decimals as u256)) as u64);
+    let amount_out = (fmul_down(dy, (coin_out_state.decimals as u256)) as u64);
     assert!(amount_out >= mint_amount, errors::slippage());
 
     let ref = vector::borrow_mut(&mut state.balances, coin_out_state.index);
@@ -327,20 +406,20 @@ module amm::volatile {
 
     y = y - dy;
 
-    if (coin_out_state.index != 0) y = fmul(y, coin_out_state.price);
+    if (coin_out_state.index != 0) y = fmul_down(y, coin_out_state.price);
 
     let ref = vector::borrow_mut(&mut xp, coin_out_state.index);
     *ref = y;
 
-    let dx = fdiv((coin_in_value as u256), (coin_in_state.decimals as u256));
+    let dx = fdiv_down((coin_in_value as u256), (coin_in_state.decimals as u256));
 
-    if (coin_in_state.index != 0 && coin_out_state.index != 0) {
-      p = coin_in_state.last_price * dx / dy;
+    let p = if (coin_in_state.index != 0 && coin_out_state.index != 0) {
+      coin_in_state.last_price * dx / dy
     } else if (coin_in_state.index == 0) {
-      p = fdiv(dx, dy);
+      fdiv_down(dx, dy)
     } else {
-       p = fdiv(dy, dx);
        ix = coin_in_state.index; 
+       fdiv_down(dy, dx)
     };
 
     let lp_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
@@ -376,7 +455,7 @@ module amm::volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>()]), errors::coins_must_be_in_order());
 
-    let (state, coin_states) = load<LpCoin>(pool);
+    let (state, coin_states) = load_mut<LpCoin>(pool);
 
     let old_balances = state.balances;
 
@@ -404,7 +483,7 @@ module amm::volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
 
-    let (state, coin_states) = load<LpCoin>(pool);
+    let (state, coin_states) = load_mut<LpCoin>(pool);
 
     let old_balances = state.balances;
 
@@ -428,7 +507,7 @@ module amm::volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>()]), errors::coins_must_be_in_order());
 
-    let (state, coin_states) = load<LpCoin>(pool);
+    let (state, coin_states) = load_mut<LpCoin>(pool);
 
     admin_fees(state, coin_states, c);
 
@@ -456,7 +535,7 @@ module amm::volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
 
-    let (state, coin_states) = load<LpCoin>(pool);
+    let (state, coin_states) = load_mut<LpCoin>(pool);
 
     admin_fees(state, coin_states, c);
 
@@ -484,12 +563,12 @@ module amm::volatile {
 
     assert!(lp_coin_amount != 0, errors::no_zero_coin());
 
-    let (state, coin_states) = load<LpCoin>(pool);
+    let (state, coin_states) = load_mut<LpCoin>(pool);
     let (a, gamma) = get_a_gamma(state, c);
     let timestamp = clock::timestamp_ms(c);
     let a_gamma_future_time = state.a_gamma.future_time;
 
-    let (dy, p, d, xp, index_in) = calculate_withdraw_one_coin<CoinOut, LpCoin>(
+    let (dy, p, d, xp, index_out) = calculate_withdraw_one_coin_internal<CoinOut, LpCoin>(
       state,
       a,
       gamma,
@@ -503,7 +582,7 @@ module amm::volatile {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    let current_balance = vector::borrow_mut(&mut state.balances, index_in);
+    let current_balance = vector::borrow_mut(&mut state.balances, index_out);
     *current_balance = *current_balance - dy;
 
     let lp_supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
@@ -515,13 +594,13 @@ module amm::volatile {
       a,
       gamma,
       xp,
-      index_in,
+      index_out,
       p,
     d,
     lp_supply_value
     );
 
-    let remove_amount = (fmul(dy, vector::borrow(&coin_states, index_in).decimals) as u64);
+    let remove_amount = (fmul_down(dy, vector::borrow(&coin_states, index_out).decimals) as u64);
     assert!(remove_amount >= min_amount, errors::slippage());
 
     coin::take(load_mut_coin_balance(&mut state.id), remove_amount, ctx)
@@ -537,7 +616,7 @@ module amm::volatile {
     let fees = state.xcp_profit - state.xcp_profit_a * ADMIN_FEE / (2 * 100000000000);
 
     if (fees != 0) {
-      let frac = fdiv(state.virtual_price, state.virtual_price - fees) - PRECISION;
+      let frac = fdiv_down(state.virtual_price, state.virtual_price - fees) - PRECISION;
       balance::join(df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey {}), balance::increase_supply(&mut state.lp_coin_supply, (frac as u64)));
 
       state.xcp_profit = state.xcp_profit - fees * 2;
@@ -545,7 +624,7 @@ module amm::volatile {
 
     state.d = volatile_math::invariant_(a, gamma, &state.balances);
     let d = state.d;
-    state.virtual_price = fdiv(get_xcp(state, coin_states, d), (balance::supply_value(&state.lp_coin_supply) as u256));
+    state.virtual_price = fdiv_down(get_xcp(state, coin_states, d), (balance::supply_value(&state.lp_coin_supply) as u256));
     state.xcp_profit_a = state.xcp_profit;
   }
 
@@ -578,8 +657,8 @@ module amm::volatile {
         let coin_state = vector::borrow(&coin_states, i);
 
         // Divide first to prevent overflow - these values r already scaled to 1e18
-        *old_bal = fmul(*old_bal, coin_state.price);
-        *new_bal = fmul(*new_bal, coin_state.price);
+        *old_bal = fmul_down(*old_bal, coin_state.price);
+        *new_bal = fmul_down(*new_bal, coin_state.price);
 
         let p = *new_bal - *old_bal;
 
@@ -631,13 +710,13 @@ module amm::volatile {
             if (i != ix)
               s = s + *vector::borrow(&xx, 0)
             else 
-              s = s + fmul(*vector::borrow(&xx, i), coin_state.last_price);
+              s = s + fmul_down(*vector::borrow(&xx, i), coin_state.last_price);
 
             i = i + 1;
           };
 
           s = s * d_token / lp_supply;
-          p = fdiv(s, (*vector::borrow(&amounts, ix) * HALF_PRECISION - d_token * *vector::borrow(&xx, ix) * HALF_PRECISION / lp_supply));
+          p = fdiv_down(s, (*vector::borrow(&amounts, ix) * ROLL - d_token * *vector::borrow(&xx, ix) * ROLL / lp_supply));
       };
 
       tweak_price(
@@ -670,8 +749,8 @@ module amm::volatile {
     )
   }
 
-  fun calculate_withdraw_one_coin<CoinOut, LpCoin>(
-    state: &mut State<LpCoin>,
+  fun calculate_withdraw_one_coin_internal<CoinOut, LpCoin>(
+    state: &State<LpCoin>,
     a: u256,
     gamma: u256,
     coin_states: vector<CoinState>,
@@ -684,25 +763,25 @@ module amm::volatile {
 
     let index = 0;
     let price_scale_i = 0;
-    let index_in: u64 = 300; // SENTINEL VALUE
+    let index_out: u64 = 300; // SENTINEL VALUE
     while ((state.n_coins as u64) > index) {
       let coin_state = vector::borrow(&coin_states, index);
       let v = vector::borrow_mut(&mut xp, index);
 
       if (coin_state.type == get<CoinOut>()) {
         price_scale_i = if (index == 0) *v else coin_state.price;
-        index_in = coin_state.index;
+        index_out = coin_state.index;
       };
 
       // we do not update the first coin price
       if (index != 0) 
-        *v = fmul(*v, coin_state.price);
+        *v = fmul_down(*v, coin_state.price);
       
       index = index + 1;
     };
 
     // Invalid coin was provided
-    assert!(index_in != 300, errors::invalid_coin_type());
+    assert!(index_out != 300, errors::invalid_coin_type());
 
     let d0 = if (update_d) volatile_math::invariant_(a, gamma, &xp) else state.d;
     let d = d0;
@@ -710,9 +789,9 @@ module amm::volatile {
     let fee = fee(state, xp);
     let d_b = (lp_coin_amount as u256) * d / (balance::supply_value(&state.lp_coin_supply) as u256);
     let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
-    let y = volatile_math::calculate_balance(a, gamma, &xp, d, (index_in as u256));
-    let dy = fdiv((*vector::borrow(&xp, index_in) - y), price_scale_i);  
-    let i_xp = vector::borrow_mut(&mut xp, index_in);
+    let y = volatile_math::calculate_balance(a, gamma, &xp, d, (index_out as u256));
+    let dy = fdiv_down((*vector::borrow(&xp, index_out) - y), price_scale_i);  
+    let i_xp = vector::borrow_mut(&mut xp, index_out);
     *i_xp = y;
 
     let p = 0;
@@ -721,21 +800,21 @@ module amm::volatile {
 
       let index = 0;
       while((state.n_coins as u64) > index) {
-        if (index != index_in) {
+        if (index != index_out) {
           s = if (index == 0) 
             s + *vector::borrow(&state.balances, 0) 
           else
-             s +  fmul(*vector::borrow(&state.balances, index), vector::borrow(&coin_states, index).last_price)  
+             s +  fmul_down(*vector::borrow(&state.balances, index), vector::borrow(&coin_states, index).last_price)  
         };  
 
         index = index + 1;
       };
 
       s = s * d_b / d0;
-      p = fdiv(s, dy - d_b * *vector::borrow(&state.balances, index_in) / d0);
+      p = fdiv_down(s, dy - d_b * *vector::borrow(&state.balances, index_out) / d0);
     };
 
-    (dy, p, d, xp, index_in)
+    (dy, p, d, xp, index_out)
   } 
 
   fun deposit_coin<CoinType, LpCoin>(state: &mut State<LpCoin>, coin_in: Coin<CoinType>) {
@@ -750,7 +829,7 @@ module amm::volatile {
 
     // Update the balance for the coin
     let current_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
-    *current_balance = *current_balance + fdiv(coin_value, coin_state.decimals);
+    *current_balance = *current_balance + fdiv_down(coin_value, coin_state.decimals);
 
     balance::join(load_mut_coin_balance(&mut state.id), coin::into_balance(coin_in));
   }
@@ -769,7 +848,7 @@ module amm::volatile {
 
       *current_balance = *current_balance - coin_amount;
 
-      let remove_amount = (fmul(coin_amount, coin_state.decimals) as u64);
+      let remove_amount = (fmul_down(coin_amount, coin_state.decimals) as u64);
       assert!(remove_amount >= min_amount, errors::slippage());
 
       coin::take(load_mut_coin_balance(&mut state.id), remove_amount, ctx)
@@ -825,17 +904,12 @@ module amm::volatile {
           extra_profit,
           adjustment_step,
           ma_half_time,
-          future_extra_profit: extra_profit,
-          future_adjustment_step: adjustment_step,
-          future_ma_half_time: ma_half_time
         },
         fees: Fees {
           mid_fee,
           out_fee,
           gamma_fee,
-          future_out_fee: 0,
-          future_mid_fee: 0,
-          future_gamma_fee: 0
+          admin_fee: MAX_ADMIN_FEE
         },
         last_prices_timestamp: timestamp,
         min_a: pow_n_coins  * A_MULTIPLIER / 100,
@@ -906,7 +980,7 @@ module amm::volatile {
     // Update Moving Average
     
     if (timestamp > state.last_prices_timestamp) {  
-      let alpha = volatile_math::half_pow(fdiv(((timestamp - state.last_prices_timestamp) as u256), state.rebalancing_params.ma_half_time), 10000000000);
+      let alpha = volatile_math::half_pow(fdiv_down(((timestamp - state.last_prices_timestamp) as u256), state.rebalancing_params.ma_half_time), 10000000000);
 
       // update prices (do not update the first one)
       let index = 1;
@@ -931,7 +1005,7 @@ module amm::volatile {
           let i = 1;
           while ((state.n_coins as u64) > i) {
             let coin_state = vector::borrow_mut(&mut new_coin_states, i);
-            coin_state.last_price = fdiv(coin_state.last_price, p_i);
+            coin_state.last_price = fdiv_down(coin_state.last_price, p_i);
             i = i + 1;
           };
         };
@@ -959,7 +1033,7 @@ module amm::volatile {
     let i = 1;
     while ((state.n_coins as u64) > i) {
       let coin_state = vector::borrow(&new_coin_states, i);
-      vector::push_back(&mut xp, fdiv(d_unadjusted, state.n_coins * coin_state.price));
+      vector::push_back(&mut xp, fdiv_down(d_unadjusted, state.n_coins * coin_state.price));
       i = i + 1;
     };
 
@@ -967,7 +1041,7 @@ module amm::volatile {
     let virtual_price = PRECISION;
 
     if (old_virtual_price != 0) {
-      virtual_price = volatile_math::geometric_mean(&xp, true) * HALF_PRECISION / lp_supply;
+      virtual_price = volatile_math::geometric_mean(&xp, true) * ROLL / lp_supply;
       xcp_profit = old_xcp_profit * virtual_price / old_virtual_price;
       
       if (old_virtual_price > virtual_price && state.a_gamma.future_time == 0) abort errors::incurred_a_loss();
@@ -992,7 +1066,7 @@ module amm::volatile {
       while ((state.n_coins as u64) > i) {
         let coin_state = vector::borrow(&new_coin_states, i);
 
-        let ratio = diff(PRECISION, fdiv(coin_state.price_oracle, coin_state.price));
+        let ratio = diff(PRECISION, fdiv_down(coin_state.price_oracle, coin_state.price));
         norm = norm + math256::pow(ratio, 2);
         i = i + 1;
       };
@@ -1023,11 +1097,11 @@ module amm::volatile {
         let i = 1;
         while ((state.n_coins as u64) > i) {
           let x = vector::borrow_mut(&mut xp, 0);
-          *x = fmul(d, state.n_coins * *vector::borrow(&p_new, i));
+          *x = fmul_down(d, state.n_coins * *vector::borrow(&p_new, i));
           i = i + 1;
         };
 
-        old_virtual_price = HALF_PRECISION * volatile_math::geometric_mean(&xp, true) / lp_supply;
+        old_virtual_price = ROLL * volatile_math::geometric_mean(&xp, true) / lp_supply;
 
         if (old_virtual_price > PRECISION && (2 * (old_virtual_price - PRECISION) > xcp_profit - PRECISION)) {
           state.d = d;
@@ -1063,7 +1137,7 @@ module amm::volatile {
 
     while ((state.n_coins as u64) > index) {
       let coin_state = *vector::borrow(&coin_states, index);
-      vector::push_back(&mut x, fdiv(d, state.n_coins * coin_state.price));
+      vector::push_back(&mut x, fdiv_down(d, state.n_coins * coin_state.price));
 
       index = index + 1;
     };
@@ -1095,8 +1169,14 @@ module amm::volatile {
 
   // * Load State Functions
 
-  fun load<LpCoin>(pool: &mut Pool<Volatile>): (&mut State<LpCoin>, vector<CoinState>) {
+  fun load<LpCoin>(pool: &Pool<Volatile>): (&State<LpCoin>, vector<CoinState>) {
+    let coins = core::view_coins(pool);    
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let coin_states = load_coin_state_vector_in_order(state, coins);
+    (state, coin_states)
+  }
 
+  fun load_mut<LpCoin>(pool: &mut Pool<Volatile>): (&mut State<LpCoin>, vector<CoinState>) {
     let coins = core::view_coins(pool);    
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     let coin_states = load_coin_state_vector_in_order(state, coins);
@@ -1134,10 +1214,6 @@ module amm::volatile {
     load_mut_coin_state_with_key(id, get<CoinType>())
   }
 
-  fun load_coin_balance<CoinType>(id: &UID): &Balance<CoinType> {
-    df::borrow(id, CoinBalanceKey { type: get<CoinType>() })
-  }
-
   fun load_mut_coin_balance<CoinType>(id: &mut UID): &mut Balance<CoinType>  {
     df::borrow_mut(id, CoinBalanceKey { type: get<CoinType>() })
   }
@@ -1156,5 +1232,124 @@ module amm::volatile {
 
   fun load_mut_state<LpCoin>(id: &mut UID): &mut State<LpCoin> {
     dof::borrow_mut(id, StateKey {})
+  }
+
+    // * Admin functions
+
+  public fun update_admin_fees<LpCoin>(pool: &mut Pool<Volatile>) {
+    let (state, coin_states) = load_mut<LpCoin>(pool);
+
+    let xcp_profit = state.xcp_profit;
+    let xcp_profit_a = state.xcp_profit_a;
+    let vprice = state.virtual_price;
+
+    if (xcp_profit > xcp_profit_a) {
+      let fees = (xcp_profit - xcp_profit_a) * state.fees.admin_fee / 20000000000;
+      if (fees != 0) {
+        let frac = (fmul_up(fdiv_up(vprice, (vprice - fees)) - PRECISION, ROLL) as u64);
+        balance::join(df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { }), balance::increase_supply(&mut state.lp_coin_supply, frac));
+        state.xcp_profit = xcp_profit - fees * 2
+      };
+    };
+
+    let d = state.d;
+
+    state.virtual_price = get_xcp(state, coin_states, d) * ROLL / (balance::supply_value(&state.lp_coin_supply) as u256);
+
+    if (state.xcp_profit > xcp_profit_a) state.xcp_profit_a = state.xcp_profit;
+  }
+
+  public fun claim_admin_fees<LpCoin>(_: &Admin, pool: &mut Pool<Volatile>, ctx: &mut TxContext): Coin<LpCoin> {
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let admin_balance = df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { });
+
+    let value = balance::value(admin_balance);
+    coin::take(admin_balance, value, ctx)
+  }
+
+  public fun ramp<LpCoin>(
+    _: &Admin, 
+    pool: &mut Pool<Volatile>,
+    c:&Clock, 
+    future_a: u256, 
+    future_gamma: u256, 
+    future_time: u64
+  ) {
+    let timestamp = clock::timestamp_ms(c);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    assert!(timestamp > state.a_gamma.initial_time + (MIN_RAMP_TIME - 1), errors::wait_one_day());
+    assert!(future_time > timestamp + (MIN_RAMP_TIME - 1), errors::future_ramp_time_is_too_short());
+
+    let (a, gamma) = get_a_gamma(state, c);
+
+    assert!(future_a != 0, 0);
+    assert!(state.max_a + 1 > future_a, 0);
+    assert!(future_gamma > MIN_GAMMA - 1, 0);
+    assert!(MAX_GAMMA + 1 > future_gamma, 0);
+
+    let ratio = fdiv_down(future_a, a);
+    assert!(1 + MAX_A_CHANGE * PRECISION > ratio, 0);
+    assert!(ratio > PRECISION / MAX_A_CHANGE - 1, 0);
+
+    ratio = fdiv_down(future_gamma, gamma);
+    assert!(1 + MAX_A_CHANGE * PRECISION > ratio, 0);
+    assert!(ratio > PRECISION / MAX_A_CHANGE - 1, 0);
+
+    state.a_gamma.a = a;
+    state.a_gamma.gamma = gamma;
+    state.a_gamma.initial_time = timestamp;
+
+    state.a_gamma.future_a = future_a;
+    state.a_gamma.future_gamma = future_gamma;
+    state.a_gamma.future_time = future_time;
+  }
+
+  public fun stop_ramp<LpCoin>(
+    _: &Admin, 
+    pool: &mut Pool<Volatile>,
+    c:&Clock, 
+  ) {
+    let timestamp = clock::timestamp_ms(c);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let (a, gamma) = get_a_gamma(state, c);
+
+    state.a_gamma.a = a;
+    state.a_gamma.gamma = gamma;
+    state.a_gamma.future_a = a;
+    state.a_gamma.future_gamma = gamma;
+    state.a_gamma.initial_time = timestamp;
+    state.a_gamma.future_time = timestamp;
+  }
+
+  public fun update_parameters<LpCoin>(
+    _: &Admin, 
+    pool: &mut Pool<Volatile>,
+    values: vector<u256>
+  ) {
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    let mid_fee = *vector::borrow(&values, 0);
+    let out_fee = *vector::borrow(&values, 1);
+    let admin_fee = *vector::borrow(&values, 2);
+    let gamma_fee = *vector::borrow(&values, 3);
+    let allowed_extra_profit = *vector::borrow(&values, 4);
+    let adjustment_step = *vector::borrow(&values, 5);
+    let ma_half_time = *vector::borrow(&values, 6);
+
+    assert!(MAX_FEE + 1 > out_fee && out_fee > MIN_FEE, errors::value_out_of_range());
+    assert!(MAX_FEE + 1 > mid_fee && MIN_FEE > MIN_FEE, errors::value_out_of_range());
+    assert!(MAX_ADMIN_FEE > admin_fee, errors::value_out_of_range());
+    assert!(gamma_fee > 0 && PRECISION >= gamma_fee, errors::value_out_of_range());
+    assert!(PRECISION > allowed_extra_profit, errors::value_out_of_range());
+    assert!(PRECISION > adjustment_step, errors::value_out_of_range());
+    assert!(1000 >= ma_half_time && ONE_WEEK > ma_half_time, errors::value_out_of_range());
+
+    state.fees.admin_fee = admin_fee;
+    state.fees.out_fee = out_fee;
+    state.fees.mid_fee= mid_fee;
+    state.fees.gamma_fee = gamma_fee;
+    state.rebalancing_params.extra_profit = allowed_extra_profit;
+    state.rebalancing_params.adjustment_step = adjustment_step;
+    state.rebalancing_params.ma_half_time = ma_half_time;
   }
 }

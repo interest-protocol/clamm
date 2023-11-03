@@ -11,7 +11,7 @@ module amm::stable_pair {
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
 
-  use suitears::math256::sqrt;
+  use suitears::math256::sqrt_down;
   use suitears::math64::{min, mul_div_down};
   use suitears::coin_decimals::{get_decimals_scalar, CoinDecimals};
 
@@ -393,7 +393,7 @@ module amm::stable_pair {
 
     assert!(coin_x_value != 0 && coin_y_value != 0, errors::cannot_create_empty_pool());
 
-    let shares = (sqrt((coin_x_value as u256) * (coin_y_value as u256)) as u64);
+    let shares = (sqrt_down((coin_x_value as u256) * (coin_y_value as u256)) as u64);
 
     let seed_liquidity = balance::increase_supply(&mut lp_coin_supply, MINIMUM_LIQUIDITY);
 
