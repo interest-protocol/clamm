@@ -424,7 +424,7 @@ module amm::volatile {
     let coin_in_value = coin::value(&coin_in);
 
     assert!(coin_in_value != 0, errors::no_zero_coin());
-
+    let pool_id = object::id(pool);
     let (state, coin_states) = load_mut<LpCoin>(pool);
     let coin_in_index = load_coin_state<CoinIn>(&state.id).index;
 
@@ -525,7 +525,7 @@ module amm::volatile {
       lp_supply
     ); 
 
-    events::emit_swap<Volatile, CoinIn, CoinOut, LpCoin>(object::id(pool), coin_in_value, amount_out);
+    events::emit_swap<Volatile, CoinIn, CoinOut, LpCoin>(pool_id, coin_in_value, amount_out);
 
     coin::take(load_mut_coin_balance(&mut state.id), amount_out, ctx)
   }
