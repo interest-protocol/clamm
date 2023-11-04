@@ -17,8 +17,8 @@ module amm::stable_tuple {
   use amm::errors;
   use amm::amm_admin::Admin;
   use amm::curves::StableTuple;
+  use amm::pool_events as events;
   use amm::utils::make_coins_from_vector;
-  use amm::stable_tuple_events as events;
   use amm::stable_fees::{
     Self, 
     StableFees,
@@ -143,7 +143,7 @@ module amm::stable_tuple {
 
     let lp_coin = add_liquidity_3_pool(&mut pool, c, coin_a, coin_b, coin_c, 0, ctx);
 
-    events::emit_new_stable_3_pool<CoinA, CoinB, CoinC, LpCoin>(object::id(&pool));
+    events::emit_new_3_pool<StableTuple, CoinA, CoinB, CoinC, LpCoin>(object::id(&pool));
 
     public_share_object(pool);
 
@@ -194,7 +194,7 @@ module amm::stable_tuple {
 
     let lp_coin = add_liquidity_4_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, 0, ctx);
 
-    events::emit_new_stable_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(object::id(&pool));
+    events::emit_new_4_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, LpCoin>(object::id(&pool));
 
     public_share_object(pool);
 
@@ -248,7 +248,7 @@ module amm::stable_tuple {
 
     let lp_coin = add_liquidity_5_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
 
-    events::emit_new_stable_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(object::id(&pool));
+    events::emit_new_5_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(object::id(&pool));
 
     public_share_object(pool);
 
@@ -356,7 +356,7 @@ module amm::stable_tuple {
   ): Coin<LpCoin> {
     core::assert_is_3_pool(pool);
 
-   events::emit_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+   events::emit_add_liquidity_3_pool<StableTuple, CoinA, CoinB, CoinC, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a), 
       coin::value(&coin_b), 
@@ -396,7 +396,7 @@ module amm::stable_tuple {
   ): Coin<LpCoin> {
     core::assert_is_4_pool(pool);
 
-    events::emit_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    events::emit_add_liquidity_4_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a), 
       coin::value(&coin_b), 
@@ -438,7 +438,7 @@ module amm::stable_tuple {
   ): Coin<LpCoin> {
     core::assert_is_5_pool(pool);
 
-    events::emit_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    events::emit_add_liquidity_5_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a), 
       coin::value(&coin_b), 
@@ -502,7 +502,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_liquidity<CoinType, LpCoin>(pool_id, amount_to_take);
+    events::emit_remove_liquidity<StableTuple, CoinType, LpCoin>(pool_id, amount_to_take);
 
     coin::take(&mut coin_state.balance, amount_to_take, ctx)
   }
@@ -526,7 +526,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
+    events::emit_remove_liquidity_3_pool<StableTuple, CoinA, CoinB, CoinC, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
@@ -556,7 +556,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    events::emit_remove_liquidity_4_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
@@ -588,7 +588,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    events::emit_remove_liquidity_5_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
@@ -616,7 +616,7 @@ module amm::stable_tuple {
     
     let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
 
-    events::emit_update_fee(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
+    events::emit_update_stable_fee<StableTuple>(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
   }
 
   public fun take_fees<CoinType, LpCoin>(
@@ -630,7 +630,7 @@ module amm::stable_tuple {
     let admin_balance = load_mut_admin_balance<CoinType>(&mut state.id);
     let amount = balance::value(admin_balance);
 
-    events::emit_take_fee<CoinType, LpCoin>(pool_id, amount);
+    events::emit_take_fees<StableTuple, CoinType, LpCoin>(pool_id, amount);
 
     coin::take(admin_balance, amount, ctx)
   }
