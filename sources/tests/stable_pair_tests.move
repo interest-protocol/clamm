@@ -148,13 +148,42 @@ module amm::stable_pair_tests {
     test::end(scenario);  
   }
 
-    //   k: u256,
-    // coin_amount: u64,
-    // balance_x: u64,
-    // balance_y:u64,
-    // decimals_x: u64,
-    // decimals_y: u64,
-    // is_x: bool
+  #[test]
+  #[expected_failure(abort_code = 11)]  
+  fun swap_usdc_high_min_amount() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let usdt_amount = 25000000000; // 25
+
+      let (_, balance_x, balance_y, _, _, decimals_x, decimals_y, _, fees) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let k = stable_pair_math::invariant_(balance_x, balance_y, decimals_x, decimals_y);
+
+      let fee_in = stable_fees::calculate_fee_in_amount(&fees, usdt_amount);
+
+      let amount_out = stable_pair_math::calculate_amount_out(k, usdt_amount - fee_in, balance_x, balance_y, decimals_x, decimals_y, false);
+
+      burn(stable_pair::swap<USDT, USDC, LP_COIN>(
+        &mut pool,
+        mint<USDT>(25, 9, ctx(test)),
+        amount_out, // too high because we did not remove the fee_out
+        ctx(test)
+      ));
+
+      test::return_shared(pool);
+    };
+    test::end(scenario); 
+  }
 
   // Set up
 
