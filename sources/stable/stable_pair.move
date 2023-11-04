@@ -240,7 +240,7 @@ module amm::stable_pair {
     let state = load_mut_state<CoinX, CoinY, LpCoin>(core::borrow_mut_uid(pool));
 
     stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
-    stable_fees::update_admin_fee_percent(&mut state.fees, fee_out_percent);  
+    stable_fees::update_fee_out_percent(&mut state.fees, fee_out_percent);  
     stable_fees::update_admin_fee_percent(&mut state.fees, admin_fee_percent);
     
     let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);

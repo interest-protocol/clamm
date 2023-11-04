@@ -47,7 +47,7 @@ module amm::stable_fees {
     if (option::is_none(&admin_fee_percent)) return;
     let admin_fee_percent = option::extract(&mut admin_fee_percent);
 
-    assert!(MAX_FEE_PERCENT >= MAX_ADMIN_FEE, errors::invalid_fee());
+    assert!(MAX_ADMIN_FEE >= admin_fee_percent, errors::invalid_fee());
     fee.admin_fee_percent = admin_fee_percent;
   }
 

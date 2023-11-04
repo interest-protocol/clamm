@@ -1,6 +1,7 @@
 #[test_only]
 module amm::stable_pair_tests {
   use std::vector;
+  use std::option;
   use std::type_name::get;
 
   use sui::balance;
@@ -15,13 +16,13 @@ module amm::stable_pair_tests {
   use amm::stable_pair;
   use amm::stable_fees;
   use amm::stable_pair_math;
-  use amm::amm_admin as admin;
   use amm::curves::StablePair;
   use amm::usdt::{Self, USDT};
   use amm::usdc::{Self, USDC};
   use amm::lp_coin::{Self, LP_COIN};
   use amm::interest_pool::{Self, Pool};
   use amm::lp_coin_2::{Self, LP_COIN_2};
+  use amm::amm_admin::{Self as admin, Admin};
   use amm::test_utils::{people, scenario, mint, add_decimals};
 
   const USDC_DECIMALS: u8 = 6;
@@ -269,6 +270,85 @@ module amm::stable_pair_tests {
 
       test::return_shared(pool);
     };    
+    test::end(scenario);  
+  }
+
+  #[test]
+  fun fee_logic() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      
+      let (_, _, _, _, _, _, _, _, fees) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);     
+
+      let (fee_in, fee_out, _) = stable_fees::view(&fees); 
+
+      stable_pair::update_fee<USDC, USDT, LP_COIN>(
+        &admin_cap,
+        &mut pool,
+        option::some(fee_in * 10),
+        option::some(fee_out * 7),
+        option::some(fee_in)
+      );
+
+      let (_, _, _, _, _, _, _, _, new_fees) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);     
+
+      let (new_fee_in, new_fee_out, new_fee_admin) = stable_fees::view(&new_fees); 
+
+      assert_eq(new_fee_in, fee_in * 10);
+      assert_eq(new_fee_out, fee_out * 7);
+      assert_eq(new_fee_admin, fee_in);
+
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool);
+    };
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+
+      let (_, _, _, admin_balance_x, admin_balance_y, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      assert_eq(admin_balance_x, 0);
+      assert_eq(admin_balance_y, 0);
+
+      burn(stable_pair::swap<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<USDC>(10, 6, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+
+      burn(stable_pair::swap<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<USDC>(10, 6, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      let (_, _, _, admin_balance_x, admin_balance_y, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let (coin_usdc, coin_usdt) = stable_pair::take_fees<USDC, USDT, LP_COIN>(&admin_cap, &mut pool, ctx(test));
+
+      assert_eq(admin_balance_x > 0, true);
+      assert_eq(admin_balance_y > 0, true);
+      assert_eq(burn(coin_usdc), admin_balance_x);
+      assert_eq(burn(coin_usdt), admin_balance_y);
+
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool);
+    };
+
     test::end(scenario);  
   }
 
