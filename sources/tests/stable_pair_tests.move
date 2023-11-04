@@ -25,8 +25,6 @@ module amm::stable_pair_tests {
   const USDT_DECIMALS: u8 = 9;
   const MINIMUM_LIQUIDITY: u64 = 100;
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
-  // const INITIAL_USDT_VALUE: u64 = 100 * 1000000000; //100 * 1e9
-  const INITIAL_USDC_VALUE: u64 = 100 * 1000000;
 
   #[test]
   fun initial_state() {
@@ -85,7 +83,7 @@ module amm::stable_pair_tests {
     {
       let pool = test::take_shared<Pool<StablePair>>(test);
 
-      let usdc_amount = INITIAL_USDC_VALUE / 10;
+      let usdc_amount = 10000000; // 10
 
       let (_, balance_x, balance_y, _, _, decimals_x, decimals_y, _, fees) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
 
@@ -100,6 +98,45 @@ module amm::stable_pair_tests {
       let coin_usdt = stable_pair::swap<USDC, USDT, LP_COIN>(
         &mut pool,
         mint<USDC>(10, 6, ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      assert_eq(burn(coin_usdt), amount_out - fee_out);
+
+      test::return_shared(pool);
+    };
+    test::end(scenario);  
+  }
+
+  #[test]
+  fun swap_usdt() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let usdt_amount = 25000000000; // 25
+
+      let (_, balance_x, balance_y, _, _, decimals_x, decimals_y, _, fees) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let k = stable_pair_math::invariant_(balance_x, balance_y, decimals_x, decimals_y);
+
+      let fee_in = stable_fees::calculate_fee_in_amount(&fees, usdt_amount);
+
+      let amount_out = stable_pair_math::calculate_amount_out(k, usdt_amount - fee_in, balance_x, balance_y, decimals_x, decimals_y, false);
+
+      let fee_out = stable_fees::calculate_fee_out_amount(&fees, amount_out);
+
+      let coin_usdt = stable_pair::swap<USDT, USDC, LP_COIN>(
+        &mut pool,
+        mint<USDT>(25, 9, ctx(test)),
         0,
         ctx(test)
       );
