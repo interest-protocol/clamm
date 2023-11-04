@@ -117,7 +117,7 @@ module amm::stable_pair {
   ): Coin<LpCoin> {
     let pool = new_pool<StablePair>(make_coins<CoinX, CoinY>(), ctx);
 
-    events::emit_new_pair<StablePair, CoinX, CoinY>(object::id(&pool), coin::value(&coin_x), coin::value(&coin_y));
+    events::emit_new_pair<StablePair, CoinX, CoinY, LpCoin>(object::id(&pool), coin::value(&coin_x), coin::value(&coin_y));
 
     let lp_coin = add_state(
       core::borrow_mut_uid(&mut pool),
@@ -184,7 +184,7 @@ module amm::stable_pair {
 
     assert!(shares_to_mint >= lp_coin_min_amount, errors::slippage());
 
-    events::emit_add_pair_liquidity<StablePair, CoinX, CoinY>(pool_id, optimal_x_amount, optimal_y_amount, shares_to_mint);
+    events::emit_add_pair_liquidity<StablePair, CoinX, CoinY, LpCoin>(pool_id, optimal_x_amount, optimal_y_amount, shares_to_mint);
 
     balance::join(&mut state.balance_x, coin::into_balance(coin_x));
     balance::join(&mut state.balance_y, coin::into_balance(coin_y));
@@ -215,7 +215,7 @@ module amm::stable_pair {
     assert!(coin_x_removed >= coin_x_min_amount, errors::slippage());
     assert!(coin_y_removed >= coin_y_min_amount, errors::slippage());
 
-    events::emit_remove_stable_pair_liquidity<CoinX, CoinY>(pool_id, coin_x_removed, coin_y_removed, lp_coin_value);
+    events::emit_remove_pair_liquidity<StablePair, CoinX, CoinY, LpCoin>(pool_id, coin_x_removed, coin_y_removed, lp_coin_value);
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
@@ -242,7 +242,7 @@ module amm::stable_pair {
     
     let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
 
-    events::emit_update_stable_fee<StablePair>(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
+    events::emit_update_stable_fee<StablePair, LpCoin>(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
   }
 
   public fun take_fees<CoinX, CoinY, LpCoin>(
@@ -256,7 +256,7 @@ module amm::stable_pair {
     let amount_x = balance::value(&state.admin_fee_balance_x);
     let amount_y = balance::value(&state.admin_fee_balance_y);
 
-    events::emit_take_stable_pair_fees<CoinX, CoinY>(pool_id, amount_x, amount_y);
+    events::emit_take_stable_pair_fees<CoinX, CoinY, LpCoin>(pool_id, amount_x, amount_y);
 
     (
       coin::take(&mut state.admin_fee_balance_x, amount_x, ctx),
@@ -292,7 +292,7 @@ module amm::stable_pair {
 
     balance::join(&mut state.balance_x, coin::into_balance(coin_x));
 
-    events::emit_swap<StablePair, CoinX, CoinY>(pool_id, coin_in_amount, amount_out);
+    events::emit_swap<StablePair, CoinX, CoinY, LpCoin>(pool_id, coin_in_amount, amount_out);
 
     coin::take(&mut state.balance_y, amount_out, ctx) 
   }
@@ -324,7 +324,7 @@ module amm::stable_pair {
 
     balance::join(&mut state.balance_y, coin::into_balance(coin_y));
 
-    events::emit_swap<StablePair, CoinY, CoinX>(pool_id, coin_in_amount, amount_out);
+    events::emit_swap<StablePair, CoinY, CoinX, LpCoin>(pool_id, coin_in_amount, amount_out);
 
     coin::take(&mut state.balance_x, amount_out, ctx) 
   }

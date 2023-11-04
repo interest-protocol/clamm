@@ -3,9 +3,9 @@ module amm::stable_tuple {
   use std::option::Option;
   use std::type_name::{TypeName, get};
   
-  use sui::clock::Clock;
   use sui::coin::{Self, Coin};
   use sui::object::{Self, UID};
+  use sui::clock::{Self, Clock};
   use sui::dynamic_field as df;
   use sui::tx_context::TxContext;
   use sui::dynamic_object_field as dof;
@@ -35,7 +35,10 @@ module amm::stable_tuple {
     calculate_balance_from_reduced_lp_supply,
   };
 
+  const MAX_A: u256 = 1000000; // 1 million
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  const MAX_A_CHANGE: u256 = 10;
+  const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
 
   struct StateKey has drop, copy, store {}
 
@@ -339,7 +342,7 @@ module amm::stable_tuple {
 
     balance::join(load_mut_admin_balance<CoinOut>(&mut state.id), admin_balance_in);
 
-    events::emit_swap<CoinIn, CoinOut, LpCoin>(object::id(pool), coin_in_value, amount_out);
+    events::emit_swap<StableTuple, CoinIn, CoinOut, LpCoin>(object::id(pool), coin_in_value, amount_out);
 
     coin_out
   }
@@ -476,7 +479,8 @@ module amm::stable_tuple {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinType> {
-    assert!(coin::value(&lp_coin) != 0, errors::no_zero_coin());
+    let lp_coin_value = coin::value(&lp_coin);
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_id = object::id(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
@@ -492,7 +496,7 @@ module amm::stable_tuple {
       get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_state.index as u256),
       &balances,
-      (coin::value(&lp_coin) as u256),
+      (lp_coin_value as u256),
       (balance::supply_value(&state.lp_coin_supply) as u256),
     );
 
@@ -502,7 +506,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_liquidity<StableTuple, CoinType, LpCoin>(pool_id, amount_to_take);
+    events::emit_remove_liquidity<StableTuple, CoinType, LpCoin>(pool_id, amount_to_take, lp_coin_value);
 
     coin::take(&mut coin_state.balance, amount_to_take, ctx)
   }
@@ -530,7 +534,8 @@ module amm::stable_tuple {
       object::id(pool), 
       coin::value(&coin_a),
       coin::value(&coin_b),
-      coin::value(&coin_c)
+      coin::value(&coin_c),
+      lp_coin_value
     );
 
     (coin_a, coin_b, coin_c)
@@ -561,7 +566,8 @@ module amm::stable_tuple {
       coin::value(&coin_a),
       coin::value(&coin_b),
       coin::value(&coin_c),
-      coin::value(&coin_d)
+      coin::value(&coin_d),
+      lp_coin_value
     );
 
     (coin_a, coin_b, coin_c, coin_d)
@@ -595,12 +601,50 @@ module amm::stable_tuple {
       coin::value(&coin_c),
       coin::value(&coin_d),
       coin::value(&coin_e),
+      lp_coin_value
     );
 
     (coin_a, coin_b, coin_c, coin_d, coin_e)
   }
 
   // * Admin Function Functions
+
+  public fun ramp<LpCoin>(_:&Admin, pool: &mut Pool<StableTuple>, c: &Clock, future_a: u256, future_a_time: u256) {
+    let current_timestamp = clock::timestamp_ms(c);
+    let pool_id = object::id(pool);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    assert!(current_timestamp > (state.initial_a_time as u64) + MIN_RAMP_TIME, errors::wait_one_day());
+    assert!(future_a_time >= ((current_timestamp + MIN_RAMP_TIME) as u256), errors::future_ramp_time_is_too_short());
+
+    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
+
+    assert!(future_a > 0 && future_a < MAX_A, errors::invalid_amplifier());
+    assert!((future_a > amp && amp * MAX_A_CHANGE >= future_a) || (amp > future_a && future_a * MAX_A_CHANGE >= amp), errors::invalid_amplifier());
+
+    state.initial_a = amp;
+    state.initial_a_time = (current_timestamp as u256);
+    state.future_a = future_a;
+    state.future_a_time = future_a_time;
+
+    events::emit_ramp_a<LpCoin>(pool_id, amp, future_a, future_a_time, current_timestamp);
+  }
+
+  public fun stop_ramp<LpCoin>(_:&Admin, pool: &mut Pool<StableTuple>, c: &Clock) {
+    let current_timestamp = clock::timestamp_ms(c);
+
+    let pool_id = object::id(pool);
+    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+
+    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
+
+    state.initial_a = amp;
+    state.initial_a_time = (current_timestamp as u256);
+    state.future_a = amp;
+    state.future_a_time = (current_timestamp as u256);
+
+    events::emit_stop_ramp_a<LpCoin>(pool_id, amp, current_timestamp);
+  }
 
   public fun update_fee<LpCoin>(
     _: &Admin,
@@ -616,7 +660,7 @@ module amm::stable_tuple {
     
     let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
 
-    events::emit_update_stable_fee<StableTuple>(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
+    events::emit_update_stable_fee<StableTuple, LpCoin>(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
   }
 
   public fun take_fees<CoinType, LpCoin>(
