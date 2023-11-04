@@ -3,6 +3,7 @@ module amm::stable_pair_tests {
   use std::vector;
   use std::type_name::get;
 
+  use sui::balance;
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
   use sui::coin::{Self, burn_for_testing as burn, CoinMetadata, TreasuryCap};
@@ -18,6 +19,7 @@ module amm::stable_pair_tests {
   use amm::usdt::{Self, USDT};
   use amm::usdc::{Self, USDC};
   use amm::lp_coin::{Self, LP_COIN};
+  use amm::lp_coin_2::{Self, LP_COIN_2};
   use amm::interest_pool::{Self, Pool};
   use amm::test_utils::{people, scenario, mint, add_decimals};
 
@@ -25,6 +27,8 @@ module amm::stable_pair_tests {
   const USDT_DECIMALS: u8 = 9;
   const MINIMUM_LIQUIDITY: u64 = 100;
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
+
+  // * Success Cases
 
   #[test]
   fun initial_state() {
@@ -148,9 +152,117 @@ module amm::stable_pair_tests {
     test::end(scenario);  
   }
 
+  // * Error Cases
+
+  #[test]
+  #[expected_failure(abort_code = 8)]  
+  fun create_pool_with_non_zero_supply() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      lp_coin_2::init_for_testing(ctx(test));
+    };
+
+    next_tx(test, alice);
+    {
+      let coin_decimals = test::take_shared<CoinDecimals>(test);
+      let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN_2>>(test);
+      let supply = coin::treasury_into_supply(lp_coin_cap);
+      burn(coin::from_balance(balance::increase_supply(&mut supply, 1), ctx(test)));
+
+      burn(stable_pair::new(
+        mint<USDC>(100, USDC_DECIMALS, ctx(test)),
+        mint<USDT>(100, USDT_DECIMALS, ctx(test)),
+        supply,
+        &coin_decimals,
+        ctx(test)
+      ));
+
+      test::return_shared(coin_decimals);
+    };
+
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 9)]  
+  fun create_pool_with_zero_usdc() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      lp_coin_2::init_for_testing(ctx(test));
+    };
+
+    next_tx(test, alice);
+    {
+      let coin_decimals = test::take_shared<CoinDecimals>(test);
+      let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN_2>>(test);
+      let supply = coin::treasury_into_supply(lp_coin_cap);
+
+      burn(stable_pair::new(
+        coin::zero<USDC>(ctx(test)),
+        mint<USDT>(100, USDT_DECIMALS, ctx(test)),
+        supply,
+        &coin_decimals,
+        ctx(test)
+      ));
+      
+      test::return_shared(coin_decimals);
+    };
+
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 9)]  
+  fun create_pool_with_zero_usdt() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      lp_coin_2::init_for_testing(ctx(test));
+    };
+
+    next_tx(test, alice);
+    {
+      let coin_decimals = test::take_shared<CoinDecimals>(test);
+      let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN_2>>(test);
+      let supply = coin::treasury_into_supply(lp_coin_cap);
+
+      burn(stable_pair::new(
+        mint<USDC>(100, USDC_DECIMALS, ctx(test)),
+        coin::zero<USDT>(ctx(test)),
+        supply,
+        &coin_decimals,
+        ctx(test)
+      ));
+      
+      test::return_shared(coin_decimals);
+    };
+
+    test::end(scenario); 
+  }
+
   #[test]
   #[expected_failure(abort_code = 11)]  
-  fun swap_usdc_high_min_amount() {
+  fun swap_usdt_high_min_amount() {
     let scenario = scenario();
     let (alice, _) = people();
 

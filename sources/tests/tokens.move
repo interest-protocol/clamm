@@ -121,3 +121,34 @@ module amm::lp_coin {
     init(LP_COIN {}, ctx);
   }
 }
+
+#[test_only]
+module amm::lp_coin_2 {
+  use std::option;
+
+  use sui::transfer;
+  use sui::coin;
+  use sui::tx_context::{Self, TxContext};
+
+  struct LP_COIN_2 has drop {}
+
+  fun init(witness: LP_COIN_2, ctx: &mut TxContext) {
+      let (treasury_cap, metadata) = coin::create_currency<LP_COIN_2>(
+            witness, 
+            9, 
+            b"LP_COIN_2", 
+            b"LP_COIN_2 Coin", 
+            b"Liquidity Pool",
+            option::none(), 
+            ctx
+        );
+
+      transfer::public_transfer(treasury_cap, tx_context::sender(ctx));
+      transfer::public_share_object(metadata);
+  }
+
+  #[test_only]
+  public fun init_for_testing(ctx: &mut TxContext) {
+    init(LP_COIN_2 {}, ctx);
+  }
+}
