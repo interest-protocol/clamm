@@ -140,6 +140,34 @@ module amm::pool_events {
     timestamp: u64
   }
 
+  struct RampAGamma<phantom LpCoin> has drop, copy {
+    pool_id: ID,
+    a: u256,
+    gamma: u256,
+    initial_time: u64,
+    future_a: u256,
+    future_gamma: u256,
+    future_time: u64
+  }
+
+  struct StopRampAGamma<phantom LpCoin> has drop, copy {
+    pool_id: ID,
+    a: u256,
+    gamma: u256,
+    timestamp: u64,
+  }
+
+  struct UpdateParameters<phantom LpCoin> has drop, copy {
+    pool_id: ID,
+    admin_fee: u256,
+    out_fee: u256,
+    mid_fee: u256,
+    gamma_fee: u256,
+    allowed_extra_profit: u256,
+    adjustment_step: u256,
+    ma_half_time: u256
+  }
+
   public(friend) fun emit_new_3_pool<Curve, CoinA, CoinB, CoinC, LpCoin>(id: ID) {
     emit(New3Pool<Curve, CoinA, CoinB, CoinC, LpCoin> { pool_id: id });
   }
@@ -269,4 +297,47 @@ module amm::pool_events {
   public(friend) fun emit_stop_ramp_a<LpCoin>(pool_id: ID, a: u256, timestamp: u64) {
     emit(StopRampA<LpCoin> {  pool_id, a, timestamp });
   }
-}
+
+  public(friend) fun emit_ramp_a_gamma<LpCoin>(
+    pool_id: ID,
+    a: u256,
+    gamma: u256,
+    initial_time: u64,
+    future_a: u256,
+    future_gamma: u256,
+    future_time: u64,
+  ) {
+    emit(RampAGamma<LpCoin> { pool_id, a, gamma, initial_time, future_a, future_gamma, future_time });
+  }
+
+  public(friend) fun emit_stop_ramp_a_gamma<LpCoin>(
+    pool_id: ID,
+    a: u256,
+    gamma: u256,
+    timestamp: u64
+  ) {
+    emit(StopRampAGamma<LpCoin> { pool_id, a, gamma, timestamp });
+  }
+
+  public(friend) fun emit_update_parameters<LpCoin>(
+    pool_id: ID,
+    admin_fee: u256,
+    out_fee: u256,
+    mid_fee: u256,
+    gamma_fee: u256,
+    allowed_extra_profit: u256,
+    adjustment_step: u256,
+    ma_half_time: u256    
+  ) {
+    emit(UpdateParameters<LpCoin> { 
+      pool_id,
+      admin_fee,
+      out_fee,
+      mid_fee,
+      gamma_fee,
+      allowed_extra_profit,
+      adjustment_step,
+      ma_half_time
+    });
+  }
+} 

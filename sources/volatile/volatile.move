@@ -1384,6 +1384,8 @@ module amm::volatile {
     future_time: u64
   ) {
     let timestamp = clock::timestamp_ms(c);
+    let pool_id = object::id(pool);
+
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     assert!(timestamp > state.a_gamma.initial_time + (MIN_RAMP_TIME - 1), errors::wait_one_day());
     assert!(future_time > timestamp + (MIN_RAMP_TIME - 1), errors::future_ramp_time_is_too_short());
@@ -1410,6 +1412,8 @@ module amm::volatile {
     state.a_gamma.future_a = future_a;
     state.a_gamma.future_gamma = future_gamma;
     state.a_gamma.future_time = future_time;
+
+    events::emit_ramp_a_gamma<LpCoin>(pool_id, a, gamma, timestamp, future_a, future_gamma, future_time);
   }
 
   public fun stop_ramp<LpCoin>(
@@ -1418,6 +1422,8 @@ module amm::volatile {
     c:&Clock, 
   ) {
     let timestamp = clock::timestamp_ms(c);
+    let pool_id = object::id(pool);
+
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     let (a, gamma) = get_a_gamma(state, c);
 
@@ -1427,6 +1433,8 @@ module amm::volatile {
     state.a_gamma.future_gamma = gamma;
     state.a_gamma.initial_time = timestamp;
     state.a_gamma.future_time = timestamp;
+
+    events::emit_stop_ramp_a_gamma<LpCoin>(pool_id, a, gamma, timestamp);
   }
 
   public fun update_parameters<LpCoin>(
@@ -1434,6 +1442,7 @@ module amm::volatile {
     pool: &mut Pool<Volatile>,
     values: vector<u256>
   ) {
+    let pool_id = object::id(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
 
     let mid_fee = *vector::borrow(&values, 0);
@@ -1459,5 +1468,7 @@ module amm::volatile {
     state.rebalancing_params.extra_profit = allowed_extra_profit;
     state.rebalancing_params.adjustment_step = adjustment_step;
     state.rebalancing_params.ma_half_time = ma_half_time;
+
+    events::emit_update_parameters<LpCoin>(pool_id, admin_fee, out_fee, mid_fee, gamma_fee, allowed_extra_profit, adjustment_step, ma_half_time);
   }
 }
