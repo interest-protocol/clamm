@@ -19,6 +19,7 @@ module amm::stable_pair {
   use amm::amm_admin::Admin;
   use amm::curves::StablePair;
   use amm::pool_events as events;
+  use amm::utils::are_coins_ordered;
   use amm::stable_fees::{
     Self, 
     StableFees,
@@ -155,6 +156,8 @@ module amm::stable_pair {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext 
   ): (Coin<LpCoin>, Coin<CoinX>, Coin<CoinY>) {
+    assert!(are_coins_ordered(pool, vector[get<CoinX>(), get<CoinY>()]), errors::coins_must_be_in_order());
+
     let coin_x_value = coin::value(&coin_x);
     let coin_y_value = coin::value(&coin_y);       
 

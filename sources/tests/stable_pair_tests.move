@@ -9,6 +9,7 @@ module amm::stable_pair_tests {
   use sui::coin::{Self, burn_for_testing as burn, CoinMetadata, TreasuryCap};
 
   use suitears::math256::sqrt_down;
+  use suitears::math64::{min, mul_div_down};
   use suitears::coin_decimals::{Self, CoinDecimals};
 
   use amm::stable_pair;
@@ -19,8 +20,8 @@ module amm::stable_pair_tests {
   use amm::usdt::{Self, USDT};
   use amm::usdc::{Self, USDC};
   use amm::lp_coin::{Self, LP_COIN};
-  use amm::lp_coin_2::{Self, LP_COIN_2};
   use amm::interest_pool::{Self, Pool};
+  use amm::lp_coin_2::{Self, LP_COIN_2};
   use amm::test_utils::{people, scenario, mint, add_decimals};
 
   const USDC_DECIMALS: u8 = 6;
@@ -149,6 +150,86 @@ module amm::stable_pair_tests {
 
       test::return_shared(pool);
     };
+    test::end(scenario);  
+  }
+
+  #[test]
+  fun add_liquidity() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let usdc_value = add_decimals(10, 6);
+      let usdt_value = add_decimals(10, 9);
+
+      let (supply, balance_x, balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let lp_coin_amount = min(
+        mul_div_down(usdc_value, supply, balance_x),
+        mul_div_down(usdt_value, supply, balance_y)
+      );
+
+      let (optimal_usdc, optimal_usdt) = stable_pair_math::calculate_optimal_add_liquidity(usdc_value, usdt_value, balance_x, balance_y);
+
+      let (lp_coin, coin_usdc, coin_usdt) = stable_pair::add_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<USDC>(10, 6, ctx(test)),
+        mint<USDT>(10, 9, ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      assert_eq(burn(lp_coin), lp_coin_amount);
+      assert_eq(burn(coin_usdc), usdc_value - optimal_usdc);
+      assert_eq(burn(coin_usdt), usdt_value - optimal_usdt);
+
+      test::return_shared(pool);
+    };  
+
+     next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let usdc_value = add_decimals(15, 6);
+      let usdt_value = add_decimals(10, 9);
+
+      let (supply, balance_x, balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let (optimal_usdc, optimal_usdt) = stable_pair_math::calculate_optimal_add_liquidity(usdc_value, usdt_value, balance_x, balance_y);
+
+      let lp_coin_amount = min(
+        mul_div_down(optimal_usdc, supply, balance_x),
+        mul_div_down(optimal_usdt, supply, balance_y)
+      );
+
+
+      let (lp_coin, coin_usdc, coin_usdt) = stable_pair::add_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<USDC>(15, 6, ctx(test)),
+        mint<USDT>(10, 9, ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      let (new_supply, new_balance_x, new_balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      assert_eq(burn(lp_coin), lp_coin_amount);
+      assert_eq(burn(coin_usdc), usdc_value - optimal_usdc);
+      assert_eq(burn(coin_usdt), usdt_value - optimal_usdt);
+      assert_eq(new_supply, supply + lp_coin_amount);
+      assert_eq(new_balance_x, balance_x + optimal_usdc);
+      assert_eq(new_balance_y, balance_y + optimal_usdt);
+
+      test::return_shared(pool);
+    };    
+
     test::end(scenario);  
   }
 
@@ -293,6 +374,68 @@ module amm::stable_pair_tests {
       ));
 
       test::return_shared(pool);
+    };
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 13)]  
+  fun add_liquidity_with_zero_usdc() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+     let pool = test::take_shared<Pool<StablePair>>(test);
+
+
+      let (lp_coin, coin_usdc, coin_usdt) = stable_pair::add_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        coin::zero<USDC>(ctx(test)),
+        mint<USDT>(10, 9, ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      burn(lp_coin);
+      burn(coin_usdc);
+      burn(coin_usdt);
+      test::return_shared(pool);      
+    };
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 13)]  
+  fun add_liquidity_with_zero_usdt() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+     let pool = test::take_shared<Pool<StablePair>>(test);
+
+
+      let (lp_coin, coin_usdc, coin_usdt) = stable_pair::add_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<USDC>(15, 6, ctx(test)),
+        coin::zero<USDT>(ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      burn(lp_coin);
+      burn(coin_usdc);
+      burn(coin_usdt);
+      test::return_shared(pool);      
     };
     test::end(scenario); 
   }

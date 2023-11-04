@@ -84,7 +84,7 @@ module amm::stable_pair_math {
     (optimal_x_amount, desired_amount_y)
   }  
 
-  fun quote_liquidity(amount_a: u64, reserves_a: u64, reserves_b: u64): u64 {
+  public fun quote_liquidity(amount_a: u64, reserves_a: u64, reserves_b: u64): u64 {
     // @dev gie the propocol an edge
     mul_div_up(amount_a, reserves_b, reserves_a)
   }

@@ -14,7 +14,6 @@ module amm::volatile {
   use sui::balance::{Self, Supply, Balance};
   
   use suitears::math256::{Self, sum, diff, mul_div_up};
-  use suitears::comparator::{compare, is_equal};
   use suitears::coin_decimals::{
     get_decimals_scalar, 
     get_decimals, 
@@ -41,7 +40,8 @@ module amm::volatile {
     empty_vector,
     vector_2_to_tuple,
     vector_3_to_tuple,
-    make_coins_from_vector
+    are_coins_ordered,
+    make_coins_from_vector,
   };
 
   const ROLL: u256 = 1_000_000; // 1e9 - LpCoins have 9 decimals 
@@ -1230,10 +1230,6 @@ module amm::volatile {
   }
 
   // * Utilities
-
-  fun are_coins_ordered(pool: &Pool<Volatile>, coins: vector<TypeName>): bool {
-    is_equal(&compare(&core::view_coins(pool), &coins))
-  }
 
   fun get_xcp<LpCoin>(state: &State<LpCoin>, coin_states: vector<CoinState>, d: u256): u256 {
     let x = vector::singleton(d / state.n_coins);
