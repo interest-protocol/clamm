@@ -6,7 +6,7 @@ module amm::stable_pair_tests {
   use sui::balance;
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
-  use sui::coin::{Self, burn_for_testing as burn, CoinMetadata, TreasuryCap};
+  use sui::coin::{Self, mint_for_testing, burn_for_testing as burn, CoinMetadata, TreasuryCap};
 
   use suitears::math256::sqrt_down;
   use suitears::math64::{min, mul_div_down};
@@ -233,6 +233,45 @@ module amm::stable_pair_tests {
     test::end(scenario);  
   }
 
+  #[test]
+  fun remove_liquidity() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let (supply, balance_x, balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let usdc_amount = mul_div_down(supply / 10, balance_x, supply);
+      let usdt_amount = mul_div_down(supply / 10, balance_y, supply);
+
+      let (coin_usdc, coin_usdt) = stable_pair::remove_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint_for_testing(supply / 10, ctx(test)),
+        0,
+           0,
+           ctx(test)
+      );
+
+      let (new_supply, new_balance_x, new_balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      assert_eq(burn(coin_usdc), usdc_amount);
+      assert_eq(burn(coin_usdt), usdt_amount);
+      assert_eq(new_supply, supply - (supply / 10));
+      assert_eq(new_balance_x, balance_x - usdc_amount);
+      assert_eq(new_balance_y, balance_y - usdt_amount);
+
+      test::return_shared(pool);
+    };    
+    test::end(scenario);  
+  }
+
   // * Error Cases
 
   #[test]
@@ -438,6 +477,146 @@ module amm::stable_pair_tests {
       test::return_shared(pool);      
     };
     test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 11)] 
+  fun add_liquidity_slippage() {
+        let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let usdc_value = add_decimals(10, 6);
+      let usdt_value = add_decimals(10, 9);
+
+      let (supply, balance_x, balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let lp_coin_amount = min(
+        mul_div_down(usdc_value, supply, balance_x),
+        mul_div_down(usdt_value, supply, balance_y)
+      );
+
+      let (lp_coin, coin_usdc, coin_usdt) = stable_pair::add_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<USDC>(10, 6, ctx(test)),
+        mint<USDT>(10, 9, ctx(test)),
+        lp_coin_amount + 1,
+        ctx(test)
+      );
+
+      burn(lp_coin);
+      burn(coin_usdc);
+      burn(coin_usdt);
+
+      test::return_shared(pool);
+    };  
+
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 14)] 
+  fun remove_liquidity_zero_lp_coin() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let (coin_usdc, coin_usdt) = stable_pair::remove_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        coin::zero(ctx(test)),
+        0,
+           0,
+           ctx(test)
+      );
+
+      burn(coin_usdc);
+      burn(coin_usdt);
+
+      test::return_shared(pool);
+    };    
+    test::end(scenario);  
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 11)] 
+  fun remove_liquidity_usdc_slippage() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let (supply, balance_x, _, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let usdc_amount = mul_div_down(supply / 10, balance_x, supply);
+
+      let (coin_usdc, coin_usdt) = stable_pair::remove_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint_for_testing(supply / 10, ctx(test)),
+        usdc_amount + 1,
+           0,
+           ctx(test)
+      );
+
+      burn(coin_usdc);
+      burn(coin_usdt);
+
+      test::return_shared(pool);
+    };    
+    test::end(scenario);  
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 11)] 
+  fun remove_liquidity_usdt_slippage() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    create_pool_(test);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StablePair>>(test);
+
+      let (supply, _, balance_y, _, _, _, _, _, _) = stable_pair::view_state<USDC, USDT, LP_COIN>(&pool);
+
+      let usdt_amount = mul_div_down(supply / 10, balance_y, supply);
+
+      let (coin_usdc, coin_usdt) = stable_pair::remove_liquidity<USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint_for_testing(supply / 10, ctx(test)),
+        0,
+           usdt_amount + 1,
+           ctx(test)
+      );
+
+      burn(coin_usdc);
+      burn(coin_usdt);
+
+      test::return_shared(pool);
+    };    
+    test::end(scenario);  
   }
 
   // Set up
