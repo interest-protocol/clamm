@@ -1,7 +1,6 @@
 module amm::stable_tuple_events {
   use sui::object::ID;
   use sui::event::emit;
-  use sui::tx_context::{Self, TxContext};
 
   friend amm::stable_tuple;
 
@@ -49,7 +48,6 @@ module amm::stable_tuple_events {
 
   struct RemoveLiquidity<phantom CoinType, phantom LpCoin> has copy, drop {
     pool_id: ID,
-    sender: address,
     amount: u64
   }
 
@@ -136,8 +134,8 @@ module amm::stable_tuple_events {
     emit(AddLiquidity5Pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin> { pool_id: id, amount_a, amount_b, amount_c, amount_d, amount_e });
   }
 
-  public(friend) fun emit_remove_liquidity<CoinType, LpCoin>(id: ID, amount: u64, ctx: &mut TxContext) {
-    emit(RemoveLiquidity<CoinType, LpCoin> { pool_id: id, amount, sender: tx_context::sender(ctx) });
+  public(friend) fun emit_remove_liquidity<CoinType, LpCoin>(id: ID, amount: u64) {
+    emit(RemoveLiquidity<CoinType, LpCoin> { pool_id: id, amount });
   }
 
   public(friend) fun emit_remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(

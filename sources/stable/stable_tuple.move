@@ -502,7 +502,7 @@ module amm::stable_tuple {
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
 
-    events::emit_remove_liquidity<CoinType, LpCoin>(pool_id, amount_to_take, ctx);
+    events::emit_remove_liquidity<CoinType, LpCoin>(pool_id, amount_to_take);
 
     coin::take(&mut coin_state.balance, amount_to_take, ctx)
   }

@@ -115,4 +115,8 @@ module amm::errors {
   public fun value_out_of_range(): u64 {
     29
   }
+
+  public fun must_supply_one_coin(): u64 {
+    30
+  }
 }
