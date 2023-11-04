@@ -26,6 +26,7 @@ module amm::stable_pair {
   };
   use amm::stable_pair_math::{
     invariant_, 
+    calculate_amount_in,
     calculate_amount_out, 
     calculate_optimal_add_liquidity
   };
@@ -67,6 +68,14 @@ module amm::stable_pair {
     else
       quote_swap_logic<CoinOut, CoinIn, LpCoin>(pool, amount_in, false)
   }
+
+  public fun quote_amount_in<CoinIn, CoinOut, LpCoin>(pool: &Pool<StablePair>, amount_out: u64): (u64, u64, u64) {
+    if (is_coin_x<CoinIn>(core::view_coins<StablePair>(pool))) 
+      quote_amount_in_logic<CoinIn, CoinOut, LpCoin>(pool, amount_out, true)
+    else
+      quote_amount_in_logic<CoinOut, CoinIn, LpCoin>(pool, amount_out, false)
+  }
+
 
   public fun get_amounts<CoinX, CoinY, LpCoin>(pool: &Pool<StablePair>): (u64, u64, u64) {
     let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
@@ -467,6 +476,26 @@ module amm::stable_pair {
 
     let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
     ((amount_out - fee_out), fee_in, fee_out)
+  }
+
+  fun quote_amount_in_logic<CoinX, CoinY, LpCoin>(pool: &Pool<StablePair>, amount_out: u64, is_x: bool): (u64, u64, u64) {
+    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
+    let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
+
+    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
+    
+    let amount_in = calculate_amount_in(
+      invariant_(coin_x_reserve, coin_y_reserve, state.decimals_x, state.decimals_y),
+      amount_out - fee_out,  
+      coin_x_reserve,  
+      coin_y_reserve, 
+      state.decimals_x, 
+      state.decimals_y, 
+      is_x
+    );
+
+    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, amount_out);
+    ((amount_in - fee_in), fee_in, fee_out)
   }
 
   // * Test Only Functions

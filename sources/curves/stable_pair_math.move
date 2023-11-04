@@ -33,6 +33,41 @@ module amm::stable_pair_math {
       (a * b) / PRECISION // x^3y + y^3x  
     }
 
+  public fun calculate_amount_in(
+    k: u256,
+    coin_amount: u64,
+    balance_x: u64,
+    balance_y:u64,
+    decimals_x: u64,
+    decimals_y: u64,
+    is_x: bool
+  ): u64 {
+    // Precision is used to scale the number for more precise calculations. 
+    // We convert them to u256 for more precise calculations and to avoid overflows.
+    let (coin_amount, balance_x, balance_y, decimals_x, decimals_y) =
+      (
+        (coin_amount as u256),
+        (balance_x as u256),
+        (balance_y as u256),
+        (decimals_x as u256),
+        (decimals_y as u256)
+      );
+
+    // Calculate the stable curve invariant k = x3y+y3x 
+    // We need to consider stable coins with different decimal values
+    let reserve_x = (balance_x * PRECISION) / decimals_x;
+    let reserve_y = (balance_y * PRECISION) / decimals_y;
+
+    let amount_out = (coin_amount * PRECISION) / if (is_x) { decimals_x } else {decimals_y };
+
+    let y = if (is_x) 
+                calculate_balance_out(reserve_x - amount_out, k, reserve_y) -  reserve_y
+              else 
+                 calculate_balance_out( reserve_y - amount_out, k, reserve_x) - reserve_x;
+
+    ((y * if (is_x) { decimals_y } else { decimals_x }) / PRECISION as u64)   
+  }   
+
   public fun calculate_amount_out(
     k: u256,
     coin_amount: u64,
@@ -115,13 +150,15 @@ module amm::stable_pair_math {
       y
     }
 
-  fun d(x0: u256, y: u256): u256 {
+  /// Implements 3 * x0 * y^2 + x0^3 = 3 * x0 * (y * y / 1e8) / 1e8 + (x0 * x0 / 1e8 * x0) / 1e8
+  public fun d(x0: u256, y: u256): u256 {
     (3 * x0 * ((y * y) / PRECISION)) /
             PRECISION +
             ((((x0 * x0) / PRECISION) * x0) / PRECISION)
   }
 
-  fun f(x0: u256, y: u256): u256 {
+  /// Implements x0*y^3 + x0^3*y = x0*(y*y/1e18*y/1e18)/1e18+(x0*x0/1e18*x0/1e18)*y/1e18
+  public fun f(x0: u256, y: u256): u256 {
     (x0 * ((((y * y) / PRECISION) * y) / PRECISION)) /
             PRECISION +
             (((((x0 * x0) / PRECISION) * x0) / PRECISION) * y) /
