@@ -1,4 +1,35 @@
 #[test_only]
+module amm::dai {
+  use std::option;
+
+  use sui::transfer;
+  use sui::coin;
+  use sui::tx_context::{Self, TxContext};
+
+  struct DAI has drop {}
+
+  fun init(witness: DAI, ctx: &mut TxContext) {
+      let (treasury_cap, metadata) = coin::create_currency<DAI>(
+            witness, 
+            9, 
+            b"DAI", 
+            b"DAI", 
+            b"Market DAO",
+            option::none(), 
+            ctx
+        );
+
+      transfer::public_transfer(treasury_cap, tx_context::sender(ctx));
+      transfer::public_share_object(metadata);
+  }
+
+  #[test_only]
+  public fun init_for_testing(ctx: &mut TxContext) {
+    init(DAI {}, ctx);
+  }
+}
+
+#[test_only]
 module amm::usdc {
   use std::option;
 

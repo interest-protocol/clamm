@@ -1,3 +1,4 @@
+#[test_only]
 module amm::stable_pair_math_tests {
   use sui::test_utils::assert_eq;
 

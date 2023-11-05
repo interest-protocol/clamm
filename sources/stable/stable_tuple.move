@@ -36,9 +36,9 @@ module amm::stable_tuple {
   };
 
   const MAX_A: u256 = 1000000; // 1 million
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
   const MAX_A_CHANGE: u256 = 10;
   const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
   struct StateKey has drop, copy, store {}
 
@@ -359,7 +359,7 @@ module amm::stable_tuple {
   ): Coin<LpCoin> {
     core::assert_is_3_pool(pool);
 
-   events::emit_add_liquidity_3_pool<StableTuple, CoinA, CoinB, CoinC, LpCoin>(
+    events::emit_add_liquidity_3_pool<StableTuple, CoinA, CoinB, CoinC, LpCoin>(
       object::id(pool), 
       coin::value(&coin_a), 
       coin::value(&coin_b), 

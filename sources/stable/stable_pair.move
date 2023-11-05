@@ -62,11 +62,11 @@ module amm::stable_pair {
     fees: StableFees  
   }
 
-  public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &Pool<StablePair>, amount_in: u64): (u64, u64, u64) {
+  public fun quote_amount_out<CoinIn, CoinOut, LpCoin>(pool: &Pool<StablePair>, amount_in: u64): (u64, u64, u64) {
     if (is_coin_x<CoinIn>(core::view_coins<StablePair>(pool))) 
-      quote_swap_logic<CoinIn, CoinOut, LpCoin>(pool, amount_in, true)
+      quote_amount_out_logic<CoinIn, CoinOut, LpCoin>(pool, amount_in, true)
     else
-      quote_swap_logic<CoinOut, CoinIn, LpCoin>(pool, amount_in, false)
+      quote_amount_out_logic<CoinOut, CoinIn, LpCoin>(pool, amount_in, false)
   }
 
   public fun quote_amount_in<CoinIn, CoinOut, LpCoin>(pool: &Pool<StablePair>, amount_out: u64): (u64, u64, u64) {
@@ -458,7 +458,7 @@ module amm::stable_pair {
     coins
   }
 
-  fun quote_swap_logic<CoinX, CoinY, LpCoin>(pool: &Pool<StablePair>, amount_in: u64, is_x: bool): (u64, u64, u64) {
+  fun quote_amount_out_logic<CoinX, CoinY, LpCoin>(pool: &Pool<StablePair>, amount_in: u64, is_x: bool): (u64, u64, u64) {
     let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
     let (coin_x_reserve, coin_y_reserve, _) = get_amounts_internal(state);
 

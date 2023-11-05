@@ -7,23 +7,23 @@ module amm::stable_pair_tests {
   use sui::balance;
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
-  use sui::coin::{Self, mint_for_testing, burn_for_testing as burn, CoinMetadata, TreasuryCap};
+  use sui::coin::{Self, mint_for_testing, burn_for_testing as burn, TreasuryCap};
 
   use suitears::math256::sqrt_down;
   use suitears::math64::{min, mul_div_down};
-  use suitears::coin_decimals::{Self, CoinDecimals};
+  use suitears::coin_decimals::CoinDecimals;
 
   use amm::stable_pair;
   use amm::stable_fees;
   use amm::stable_pair_math;
   use amm::curves::StablePair;
-  use amm::usdt::{Self, USDT};
-  use amm::usdc::{Self, USDC};
-  use amm::lp_coin::{Self, LP_COIN};
+  use amm::usdt::USDT;
+  use amm::usdc::USDC;
+  use amm::lp_coin::LP_COIN;
   use amm::interest_pool::{Self, Pool};
   use amm::lp_coin_2::{Self, LP_COIN_2};
-  use amm::amm_admin::{Self as admin, Admin};
-  use amm::test_utils::{people, scenario, mint, add_decimals};
+  use amm::amm_admin::Admin;
+  use amm::test_utils::{people, scenario, mint, add_decimals, setup_dependencies};
 
   const USDC_DECIMALS: u8 = 6;
   const USDT_DECIMALS: u8 = 9;
@@ -704,28 +704,7 @@ module amm::stable_pair_tests {
   fun create_pool_(test: &mut Scenario) {
     let (alice, _) = people();
 
-    next_tx(test, alice);
-    {
-      usdc::init_for_testing(ctx(test));
-      usdt::init_for_testing(ctx(test));
-      lp_coin::init_for_testing(ctx(test));
-      admin::init_for_testing(ctx(test));
-      coin_decimals::init_for_testing(ctx(test));
-    };
-
-    next_tx(test, alice);
-    {
-      let coin_decimals_storage = test::take_shared<CoinDecimals>(test);
-      let usdt_metadata = test::take_shared<CoinMetadata<USDT>>(test);
-      let usdc_metadata = test::take_shared<CoinMetadata<USDC>>(test);
-
-      coin_decimals::register_coin<USDT>(&mut coin_decimals_storage, &usdt_metadata);
-      coin_decimals::register_coin<USDC>(&mut coin_decimals_storage, &usdc_metadata);
-
-      test::return_shared(coin_decimals_storage);
-      test::return_shared(usdc_metadata);
-      test::return_shared(usdt_metadata);
-    };
+    setup_dependencies(test);
 
     next_tx(test, alice);
     {
