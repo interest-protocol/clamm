@@ -12,7 +12,7 @@ module amm::init_stable_tuple {
   use amm::usdc::USDC;
   use amm::lp_coin::LP_COIN;
   use amm::stable_tuple_simulation::{Self as sim, State as SimState};
-  use amm::test_utils::{people, mint, add_decimals, setup_dependencies};
+  use amm::test_utils::{people, mint, normalize_amount, setup_dependencies};
 
   const DAI_DECIMALS: u8 = 9;
   const USDC_DECIMALS: u8 = 6; 
@@ -23,7 +23,7 @@ module amm::init_stable_tuple {
 
     setup_dependencies(test);
 
-    let initial_a = 2 * 360;
+    let initial_a = 360;
 
     next_tx(test, alice);
     {
@@ -35,7 +35,7 @@ module amm::init_stable_tuple {
       let c = test::take_shared<Clock>(test);
       let coin_decimals = test::take_shared<CoinDecimals>(test);
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
-      let sim_state = test::take_from_sender<SimState>(test);
+      let sim_state = test::take_shared<SimState>(test);
 
       burn(stable_tuple::new_3_pool(
         &c,
@@ -52,8 +52,7 @@ module amm::init_stable_tuple {
         &mut sim_state, 
         initial_a, 
         3, 
-        vector[make_amount(100, DAI_DECIMALS), make_amount(110, USDC_DECIMALS), make_amount(121, USDT_DECIMALS)],
-        vector[make_amount(1, DAI_DECIMALS), make_amount(1, USDC_DECIMALS), make_amount(1, USDT_DECIMALS)],
+        vector[normalize_amount(100), normalize_amount(110), normalize_amount(121)],
         1
       );
 
@@ -61,9 +60,5 @@ module amm::init_stable_tuple {
       test::return_shared(coin_decimals);
       test::return_shared(c);
     };
-  }
-
-  fun make_amount(x: u64, e: u8): u256 {
-    (add_decimals(x, e) as u256)
   }
 }

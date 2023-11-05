@@ -56,7 +56,7 @@ module amm::stable_tuple_math {
     abort errors::failed_to_converge()
   }
 
-  public fun calculate_out_balance_from_in_balance(
+  public fun y(
     amp: u256, 
     token_in_index: u256, 
     token_out_index: u256,
@@ -71,18 +71,16 @@ module amm::stable_tuple_math {
     let n_coins = (vector::length(balances) as u256);
     let ann = amp * n_coins;
 
-    let _x = 0;
     let index = 0;
 
     while (index < n_coins) {
       if (index == token_in_index) {
-        _x = new_balance_in;
-        s = s + _x;
-        c = c * d / (_x * n_coins);
+        s = s + new_balance_in;
+        c = c * d / (new_balance_in * n_coins);
       } else if (index != token_out_index) {
-        _x = *vector::borrow(balances, (index as u64));
-        s = s + _x;
-        c = c * d / (_x * n_coins);
+        let x = *vector::borrow(balances, (index as u64));
+        s = s + x;
+        c = c * d / (x * n_coins);
       };
 
       index = index + 1;
@@ -91,23 +89,17 @@ module amm::stable_tuple_math {
     c = c * d / (ann * n_coins);
     let b = s + d / ann;
     let y = d;
+    let prev_y = 0;
 
-    let index = 0;
-
-    while (index < 255) {
-      let prev_y = y;
-
+    while(1 >= diff(y, prev_y)) {
+       prev_y = y;
       y = (y * y + c) / (2 * y + b - d);
-
-      if (diff(y, prev_y) <= 1) return y;
-
-      index = index + 1;
     };
 
-    abort errors::failed_to_converge()
+    y
   }
 
-  public fun calculate_balance_from_reduced_lp_supply(
+  public fun y_lp(
     amp: u256, 
     i: u256, 
     balances: &vector<u256>, 
@@ -118,7 +110,7 @@ module amm::stable_tuple_math {
     let new_invariant = prev_invariant - ((lp_burn_amount * prev_invariant) / lp_supply_value);
 
 
-    calculate_new_coin_balance_logic(
+    y_d(
       amp,
       i,
       balances,
@@ -126,21 +118,20 @@ module amm::stable_tuple_math {
     )
   }
 
-  fun calculate_new_coin_balance_logic(amp: u256, i: u256, balances: &vector<u256>, _invariant: u256): u256 {
+  public fun y_d(amp: u256, i: u256, balances: &vector<u256>, _invariant: u256): u256 {
 
     let c = 0;
     let s = 0;
     let n_coins = (vector::length(balances) as u256);
     let ann = amp * n_coins;
-    let _x = 0;
 
     let index = 0;
 
-    while (index < n_coins) {
+    while (n_coins > 1) {
       if (index != i) {
-        _x = *vector::borrow(balances, (index as u64));
-        s = s + _x;
-        c = c * _invariant / (_x * n_coins);
+        let x = *vector::borrow(balances, (index as u64));
+        s = s + x;
+        c = c * _invariant / (x * n_coins);
       };
       index = index + 1;
     };
@@ -148,18 +139,13 @@ module amm::stable_tuple_math {
     c = c * _invariant / (ann * n_coins);
     let b = s + _invariant / ann;
     let y = _invariant;
+    let prev_y = 0;
 
-    let index = 0;
-
-    while (index < 255) {
+    while (1 >= diff(y, prev_y)) {
       let prev_y = y;
+    
       y = (y * y + c) / (2 * y + b - _invariant);
-
-      if (diff(y, prev_y) <= 1) return y;
-
-      index = index + 1;
     };
-
-    abort errors::failed_to_converge()
+    y
   }
 }

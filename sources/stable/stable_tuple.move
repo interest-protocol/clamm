@@ -18,7 +18,7 @@ module amm::stable_tuple {
   use amm::amm_admin::Admin;
   use amm::curves::StableTuple;
   use amm::pool_events as events;
-  use amm::utils::make_coins_from_vector;
+  use amm::utils::{make_coins_from_vector, empty_vector};
   use amm::stable_fees::{
     Self, 
     StableFees,
@@ -29,14 +29,15 @@ module amm::stable_tuple {
     new_pool
   };
   use amm::stable_tuple_math::{
+    y,
+    y_lp,
     get_amp,
-    invariant_,
-    calculate_out_balance_from_in_balance,
-    calculate_balance_from_reduced_lp_supply,
+    invariant_
   };
 
   const MAX_A: u256 = 1000000; // 1 million
   const MAX_A_CHANGE: u256 = 10;
+  const ROLL: u256 = 1_000_000_000; // 1e18
   const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
@@ -96,7 +97,7 @@ module amm::stable_tuple {
 
     let normalized_value = ((amount - fee_in) as u256) * PRECISION / coin_in_state.decimals;
 
-    let new_out_balance = calculate_out_balance_from_in_balance(
+    let new_out_balance = y(
       get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_in_state.index as u256),
       (coin_out_state.index as u256),
@@ -111,6 +112,7 @@ module amm::stable_tuple {
 
     (amount - fee_out, fee_in, fee_out)
   }
+
 
   // * Mut Functions
 
@@ -290,7 +292,7 @@ module amm::stable_tuple {
 
     let prev_k = invariant_(amp, &state.balances);
 
-    let new_out_balance = calculate_out_balance_from_in_balance(
+    let new_out_balance = y(
       amp,
       (coin_in_state.index as u256),
       (coin_out_state.index as u256),
@@ -492,7 +494,7 @@ module amm::stable_tuple {
     let current_coin_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
     let initial_coin_balance = *current_coin_balance;
     
-    *current_coin_balance = calculate_balance_from_reduced_lp_supply(
+    *current_coin_balance = y_lp(
       get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_state.index as u256),
       &balances,
@@ -688,7 +690,7 @@ module amm::stable_tuple {
 
     let supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
 
-    let mint_amount = if (supply_value == 0) { (new_k as u64) } else { ((supply_value * (new_k - prev_k) / prev_k) as u64) };
+    let mint_amount = if (supply_value == 0) { ((new_k / ROLL)  as u64) } else { ((supply_value * (new_k - prev_k) / prev_k) as u64) };
 
     assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
 
@@ -759,7 +761,7 @@ module amm::stable_tuple {
     dof::add(id, StateKey {}, 
       State {
         id: object::new(ctx),
-        balances: vector[],
+        balances: empty_vector((n_coins as u256)),
         initial_a,
         future_a: initial_a,
         initial_a_time: 0,

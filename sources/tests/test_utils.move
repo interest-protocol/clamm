@@ -15,6 +15,8 @@ module amm::test_utils {
   use amm::usdc::{Self, USDC};
   use amm::lp_coin::{Self, LP_COIN};
 
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+
   public fun scenario(): Scenario { test::begin(@0x1) }
 
   public fun people():(address, address) { (@0xBEEF, @0x1337)}
@@ -25,6 +27,10 @@ module amm::test_utils {
 
   public fun add_decimals(x: u64, decimals: u8): u64 {
     x * math::pow(10, decimals)
+  }
+
+  public fun normalize_amount(a: u256): u256 {
+    a * PRECISION
   }
 
   public fun setup_dependencies(test: &mut Scenario) {
