@@ -31,7 +31,7 @@ module amm::stable_tuple {
   use amm::stable_tuple_math::{
     y,
     y_lp,
-    get_amp,
+    get_a,
     invariant_
   };
 
@@ -68,7 +68,7 @@ module amm::stable_tuple {
 
   // * View Functions
   
-  // @dev Price is returnedi n 1e18
+  // @dev Price is returned in 1e18
   public fun get_lp_coin_price_in_underlying<LpCoin>(
     pool: &Pool<StableTuple>,
     c: &Clock,
@@ -76,7 +76,7 @@ module amm::stable_tuple {
     let state = load_state<LpCoin>(core::borrow_uid(pool));
 
     let k = invariant_(
-      get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c), 
+      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c), 
       &state.balances
     );
 
@@ -98,7 +98,7 @@ module amm::stable_tuple {
     let normalized_value = ((amount - fee_in) as u256) * PRECISION / coin_in_state.decimals;
 
     let new_out_balance = y(
-      get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
+      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_in_state.index as u256),
       (coin_out_state.index as u256),
       *vector::borrow(&state.balances, coin_in_state.index) + normalized_value,
@@ -288,7 +288,7 @@ module amm::stable_tuple {
     // Has no fees to properly calculate new out balance
     let normalized_value = ((coin_in_value - fee_in) as u256) * PRECISION / coin_in_state.decimals;
 
-    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);
 
     let prev_k = invariant_(amp, &state.balances);
 
@@ -370,7 +370,7 @@ module amm::stable_tuple {
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     
-    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
 
     let prev_k = invariant_(amp, &state.balances);
 
@@ -411,7 +411,7 @@ module amm::stable_tuple {
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     
-    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
     let prev_k = invariant_(amp, &state.balances);
 
     deposit_coin<CoinA, LpCoin>(state, coin_a);
@@ -454,7 +454,7 @@ module amm::stable_tuple {
 
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     
-    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
     let prev_k = invariant_(amp, &state.balances);
 
     deposit_coin<CoinA, LpCoin>(state, coin_a);
@@ -495,7 +495,7 @@ module amm::stable_tuple {
     let initial_coin_balance = *current_coin_balance;
     
     *current_coin_balance = y_lp(
-      get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
+      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_state.index as u256),
       &balances,
       (lp_coin_value as u256),
@@ -619,7 +619,7 @@ module amm::stable_tuple {
     assert!(current_timestamp > (state.initial_a_time as u64) + MIN_RAMP_TIME, errors::wait_one_day());
     assert!(future_a_time >= ((current_timestamp + MIN_RAMP_TIME) as u256), errors::future_ramp_time_is_too_short());
 
-    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
 
     assert!(future_a > 0 && future_a < MAX_A, errors::invalid_amplifier());
     assert!((future_a > amp && amp * MAX_A_CHANGE >= future_a) || (amp > future_a && future_a * MAX_A_CHANGE >= amp), errors::invalid_amplifier());
@@ -638,7 +638,7 @@ module amm::stable_tuple {
     let pool_id = object::id(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
 
-    let amp = get_amp(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
 
     state.initial_a = amp;
     state.initial_a_time = (current_timestamp as u256);

@@ -9,7 +9,7 @@ module amm::stable_tuple_math {
 
   use suitears::math256::{diff, sum};
 
-  public fun get_amp(
+  public fun get_a(
     a0: u256,
     t0: u256,
     a1: u256,
@@ -26,17 +26,16 @@ module amm::stable_tuple_math {
 
   public fun invariant_(amp: u256, balances: &vector<u256>): u256 {
     let s = sum(balances);
+    if (s == 0) return 0;
+    
     let n_coins = vector::length(balances);
     let n_coins_u256 = (n_coins as u256);
 
-    if (s == 0) return 0;
-
+    let prev_d = 0;
     let d = s;
     let ann = amp * n_coins_u256;
-    
-    let i = 0;
-
-    while(i < 255) {
+  
+    while(1 >= diff(d, prev_d)) {
       let d_p = d;
       let index = 0;
 
@@ -45,15 +44,11 @@ module amm::stable_tuple_math {
         index = index + 1;
       };
 
-      let prev_d = d; 
+      prev_d = d; 
       d = (ann * s + d_p * n_coins_u256) * d / ((ann -1) * d + (n_coins_u256 + 1) * d_p);
-
-      if (diff(d, prev_d) <= 1) return d;
- 
-      i = i + 1;
     };
 
-    abort errors::failed_to_converge()
+    d
   }
 
   public fun y(
@@ -92,7 +87,7 @@ module amm::stable_tuple_math {
     let prev_y = 0;
 
     while(1 >= diff(y, prev_y)) {
-       prev_y = y;
+      prev_y = y;
       y = (y * y + c) / (2 * y + b - d);
     };
 
@@ -107,19 +102,15 @@ module amm::stable_tuple_math {
     lp_supply_value: u256,
   ): u256 {
     let prev_invariant = invariant_(amp, balances);
-    let new_invariant = prev_invariant - ((lp_burn_amount * prev_invariant) / lp_supply_value);
-
-
     y_d(
       amp,
       i,
       balances,
-      new_invariant
+      prev_invariant - ((lp_burn_amount * prev_invariant) / lp_supply_value)
     )
   }
 
   public fun y_d(amp: u256, i: u256, balances: &vector<u256>, _invariant: u256): u256 {
-
     let c = 0;
     let s = 0;
     let n_coins = (vector::length(balances) as u256);
@@ -127,7 +118,7 @@ module amm::stable_tuple_math {
 
     let index = 0;
 
-    while (n_coins > 1) {
+    while (n_coins > index) {
       if (index != i) {
         let x = *vector::borrow(balances, (index as u64));
         s = s + x;
@@ -142,8 +133,7 @@ module amm::stable_tuple_math {
     let prev_y = 0;
 
     while (1 >= diff(y, prev_y)) {
-      let prev_y = y;
-    
+      prev_y = y;
       y = (y * y + c) / (2 * y + b - _invariant);
     };
     y
