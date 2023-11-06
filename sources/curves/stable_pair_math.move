@@ -18,20 +18,11 @@ module amm::stable_pair_math {
     decimals_x: u64,
     decimals_y: u64
   ): u256 {
-    let (x, y, decimals_x, decimals_y) =
-    (
-      (x as u256),
-      (y as u256),
-      (decimals_x as u256),
-      (decimals_y as u256)
-    );  
-
-      let x = (x * PRECISION) / decimals_x;
-      let y = (y * PRECISION) / decimals_y;
-      let a = (x * y) / PRECISION; // xy
-      let b = ((x * x) / PRECISION + (y * y) / PRECISION); // x^2 + y^2
-      (a * b) / PRECISION // x^3y + y^3x  
-    }
+    f(
+      ((x as u256) * PRECISION) / (decimals_x as u256),
+      ((y as u256) * PRECISION) / (decimals_y as u256)
+    )
+  }
 
   public fun calculate_amount_in(
     k: u256,
@@ -61,9 +52,9 @@ module amm::stable_pair_math {
     let amount_out = (coin_amount * PRECISION) / if (is_x) { decimals_x } else {decimals_y };
 
     let y = if (is_x) 
-                calculate_balance_out(reserve_x - amount_out, k, reserve_y) -  reserve_y
+                y(reserve_x - amount_out, k, reserve_y) -  reserve_y
               else 
-                 calculate_balance_out( reserve_y - amount_out, k, reserve_x) - reserve_x;
+                 y( reserve_y - amount_out, k, reserve_x) - reserve_x;
 
     ((y * if (is_x) { decimals_y } else { decimals_x }) / PRECISION as u64)   
   }   
@@ -96,9 +87,9 @@ module amm::stable_pair_math {
     let amount_in = (coin_amount * PRECISION) / if (is_x) { decimals_x } else {decimals_y };
 
     let y = if (is_x) 
-                reserve_y - calculate_balance_out(amount_in + reserve_x, k, reserve_y) 
+                reserve_y - y(amount_in + reserve_x, k, reserve_y) 
               else 
-                reserve_x - calculate_balance_out(amount_in + reserve_y, k, reserve_x);
+                reserve_x - y(amount_in + reserve_y, k, reserve_x);
 
     ((y * if (is_x) { decimals_y } else { decimals_x }) / PRECISION as u64)   
   } 
@@ -130,25 +121,19 @@ module amm::stable_pair_math {
   * @param xy Invariant before the swap
   * @param y Current balance of the Token Out
   */
-  fun calculate_balance_out(x0: u256, xy: u256, y: u256): u256 {
-      let i = 0;
-      // Here it is using the Newton's method to to make sure that y and and y_prev are equal   
-      while (i < 255) {
-        i = i + 1;
-        let y_prev = y;
-        let k = f(x0, y);
+  fun y(x0: u256, xy: u256, y: u256): u256 {
+    let y_prev = 0;
+    while (diff(y, y_prev) > 1) {
+      y_prev = y;
+      let k = f(x0, y);
         
-        if (k < xy) {
-          let dy = (((xy - k) * PRECISION) / d(x0, y)) + 1; // round up
-            y = y + dy;
-          } else {
-            y = y - ((k - xy) * PRECISION) / d(x0, y);
-          };
-
-        if (diff(y, y_prev) <= 1) break
-      };
-      y
-    }
+      y = if (k < xy)
+            y + ((((xy - k) * PRECISION) / d(x0, y)) + 1) // round up
+          else
+            y - ((k - xy) * PRECISION) / d(x0, y);
+    };
+    y
+  }
 
   /// Implements 3 * x0 * y^2 + x0^3 = 3 * x0 * (y * y / 1e8) / 1e8 + (x0 * x0 / 1e8 * x0) / 1e8
   public fun d(x0: u256, y: u256): u256 {
@@ -158,11 +143,10 @@ module amm::stable_pair_math {
   }
 
   /// Implements x0*y^3 + x0^3*y = x0*(y*y/1e18*y/1e18)/1e18+(x0*x0/1e18*x0/1e18)*y/1e18
-  public fun f(x0: u256, y: u256): u256 {
-    (x0 * ((((y * y) / PRECISION) * y) / PRECISION)) /
-            PRECISION +
-            (((((x0 * x0) / PRECISION) * x0) / PRECISION) * y) /
-            PRECISION
+  public fun f(x: u256, y: u256): u256 {
+    let a = (x * y) / PRECISION; // xy
+    let b = ((x * x) / PRECISION + (y * y) / PRECISION); // x^2 + y^2
+    (a * b) / PRECISION // x^3y + y^3x  
   }
 
 }

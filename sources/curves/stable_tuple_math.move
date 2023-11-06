@@ -35,7 +35,7 @@ module amm::stable_tuple_math {
     let d = s;
     let ann = amp * n_coins_u256;
   
-    while(1 >= diff(d, prev_d)) {
+    while(diff(d, prev_d) > 1) {
       let d_p = d;
       let index = 0;
 
@@ -68,7 +68,7 @@ module amm::stable_tuple_math {
 
     let index = 0;
 
-    while (index < n_coins) {
+    while (n_coins > index) {
       if (index == token_in_index) {
         s = s + new_balance_in;
         c = c * d / (new_balance_in * n_coins);
@@ -86,7 +86,7 @@ module amm::stable_tuple_math {
     let y = d;
     let prev_y = 0;
 
-    while(1 >= diff(y, prev_y)) {
+    while(diff(y, prev_y) > 1) {
       prev_y = y;
       y = (y * y + c) / (2 * y + b - d);
     };
@@ -132,7 +132,7 @@ module amm::stable_tuple_math {
     let y = _invariant;
     let prev_y = 0;
 
-    while (1 >= diff(y, prev_y)) {
+    while (diff(y, prev_y) > 1) {
       prev_y = y;
       y = (y * y + c) / (2 * y + b - _invariant);
     };

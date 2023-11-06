@@ -73,7 +73,7 @@ module amm::stable_pair_math_tests {
     let y = 2520572000001255 * 1_000_000_000;
 
     let r = stable_pair_math::f(x0, y);
-    assert_eq(r, 160149899619106589403934712464197978496548);
+    assert_eq(r, 160149899619106589403934712464197979435638);
 
     let r = stable_pair_math::f(0, 0);
     assert_eq(r, 0);
