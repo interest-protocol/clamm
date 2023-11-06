@@ -56,8 +56,6 @@ module amm::stable_tuple_simulation {
     invariant_(state.a, &state.xp)
   }
 
-
-
   public fun y(state: &State, i: u64, j: u64, x: u256): u256 {
     get_y(state.a, (i as u256), (j as u256), x, &state.xp)
   }
@@ -118,8 +116,11 @@ module amm::stable_tuple_simulation {
     dy
   } 
 
-  #[test_only]
   public fun init_for_testing(ctx: &mut TxContext) {
     init(ctx);
+  }
+
+  public fun view_state(state: &State): (vector<u256>, u256, u64, u256, u256) {
+    (state.xp, state.a, state.n, state.fee, state.tokens)
   }
 }

@@ -486,7 +486,7 @@ module amm::stable_tuple {
 
     let pool_id = object::id(pool);
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
-    
+
     let coin_state = load_mut_coin_state<CoinType>(&mut state.id);
 
     let balances = state.balances;
@@ -502,7 +502,7 @@ module amm::stable_tuple {
       (balance::supply_value(&state.lp_coin_supply) as u256),
     );
 
-    let amount_to_take = (((*current_coin_balance - initial_coin_balance) * coin_state.decimals / PRECISION) as u64);
+    let amount_to_take = (((initial_coin_balance - *current_coin_balance) * coin_state.decimals / PRECISION) as u64);
 
     assert!(amount_to_take >= min_amount, errors::slippage());
 
@@ -796,7 +796,18 @@ module amm::stable_tuple {
   }
 
   #[test_only]
-  public fun get_state<LpCoin>(pool: &Pool<StableTuple>): &State<LpCoin> {
-    load_state(core::borrow_uid(pool))
+  public fun view_state<LpCoin>(pool: &Pool<StableTuple>): (vector<u256>,u256, u256, u256, u256, u64, u256, u64, &StableFees) {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    (
+      state.balances, 
+      state.initial_a, 
+      state.future_a, 
+      state.initial_a, 
+      state.initial_a_time,
+      balance::supply_value(&state.lp_coin_supply),
+      state.lp_coin_decimals,
+      state.n_coins,
+      &state.fees
+    )
   }  
 }

@@ -1,12 +1,15 @@
 // * 3 Pool - DAI - USDC - USDT
 #[test_only]
 module amm::stable_tuple_tests {
+  use std::vector;
+
   use sui::clock::Clock;
   use sui::test_utils::{assert_eq};
-  use sui::coin::{burn_for_testing as burn};
+  use sui::coin::{burn_for_testing as burn, mint_for_testing};
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
   use suitears::math64::diff;
+  use suitears::math256::diff as u256_diff;
 
   use amm::dai::DAI;
   use amm::usdt::USDT;
@@ -26,6 +29,189 @@ module amm::stable_tuple_tests {
   const USDC_DECIMALS_SCALAR: u256 = 1000000; 
   const USDT_DECIMALS_SCALAR: u256 = 1000000000;
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+
+  // * We p
+  #[test]
+  fun virtual_price_always_up() {
+   let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    // Imbalanced set up
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let c = test::take_shared<Clock>(test); 
+
+      let virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+
+      {
+        let i = 0;
+        while (3 > i) {
+          
+          burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
+            &mut pool,
+            &c,
+            mint<DAI>(300, DAI_DECIMALS, ctx(test)),
+            0,
+            ctx(test)
+          ));
+          i = i + 1;
+        }
+      };
+
+      let virtual_price_2 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_2 > virtual_price, true);
+
+      {
+        let i = 0;
+        while (3 > i) {
+          
+          burn(stable_tuple::add_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+            &mut pool,
+            &c,
+            mint<DAI>(200, DAI_DECIMALS, ctx(test)),
+            mint<USDC>(300, USDC_DECIMALS, ctx(test)),
+            mint<USDT>(400, USDT_DECIMALS, ctx(test)),
+            0,
+            ctx(test)
+          ));
+          i = i + 1;
+        }        
+      };
+
+      let virtual_price_3 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_3 > virtual_price_2, true);
+
+      {
+        let i = 0;
+
+        let (_, _, _, _, _, supply,_, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+
+        while (3 > i) {
+          
+          let (a, b, c) = stable_tuple::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+            &mut pool,
+            mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
+            vector[0, 0 ,0],
+            ctx(test)
+          );
+          burn(a);
+          burn(b);
+          burn(c);
+          i = i + 1;
+        }        
+      }; 
+
+      let virtual_price_4 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_4 > virtual_price_3, true);     
+
+        {
+        let i = 0;
+        while (3 > i) {
+
+          let (_, _, _, _, _, supply,_, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+          
+          burn(stable_tuple::remove_one_coin_liquidity<DAI, LP_COIN>(
+            &mut pool,
+            &c,
+            mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
+            0,
+            ctx(test)
+          ));
+          i = i + 1;
+        }        
+      }; 
+
+      let virtual_price_5 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_5 >= virtual_price_4, true); 
+
+      test::return_shared(c);
+      test::return_shared(pool);            
+    };
+    test::end(scenario);      
+  }
+
+  // * Compare the balances after swap of the sim and the pool
+  #[test]
+  fun swaps() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    // Imbalanced set up
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let c = test::take_shared<Clock>(test); 
+      let sim_state = test::take_shared<SimState>(test);  
+
+      let virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+
+
+      burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(300, DAI_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      burn(stable_tuple::swap<USDC, USDT, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDC>(450, USDC_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      burn(stable_tuple::swap<USDT, DAI, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDT>(754, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      sim::swap(&mut sim_state, 0, 1, normalize_amount(300));
+      sim::swap(&mut sim_state, 1, 2, normalize_amount(450));
+      sim::swap(&mut sim_state, 2, 0, normalize_amount(754));
+
+
+      let new_virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+
+      let (pool_balances, _, _, _, _, _,_, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+      let (sim_balances, _, n_coins, _, _) = sim::view_state(&sim_state);
+
+      {
+        let i = 0;
+        while (n_coins > i) {
+          let pool_bal = *vector::borrow(&pool_balances, i);
+          let sim_bal = *vector::borrow(&sim_balances, i);
+
+          // Less than 1 USD loss
+          // Because in the contract we remove fees on 1e9 scalar
+          // In the sim the fees are calculated on a 1e18 scalar
+          let limit = PRECISION;
+          assert_eq(limit > u256_diff(pool_bal, sim_bal), true);
+          i = i + 1;
+        };
+      };
+
+      assert_eq(new_virtual_price > virtual_price, true);
+
+      test::return_shared(c);
+      test::return_shared(pool);
+      test::return_shared(sim_state);   
+    };
+    test::end(scenario);  
+  }
 
   // * We test that the pool does not break in every imbalanced scenarios
   #[test]
@@ -81,6 +267,7 @@ module amm::stable_tuple_tests {
     test::end(scenario);   
   }
 
+  // * We compare the pool curve with our Sim curve
   #[test]
   fun curve() {
     let scenario = scenario();

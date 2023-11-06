@@ -106,12 +106,12 @@ module amm::stable_tuple_math {
       amp,
       i,
       balances,
-      prev_invariant - ((lp_burn_amount * prev_invariant) / lp_supply_value)
+      prev_invariant - lp_burn_amount * prev_invariant / lp_supply_value
     )
   }
 
   public fun y_d(amp: u256, i: u256, balances: &vector<u256>, _invariant: u256): u256 {
-    let c = 0;
+    let c = _invariant;
     let s = 0;
     let n_coins = (vector::length(balances) as u256);
     let ann = amp * n_coins;
