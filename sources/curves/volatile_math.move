@@ -27,10 +27,10 @@ module amm::volatile_math {
 
     let len = vector::length(&x);
     let d = *vector::borrow(&x, 0); 
-    let i = 0;
+    let prev_d = 0;
 
-    while (i < 255) {
-      let prev_d = d;
+    while (diff(d, prev_d) > 1 || diff(d, prev_d) * PRECISION > d) {
+      prev_d = d;
       let temp = PRECISION;
 
       let j = 0;
@@ -39,12 +39,6 @@ module amm::volatile_math {
         j = j + 1;
       };
       d = d * (((len as u256) - 1) * PRECISION + temp) / ((len as u256) * PRECISION);
-
-      let diff = diff(d, prev_d);
-      
-      if (diff <= 1 || diff * PRECISION < d) return d;
-      
-      i = i + 1;
     };
     abort errors::failed_to_converge()
   }
@@ -85,11 +79,10 @@ module amm::volatile_math {
 
     let d = (n_coins as u256) * geometric_mean(&x, false);
     let s = sum(&x);
+    let d_prev = 0;
 
-    let i = 0;
-    while (i < 255) {
-      i = i + 1;
-      let d_prev = d;
+    while (diff(d, d_prev) * 100000000000000 > max(10000000000000000, d)) {
+      d_prev = d;
       let k0 = PRECISION;
 
       let j = 0;
@@ -105,26 +98,22 @@ module amm::volatile_math {
       let d_plus = d * (neg_fprime  + s) / neg_fprime;
       let d_minus = d * d / neg_fprime;
       
-      if (PRECISION > k0) {
-        d_minus = d_minus + d * (mul1 / neg_fprime) / PRECISION * (PRECISION - k0) / k0;
-      } else {
-        d_minus = d_minus - d * (mul1 / neg_fprime) / PRECISION * (k0 - PRECISION) / k0;
-      };
+      d_minus = if (PRECISION > k0)
+        d_minus + d * (mul1 / neg_fprime) / PRECISION * (PRECISION - k0) / k0
+      else
+        d_minus - d * (mul1 / neg_fprime) / PRECISION * (k0 - PRECISION) / k0;
 
-      d = if (d_plus > d_minus) { d_plus - d_minus } else { (d_minus - d_plus) / 2 };
-      let diff = diff(d, d_prev);
-
-      if (diff * 100000000000000 < max(10000000000000000, d)) {
-        let j = 0;
-        while (j < n_coins) {
-          let frac = *vector::borrow(&x, j) * PRECISION / d;
-          assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
-          j = j + 1;
-        };
-        return d
-      };
+      d = if (d_plus > d_minus) d_plus - d_minus else (d_minus - d_plus) / 2;
     };
-    abort errors::failed_to_converge()
+    
+    let j = 0;
+    while (j < n_coins) {
+      let frac = *vector::borrow(&x, j) * PRECISION / d;
+      assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
+      j = j + 1;
+    };
+
+    d
   }
 
   public fun calculate_balance(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
@@ -165,8 +154,9 @@ module amm::volatile_math {
       j = j + 1;
     };
 
-    j = 0;
-    while (j < 255) {
+    let y_prev = 0;
+
+    while(diff(y, y_prev) > max(converge_limit, y / 100000000000000)) {
       let y_prev = y;
       let k0 = k0_i * y * (n_coins as u256) / d;
       let s = s_i + y;
@@ -185,17 +175,13 @@ module amm::volatile_math {
       let y_plus = (yfprime + PRECISION * d) / fprime + y_minus * PRECISION / k0;
       y_minus = y_minus + PRECISION * s / fprime;
 
-      if (y_plus < y_minus) { y = y_prev / 2; } else { y = y_plus - y_minus; };
-      
-      let diff = diff(y, y_prev);
-
-      if (diff < max(converge_limit, y / 100000000000000)) {
-        let frac = y * PRECISION / d;
-        assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
-        return y
-      };
+      y = if (y_plus < y_minus) y_prev / 2 else y_plus - y_minus;
     };
-    abort errors::failed_to_converge()
+    
+    let frac = y * PRECISION / d;
+    assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
+
+    y
   }
 
   public fun half_pow(power: u256, precision: u256): u256 {
@@ -239,16 +225,11 @@ module amm::volatile_math {
     let z = (x + PRECISION) / 2;
     let y = x;
 
-    let i = 0;
-    while (256 > i) {
-      if (z == y) return y;
-
+    while (z != y) {
       y = z;
       z = (x * PRECISION / z + z) / 2;
-
-      i = i + 1;
     };
 
-     abort errors::failed_to_converge()
+    y
   }
 }
