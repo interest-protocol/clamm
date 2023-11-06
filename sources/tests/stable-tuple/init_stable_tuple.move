@@ -18,7 +18,7 @@ module amm::init_stable_tuple {
   const USDC_DECIMALS: u8 = 6; 
   const USDT_DECIMALS: u8 = 9;
 
-  public fun setup_3pool(test: &mut Scenario) {
+  public fun setup_3pool(test: &mut Scenario, dai_amount: u64, usdc_amount: u64, usdt_amount: u64) {
     let (alice, _) = people();
 
     setup_dependencies(test);
@@ -40,9 +40,9 @@ module amm::init_stable_tuple {
       burn(stable_tuple::new_3_pool(
         &c,
         initial_a,
-        mint<DAI>(100, DAI_DECIMALS, ctx(test)),
-        mint<USDC>(110, USDC_DECIMALS, ctx(test)),
-        mint<USDT>(121, USDT_DECIMALS, ctx(test)),
+        mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
+        mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
+        mint<USDT>(usdt_amount, USDT_DECIMALS, ctx(test)),
         &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
         ctx(test)
@@ -52,7 +52,7 @@ module amm::init_stable_tuple {
         &mut sim_state, 
         initial_a, 
         3, 
-        vector[normalize_amount(100), normalize_amount(110), normalize_amount(121)],
+        vector[normalize_amount((dai_amount as u256)), normalize_amount((usdc_amount as u256)), normalize_amount((usdt_amount as u256))],
         1
       );
 

@@ -1,6 +1,6 @@
 // * 3 Pool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_curve_test {
+module amm::stable_tuple_tests {
   use sui::clock::Clock;
   use sui::test_utils::{assert_eq};
   use sui::coin::{burn_for_testing as burn};
@@ -27,14 +27,68 @@ module amm::stable_tuple_curve_test {
   const USDT_DECIMALS_SCALAR: u256 = 1000000000;
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
+  // * We test that the pool does not break in every imbalanced scenarios
   #[test]
-  public fun curve() {
+  fun imbalanced_swaps() {
     let scenario = scenario();
     let (alice, _) = people();
 
     let test = &mut scenario;
 
-    setup_3pool(test);
+    // Imbalanced set up
+    setup_3pool(test, 10000, 10, 10);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let c = test::take_shared<Clock>(test);
+
+      {
+        let i = 0;
+        while (3 > i) {
+          assert_eq(
+            burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
+              &mut pool,
+               &c,
+               mint<DAI>(25, DAI_DECIMALS, ctx(test)),
+               0,
+               ctx(test))) != 0,
+               true
+          );
+          i = i + 1;
+        }
+      };
+
+      {
+        let i = 0;
+        while (3 > i) {
+          assert_eq(
+              burn(stable_tuple::swap<USDT, DAI, LP_COIN>(
+                &mut pool,
+                &c,
+                mint<USDT>(30, USDT_DECIMALS, ctx(test)),
+                0,
+                ctx(test))) != 0,
+               true
+          );
+          i = i + 1;
+        }
+      };
+
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario);   
+  }
+
+  #[test]
+  fun curve() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_3pool(test, 100, 110, 121);
 
     next_tx(test, alice);
     {
