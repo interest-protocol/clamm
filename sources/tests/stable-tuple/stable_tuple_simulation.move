@@ -1,9 +1,7 @@
 #[test_only]
 module amm::stable_tuple_simulation {
   use std::vector;
-  use std::debug;
-
-  use suitears::math256::{sum, diff};
+  
   use suitears::fixed_point_wad::{wad_mul_down as fmul};
 
   use sui::object::{Self, UID};
@@ -17,7 +15,6 @@ module amm::stable_tuple_simulation {
   };
 
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
-  const A_PRECISION: u256 = 100;
 
   struct State has key {
     id: UID,
@@ -75,10 +72,9 @@ module amm::stable_tuple_simulation {
 
   public fun swap(state: &mut State, i: u64, j: u64, dx: u256): u256 {
     let dx = dx - fmul(dx, state.fee);
-    let _xp = state.xp;
-    let x = *vector::borrow(&_xp, i) + dx;
+    let x = *vector::borrow(&state.xp, i) + dx;
     let y = y(state, i, j, x);
-    let dy = *vector::borrow(&_xp, j) - y;
+    let dy = *vector::borrow(&state.xp, j) - y;
     let fee = fmul(dy, state.fee);
     assert!(dy != 0, 0);
 

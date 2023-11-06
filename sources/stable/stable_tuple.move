@@ -108,9 +108,9 @@ module amm::stable_tuple {
     let amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
     let amount_out = ((amount_out * coin_out_state.decimals / PRECISION) as u64);
 
-    let fee_out = stable_fees::calculate_fee_in_amount(&state.fees, amount_out);
+    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
 
-    (amount - fee_out, fee_in, fee_out)
+    (amount_out - fee_out, fee_in, fee_out)
   }
 
 
@@ -794,4 +794,9 @@ module amm::stable_tuple {
   fun load_mut_state<LpCoin>(id: &mut UID): &mut State<LpCoin> {
     dof::borrow_mut(id, StateKey {})
   }
+
+  #[test_only]
+  public fun get_state<LpCoin>(pool: &Pool<StableTuple>): &State<LpCoin> {
+    load_state(core::borrow_uid(pool))
+  }  
 }

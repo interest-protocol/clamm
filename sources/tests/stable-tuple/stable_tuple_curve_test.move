@@ -6,6 +6,8 @@ module amm::stable_tuple_curve_test {
   use sui::coin::{burn_for_testing as burn};
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
+  use suitears::math64::diff;
+
   use amm::dai::DAI;
   use amm::usdt::USDT;
   use amm::usdc::USDC;
@@ -69,11 +71,13 @@ module amm::stable_tuple_curve_test {
       sim::swap(&mut sim_state, 2, 0, normalize_amount(30));
 
       let (pool_dy, _, _) = stable_tuple::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
+
       let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
       let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
 
-
-      // assert_eq(sim_dy, pool_dy);
+      // Difference of 1 cent
+      // happens because of fees rounding
+      assert_eq( (USDC_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
 
       test::return_shared(c);
       test::return_shared(pool);

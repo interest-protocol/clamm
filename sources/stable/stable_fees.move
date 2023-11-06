@@ -62,7 +62,7 @@ module amm::stable_fees {
   public fun calculate_admin_amount(fees: &StableFees, amount: u64): u64 {
     calculate_fee_amount(amount, fees.admin_fee_percent)
   }
-
+  
   fun calculate_fee_amount(x: u64, percent: u256): u64 {
     (wad_mul_up((x as u256), percent) as u64)
   }
