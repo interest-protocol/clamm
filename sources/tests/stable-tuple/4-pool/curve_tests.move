@@ -1,10 +1,10 @@
-// * 5 Pool - DAI - USDC - USDT - FRAX - TRUE_USD
+// * 4 Pool - DAI - USDC - USDT - FRAX
 #[test_only]
-module amm::stable_tuple_5pool_curve_tests {
+module amm::stable_tuple_4pool_curve_tests {
   use std::vector;
 
   use sui::clock::Clock;
-  use sui::test_utils::{assert_eq};
+  use sui::test_utils::assert_eq;
   use sui::coin::{burn_for_testing as burn, mint_for_testing};
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
@@ -17,10 +17,9 @@ module amm::stable_tuple_5pool_curve_tests {
   use amm::frax::FRAX;
   use amm::stable_tuple;
   use amm::lp_coin::LP_COIN;
-  use amm::true_usd::TRUE_USD;
   use amm::curves::StableTuple;
   use amm::interest_pool::Pool;
-  use amm::init_stable_tuple::setup_5pool;
+  use amm::init_stable_tuple::setup_4pool;
   use amm::stable_tuple_simulation::{Self as sim, State as SimState};
   use amm::test_utils::{people, scenario, mint, normalize_amount, add_decimals};
 
@@ -28,10 +27,9 @@ module amm::stable_tuple_5pool_curve_tests {
   const USDC_DECIMALS: u8 = 6; 
   const USDT_DECIMALS: u8 = 9;
   const FRAX_DECIMALS: u8 = 9;
-  const TRUE_USD_DECIMALS: u8 = 9;
   const USDC_DECIMALS_SCALAR: u256 = 1000000; 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
-  const N_COINS: u64 = 5;
+  const N_COINS: u64 = 4;
 
   // * We p
   #[test]
@@ -41,8 +39,7 @@ module amm::stable_tuple_5pool_curve_tests {
 
     let test = &mut scenario;
 
-    // Imbalanced set up
-    setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
+    setup_4pool(test, 1000, 1000, 1000, 1000);
 
     next_tx(test, alice);
     {
@@ -73,14 +70,13 @@ module amm::stable_tuple_5pool_curve_tests {
         let i = 0;
         while (N_COINS > i) {
           
-          burn(stable_tuple::add_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+          burn(stable_tuple::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
             &mut pool,
             &c,
             mint<DAI>(200, DAI_DECIMALS, ctx(test)),
             mint<USDC>(300, USDC_DECIMALS, ctx(test)),
             mint<USDT>(400, USDT_DECIMALS, ctx(test)),
             mint<FRAX>(500, FRAX_DECIMALS, ctx(test)),
-            mint<TRUE_USD>(500, TRUE_USD_DECIMALS, ctx(test)),
             0,
             ctx(test)
           ));
@@ -98,17 +94,16 @@ module amm::stable_tuple_5pool_curve_tests {
 
         while (N_COINS > i) {
           
-          let (a, b, c, d, e) = stable_tuple::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+          let (a, b, c, d) = stable_tuple::remove_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
             &mut pool,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
-            vector[0, 0 ,0, 0, 0],
+            vector[0, 0 ,0, 0],
             ctx(test)
           );
           burn(a);
           burn(b);
           burn(c);
           burn(d);
-          burn(e);
           i = i + 1;
         }        
       }; 
@@ -150,7 +145,7 @@ module amm::stable_tuple_5pool_curve_tests {
 
     let test = &mut scenario;
 
-    setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
+    setup_4pool(test, 1000, 1000, 1000, 1000);
 
     next_tx(test, alice);
     {
@@ -185,7 +180,7 @@ module amm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(stable_tuple::swap<FRAX, TRUE_USD, LP_COIN>(
+      burn(stable_tuple::swap<FRAX, DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<FRAX>(666, FRAX_DECIMALS, ctx(test)),
@@ -193,19 +188,10 @@ module amm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(stable_tuple::swap<TRUE_USD, DAI, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<TRUE_USD>(758, FRAX_DECIMALS, ctx(test)),
-        0,
-        ctx(test)
-      ));
-
       sim::swap(&mut sim_state, 0, 1, normalize_amount(300));
       sim::swap(&mut sim_state, 1, 2, normalize_amount(450));
       sim::swap(&mut sim_state, 2, 3, normalize_amount(754));
-      sim::swap(&mut sim_state, 3, 4, normalize_amount(666));
-      sim::swap(&mut sim_state, 4, 0, normalize_amount(758));
+      sim::swap(&mut sim_state, 3, 0, normalize_amount(666));
 
       let new_virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
 
@@ -245,7 +231,7 @@ module amm::stable_tuple_5pool_curve_tests {
     let test = &mut scenario;
 
     // Imbalanced set up
-    setup_5pool(test, 10000, 10, 10, 5, 10);
+    setup_4pool(test, 10000, 10, 10, 5);
 
     next_tx(test, alice);
     {
@@ -259,7 +245,7 @@ module amm::stable_tuple_5pool_curve_tests {
               burn(stable_tuple::swap<FRAX, DAI, LP_COIN>(
                 &mut pool,
                 &c,
-                mint<FRAX>(30, USDT_DECIMALS, ctx(test)),
+                mint<FRAX>(30, FRAX_DECIMALS, ctx(test)),
                 0,
                 ctx(test))) != 0,
                true
@@ -298,7 +284,7 @@ module amm::stable_tuple_5pool_curve_tests {
 
     let test = &mut scenario;
 
-    setup_5pool(test, 100, 110, 121, 133, 146);
+    setup_4pool(test, 100, 110, 121, 133);
 
     next_tx(test, alice);
     {
@@ -330,27 +316,18 @@ module amm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(stable_tuple::swap<FRAX, TRUE_USD, LP_COIN>(
+      burn(stable_tuple::swap<FRAX, DAI, LP_COIN>(
         &mut pool,
         &c,
-        mint<FRAX>(35, USDT_DECIMALS, ctx(test)),
+        mint<FRAX>(35, FRAX_DECIMALS, ctx(test)),
         0,
         ctx(test)
       ));
 
-      burn(stable_tuple::swap<TRUE_USD, DAI, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<TRUE_USD>(40, USDT_DECIMALS, ctx(test)),
-        0,
-        ctx(test)
-      ));      
-
       sim::swap(&mut sim_state, 0, 1, normalize_amount(25));
       sim::swap(&mut sim_state, 1, 2, normalize_amount(30));
       sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
-      sim::swap(&mut sim_state, 3, 4, normalize_amount(35));
-      sim::swap(&mut sim_state, 4, 0, normalize_amount(35));
+      sim::swap(&mut sim_state, 3, 0, normalize_amount(35));
 
       let (pool_dy, _, _) = stable_tuple::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
 
