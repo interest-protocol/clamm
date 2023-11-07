@@ -13,7 +13,9 @@ module amm::test_utils {
   use amm::amm_admin as admin;
   use amm::usdt::{Self, USDT};
   use amm::usdc::{Self, USDC};
+  use amm::frax::{Self, FRAX};
   use amm::lp_coin::{Self, LP_COIN};
+  use amm::true_usd::{Self, TRUE_USD};
 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
@@ -44,6 +46,8 @@ module amm::test_utils {
       lp_coin::init_for_testing(ctx(test));
       admin::init_for_testing(ctx(test));
       coin_decimals::init_for_testing(ctx(test));
+      frax::init_for_testing(ctx(test));
+      true_usd::init_for_testing(ctx(test));
     };    
 
     next_tx(test, alice);
@@ -52,18 +56,24 @@ module amm::test_utils {
       let usdt_metadata = test::take_shared<CoinMetadata<USDT>>(test);
       let usdc_metadata = test::take_shared<CoinMetadata<USDC>>(test);
       let dai_metadata = test::take_shared<CoinMetadata<DAI>>(test);
+      let frax_metadata = test::take_shared<CoinMetadata<FRAX>>(test);
       let lp_metadata = test::take_shared<CoinMetadata<LP_COIN>>(test);
+      let true_usd_metadata = test::take_shared<CoinMetadata<TRUE_USD>>(test);
 
       coin_decimals::register_coin<USDT>(&mut coin_decimals_storage, &usdt_metadata);
       coin_decimals::register_coin<USDC>(&mut coin_decimals_storage, &usdc_metadata);
       coin_decimals::register_coin<DAI>(&mut coin_decimals_storage, &dai_metadata);
       coin_decimals::register_coin<LP_COIN>(&mut coin_decimals_storage, &lp_metadata);
+      coin_decimals::register_coin<FRAX>(&mut coin_decimals_storage, &frax_metadata);
+      coin_decimals::register_coin<TRUE_USD>(&mut coin_decimals_storage, &true_usd_metadata);
 
       test::return_shared(coin_decimals_storage);
       test::return_shared(lp_metadata);
       test::return_shared(dai_metadata);
       test::return_shared(usdc_metadata);
       test::return_shared(usdt_metadata);
+      test::return_shared(frax_metadata);
+      test::return_shared(true_usd_metadata);
     };
 
     next_tx(test, alice);

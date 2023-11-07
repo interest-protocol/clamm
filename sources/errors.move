@@ -119,4 +119,8 @@ module amm::errors {
   public fun must_supply_one_coin(): u64 {
     30
   }
+
+  public fun cannot_swap_same_coin(): u64 {
+    31
+  }
 }

@@ -9,7 +9,6 @@ module amm::interest_pool {
   use sui::vec_set::{Self, VecSet};
 
   use amm::curves;
-  use amm::errors;
 
   friend amm::volatile;
   friend amm::stable_pair;
@@ -22,18 +21,6 @@ module amm::interest_pool {
 
   public fun view_coins<Curve>(pool: &Pool<Curve>): vector<TypeName> {
     *vec_set::keys(&pool.coins)
-  }
-
-  public fun assert_is_3_pool<Curve>(pool: &Pool<Curve>) {
-    assert!(vec_set::size(&pool.coins) == 3, errors::must_be_3_pool());
-  }
-
-  public fun assert_is_4_pool<Curve>(pool: &Pool<Curve>) {
-    assert!(vec_set::size(&pool.coins) == 4, errors::must_be_4_pool());
-  }
-
-  public fun assert_is_5_pool<Curve>(pool: &Pool<Curve>) {
-    assert!(vec_set::size(&pool.coins) == 5, errors::must_be_5_pool());
   }
 
   public(friend) fun borrow_mut_uid<Curve>(pool: &mut Pool<Curve>): &mut UID {

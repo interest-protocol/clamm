@@ -18,7 +18,11 @@ module amm::stable_tuple {
   use amm::amm_admin::Admin;
   use amm::curves::StableTuple;
   use amm::pool_events as events;
-  use amm::utils::{make_coins_from_vector, empty_vector};
+  use amm::utils::{
+    empty_vector,
+    are_coins_ordered,
+    make_coins_from_vector, 
+  };
   use amm::stable_fees::{
     Self, 
     StableFees,
@@ -267,6 +271,8 @@ module amm::stable_tuple {
     min_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
+    assert!(get<CoinIn>() != get<CoinOut>(), errors::cannot_swap_same_coin());
+    
     let coin_in_value = coin::value(&coin_in);
     assert!(coin_in_value != 0, errors::cannot_swap_zero_value());
 
@@ -359,7 +365,7 @@ module amm::stable_tuple {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    core::assert_is_3_pool(pool);
+    assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
 
     events::emit_add_liquidity_3_pool<StableTuple, CoinA, CoinB, CoinC, LpCoin>(
       object::id(pool), 
@@ -399,7 +405,12 @@ module amm::stable_tuple {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    core::assert_is_4_pool(pool);
+    assert!(
+      are_coins_ordered(
+        pool, 
+        vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
+      errors::coins_must_be_in_order()
+    );
 
     events::emit_add_liquidity_4_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, LpCoin>(
       object::id(pool), 
@@ -441,7 +452,12 @@ module amm::stable_tuple {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    core::assert_is_5_pool(pool);
+    assert!(
+      are_coins_ordered(
+        pool, 
+        vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>(), get<CoinE>()]), 
+      errors::coins_must_be_in_order()
+    );
 
     events::emit_add_liquidity_5_pool<StableTuple, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
       object::id(pool), 
@@ -519,6 +535,13 @@ module amm::stable_tuple {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
+    assert!(
+      are_coins_ordered(
+        pool, 
+        vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), 
+      errors::coins_must_be_in_order()
+    );
+
     let lp_coin_value = coin::value(&lp_coin);
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
@@ -549,6 +572,13 @@ module amm::stable_tuple {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
+    assert!(
+      are_coins_ordered(
+        pool, 
+        vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
+      errors::coins_must_be_in_order()
+    );
+
     let lp_coin_value = coin::value(&lp_coin);
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
@@ -581,6 +611,13 @@ module amm::stable_tuple {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
+    assert!(
+      are_coins_ordered(
+        pool, 
+        vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>(), get<CoinE>()]), 
+      errors::coins_must_be_in_order()
+    );
+
     let lp_coin_value = coin::value(&lp_coin);
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 

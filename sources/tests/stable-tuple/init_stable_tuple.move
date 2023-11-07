@@ -10,9 +10,9 @@ module amm::init_stable_tuple {
   use amm::dai::DAI;
   use amm::usdt::USDT;
   use amm::usdc::USDC;
+  use amm::frax::FRAX;
   use amm::lp_coin::LP_COIN;
-  use amm::frax::{Self, FRAX};
-  use amm::true_usd::{Self, TRUE_USD};
+  use amm::true_usd::TRUE_USD;
   use amm::stable_tuple_simulation::{Self as sim, State as SimState};
   use amm::test_utils::{people, mint, normalize_amount, setup_dependencies};
 
@@ -82,7 +82,6 @@ module amm::init_stable_tuple {
     next_tx(test, alice);
     {
       sim::init_for_testing(ctx(test));
-      frax::init_for_testing(ctx(test));
     };
 
     next_tx(test, alice);
@@ -140,8 +139,6 @@ module amm::init_stable_tuple {
     next_tx(test, alice);
     {
       sim::init_for_testing(ctx(test));
-      frax::init_for_testing(ctx(test));
-      true_usd::init_for_testing(ctx(test));
     };
 
     next_tx(test, alice);

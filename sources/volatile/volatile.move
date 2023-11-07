@@ -421,8 +421,9 @@ module amm::volatile {
     mint_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
+    assert!(get<CoinIn>() != get<CoinOut>(), errors::cannot_swap_same_coin());
+    
     let coin_in_value = coin::value(&coin_in);
-
     assert!(coin_in_value != 0, errors::no_zero_coin());
     let pool_id = object::id(pool);
     let (state, coin_states) = load_mut<LpCoin>(pool);
@@ -585,7 +586,6 @@ module amm::volatile {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>) {
-
     assert!(coin::value(&lp_coin) != 0, errors::no_zero_coin());
 
     let pool_id = object::id(pool);
