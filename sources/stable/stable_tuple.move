@@ -694,7 +694,7 @@ module amm::stable_tuple {
   ) {
     let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
     stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
-    stable_fees::update_admin_fee_percent(&mut state.fees, fee_out_percent);  
+    stable_fees::update_fee_out_percent(&mut state.fees, fee_out_percent);  
     stable_fees::update_admin_fee_percent(&mut state.fees, admin_fee_percent);
     
     let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
@@ -830,6 +830,12 @@ module amm::stable_tuple {
 
   fun load_mut_state<LpCoin>(id: &mut UID): &mut State<LpCoin> {
     dof::borrow_mut(id, StateKey {})
+  }
+
+  #[test_only]
+  public fun view_admin_balance<CoinType, LpCoin>(pool: &Pool<StableTuple>): u64 {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    balance::value(df::borrow<AdminCoinBalanceKey, Balance<CoinType>>(&state.id, AdminCoinBalanceKey  { type: get<CoinType>() }))
   }
 
   #[test_only]
