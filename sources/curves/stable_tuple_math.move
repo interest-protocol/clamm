@@ -20,8 +20,10 @@ module amm::stable_tuple_math {
 
     if (current_timestamp >= t1) return a1;
 
-
-    if (a1 > a0) { a0 + (a1 - a0) } else { a0 - (a0 - a1) }  * (current_timestamp - t0) / (t1 - t0)
+    if (a1 > a0) 
+      a0 + (a1 - a0) * (current_timestamp - t0) / (t1 - t0) 
+    else 
+      a0 - (a0 - a1) * (current_timestamp - t0) / (t1 - t0)
   }
 
   public fun invariant_(amp: u256, balances: &vector<u256>): u256 {

@@ -71,6 +71,14 @@ module amm::stable_tuple {
   }
 
   // * View Functions
+
+  public fun a<LpCoin>(
+    pool: &Pool<StableTuple>,
+    c: &Clock,
+  ): u256 {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c)
+  }
   
   // @dev Price is returned in 1e18
   public fun get_lp_coin_price_in_underlying<LpCoin>(
