@@ -108,10 +108,6 @@ module amm::errors {
     28
   }
 
-  public fun future_ramp_time_is_too_short(): u64 {
-    28
-  }
-
   public fun value_out_of_range(): u64 {
     29
   }
@@ -122,5 +118,9 @@ module amm::errors {
 
   public fun cannot_swap_same_coin(): u64 {
     31
+  }
+
+  public fun future_ramp_time_is_too_short(): u64 {
+    32
   }
 }

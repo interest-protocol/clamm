@@ -134,8 +134,183 @@ module amm::stable_tuple_ramp_tests {
       test::return_to_sender(test, admin_cap);
       test::return_shared(pool);
     };
-    
-
     test::end(scenario);      
   }
+
+  #[test]
+  #[expected_failure(abort_code = 28)]
+  fun ramp_abort_too_early() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      let c = test::take_shared<Clock>(test);      
+
+      // initial_a_time is at Zero - We need to wait more than 1 day
+
+      // We only wait one day - so will throw
+      clock::set_for_testing(&mut c, MIN_RAMP_TIME);
+
+      stable_tuple::ramp<LP_COIN>(&admin_cap, &mut pool, &c, 1, 1);
+
+      test::return_shared(c);
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  }  
+
+
+  #[test]
+  #[expected_failure(abort_code = 32)]
+  fun ramp_future_time_too_short() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      let c = test::take_shared<Clock>(test);      
+
+      clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
+
+      // Ramp time is too short
+      stable_tuple::ramp<LP_COIN>(&admin_cap, &mut pool, &c, 1, ((MIN_RAMP_TIME * 2) as u256) );
+
+      test::return_shared(c);
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  } 
+
+  #[test]
+  #[expected_failure(abort_code = 4)]
+  fun ramp_abort_zero_a() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      let c = test::take_shared<Clock>(test);      
+
+      clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
+
+      // Ramp time is too short
+      stable_tuple::ramp<LP_COIN>(&admin_cap, &mut pool, &c, 0, ((MIN_RAMP_TIME * 2 + 1) as u256) );
+
+      test::return_shared(c);
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  } 
+
+  #[test]
+  #[expected_failure(abort_code = 4)]
+  fun ramp_abort_a_too_high() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      let c = test::take_shared<Clock>(test);      
+
+      clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
+
+      // Ramp time is too short
+      stable_tuple::ramp<LP_COIN>(&admin_cap, &mut pool, &c, MAX_A, ((MIN_RAMP_TIME * 2 + 1) as u256) );
+
+      test::return_shared(c);
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  } 
+
+  #[test]
+  #[expected_failure(abort_code = 4)]
+  fun ramp_up_too_high() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      let c = test::take_shared<Clock>(test);      
+
+      clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
+
+      // Ramp Up is too high
+      stable_tuple::ramp<LP_COIN>(&admin_cap, &mut pool, &c, 360 * MAX_A_CHANGE + 1, ((MIN_RAMP_TIME * 2 + 1) as u256) );
+
+      test::return_shared(c);
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  } 
+
+  #[test]
+  #[expected_failure(abort_code = 4)]
+  fun ramp_down_too_low() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let admin_cap = test::take_from_sender<Admin>(test);
+      let c = test::take_shared<Clock>(test);      
+
+      clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
+
+      // Ramp down is too low
+      stable_tuple::ramp<LP_COIN>(&admin_cap, &mut pool, &c, 360 / (MAX_A_CHANGE + 1), ((MIN_RAMP_TIME * 2 + 1) as u256) );
+
+      test::return_shared(c);
+      test::return_to_sender(test, admin_cap);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  } 
 }
