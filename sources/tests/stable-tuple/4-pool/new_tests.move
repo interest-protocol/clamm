@@ -7,6 +7,10 @@ module amm::stable_tuple_4pool_new_tests {
   use sui::test_scenario::{Self as test, next_tx};
 
   use amm::stable_tuple;
+  use amm::dai::DAI;
+  use amm::usdt::USDT;
+  use amm::usdc::USDC;
+  use amm::frax::FRAX;
   use amm::lp_coin::LP_COIN;
   use amm::curves::StableTuple;
   use amm::interest_pool::Pool;
@@ -14,6 +18,10 @@ module amm::stable_tuple_4pool_new_tests {
   use amm::test_utils::{people, scenario, normalize_amount};
 
   const INITIAL_A: u256 = 360;
+  const DAI_DECIMALS_SCALAR: u64 = 1000000000;
+  const FRAX_DECIMALS_SCALAR: u64 = 1000000000;
+  const USDC_DECIMALS_SCALAR: u64 = 1000000; 
+  const USDT_DECIMALS_SCALAR: u64 = 1000000000;
 
   #[test]
   fun sets_initial_state_correctly() {
@@ -48,6 +56,27 @@ module amm::stable_tuple_4pool_new_tests {
           i = i + 1;
         };
       };
+
+      let (_, index, balance) = stable_tuple::view_coin_state<DAI, LP_COIN>(&pool);
+
+      assert_eq(index, 0);
+      assert_eq(balance, 100 * DAI_DECIMALS_SCALAR);
+
+      let (_, index, balance) = stable_tuple::view_coin_state<USDC, LP_COIN>(&pool);
+
+      assert_eq(index, 1);
+      assert_eq(balance, 2000 * USDC_DECIMALS_SCALAR);
+
+      let (_, index, balance) = stable_tuple::view_coin_state<USDT, LP_COIN>(&pool);
+
+      assert_eq(index, 2);
+      assert_eq(balance, 30000 * USDT_DECIMALS_SCALAR);
+
+
+      let (_, index, balance) = stable_tuple::view_coin_state<FRAX, LP_COIN>(&pool);
+
+      assert_eq(index, 3);
+      assert_eq(balance, 45000 * FRAX_DECIMALS_SCALAR);    
 
       assert_eq(initial_a, INITIAL_A);
       assert_eq(future_a, INITIAL_A);

@@ -841,6 +841,13 @@ module amm::stable_tuple {
   }
 
   #[test_only]
+  public fun view_coin_state<CoinType, LpCoin>(pool: &Pool<StableTuple>): (u256, u64, u64) {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let coin_state = load_coin_state<CoinType>(&state.id);
+    (coin_state.decimals, coin_state.index, balance::value(&coin_state.balance))
+  }
+
+  #[test_only]
   public fun view_admin_balance<CoinType, LpCoin>(pool: &Pool<StableTuple>): u64 {
     let state = load_state<LpCoin>(core::borrow_uid(pool));
     balance::value(df::borrow<AdminCoinBalanceKey, Balance<CoinType>>(&state.id, AdminCoinBalanceKey  { type: get<CoinType>() }))
