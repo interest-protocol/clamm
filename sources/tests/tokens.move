@@ -92,6 +92,68 @@ module amm::usdt {
 }
 
 #[test_only]
+module amm::true_usd {
+  use std::option;
+
+  use sui::transfer;
+  use sui::coin;
+  use sui::tx_context::{Self, TxContext};
+
+  struct TRUE_USD has drop {}
+
+  fun init(witness: TRUE_USD, ctx: &mut TxContext) {
+      let (treasury_cap, metadata) = coin::create_currency<TRUE_USD>(
+            witness, 
+            9, 
+            b"TRUE_USD", 
+            b"TRUE_USD Coin", 
+            b"",
+            option::none(), 
+            ctx
+        );
+
+      transfer::public_transfer(treasury_cap, tx_context::sender(ctx));
+      transfer::public_share_object(metadata);
+  }
+
+  #[test_only]
+  public fun init_for_testing(ctx: &mut TxContext) {
+    init(TRUE_USD {}, ctx);
+  }
+}
+
+#[test_only]
+module amm::frax {
+  use std::option;
+
+  use sui::transfer;
+  use sui::coin;
+  use sui::tx_context::{Self, TxContext};
+
+  struct FRAX has drop {}
+
+  fun init(witness: FRAX, ctx: &mut TxContext) {
+      let (treasury_cap, metadata) = coin::create_currency<FRAX>(
+            witness, 
+            9, 
+            b"FRAX", 
+            b"FRAX Coin", 
+            b"",
+            option::none(), 
+            ctx
+        );
+
+      transfer::public_transfer(treasury_cap, tx_context::sender(ctx));
+      transfer::public_share_object(metadata);
+  }
+
+  #[test_only]
+  public fun init_for_testing(ctx: &mut TxContext) {
+    init(FRAX {}, ctx);
+  }
+}
+
+#[test_only]
 module amm::eth {
   use std::option;
 

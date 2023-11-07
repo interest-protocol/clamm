@@ -1,6 +1,6 @@
 // * 3 Pool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_tests {
+module amm::stable_tuple_3pool_curve_tests {
   use std::vector;
 
   use sui::clock::Clock;
@@ -25,9 +25,7 @@ module amm::stable_tuple_tests {
   const DAI_DECIMALS: u8 = 9;
   const USDC_DECIMALS: u8 = 6; 
   const USDT_DECIMALS: u8 = 9;
-  const DAI_DECIMALS_SCALAR: u256 = 1000000000;
   const USDC_DECIMALS_SCALAR: u256 = 1000000; 
-  const USDT_DECIMALS_SCALAR: u256 = 1000000000;
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
   // * We p
