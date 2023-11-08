@@ -3,9 +3,9 @@
 module amm::stable_tuple_remove_one_coin_liquidity_tests { 
   use sui::clock::Clock;
   use sui::test_utils::assert_eq;
-  use sui::coin::{burn_for_testing as burn, mint_for_testing as mint};
   use sui::test_scenario::{Self as test, next_tx, ctx};
-
+  use sui::coin::{burn_for_testing as burn, mint_for_testing as mint};
+  
   use amm::dai::DAI;
   use amm::stable_tuple;
   use amm::lp_coin::LP_COIN;

@@ -85,28 +85,6 @@ module amm::stable_tuple_simulation {
     dy - fee
   }   
 
-  public fun remove_liquidity_imabalance(state: &mut State, amounts: vector<u256>): u256 {
-    let old_balances = state.xp;
-    let new_balances = state.xp;
-    let d0 = d(state);
-
-    {
-      let len = vector::length(&new_balances);
-      let i = 0;
-      while (len > i) {
-        let ref = vector::borrow_mut(&mut new_balances, i);
-        *ref = *ref - *vector::borrow(&amounts, i);
-        i = i + 1;
-      };
-    };
-
-    state.xp = new_balances;
-    let d1 = d(state);
-    state.xp = old_balances;
-
-    ((d0 - d1) * state.lp_supply) / d0 
-  }
-
   public fun calc_withdraw_one_coin(state: &State, token_amount: u256, i: u64): u256 {
     let _xp = state.xp;
     let d0 = d(state);
