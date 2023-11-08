@@ -22,7 +22,7 @@ module amm::stable_tuple_simulation {
     n: u64,
     fee: u256,
     xp: vector<u256>,
-    tokens: u256
+    lp_supply: u256
   }
 
   #[allow(unused_function)]
@@ -34,7 +34,7 @@ module amm::stable_tuple_simulation {
         n: 0,
         fee: INITIAL_FEE_PERCENT,
         xp: vector[],
-        tokens: 0
+        lp_supply: 0
       }
     );
   }
@@ -44,12 +44,12 @@ module amm::stable_tuple_simulation {
     a: u256,
     n: u64,      
     xp: vector<u256>,
-    tokens: u256    
+    lp_supply: u256    
   ) {
     state.a = a;
     state.n = n;
     state.xp = xp;
-    state.tokens = tokens;
+    state.lp_supply = lp_supply;
   }
 
   public fun d(state: &State): u256 {
@@ -104,13 +104,13 @@ module amm::stable_tuple_simulation {
     let d1 = d(state);
     state.xp = old_balances;
 
-    ((d0 - d1) * state.tokens) / d0 
+    ((d0 - d1) * state.lp_supply) / d0 
   }
 
   public fun calc_withdraw_one_coin(state: &State, token_amount: u256, i: u64): u256 {
     let _xp = state.xp;
     let d0 = d(state);
-    let d1 = d0 - (token_amount * d0) / state.tokens;
+    let d1 = d0 - (token_amount * d0) / state.lp_supply;
     let dy = *vector::borrow(&_xp, i) - y_d(state, i, d1);
 
     dy
@@ -121,6 +121,6 @@ module amm::stable_tuple_simulation {
   }
 
   public fun view_state(state: &State): (vector<u256>, u256, u64, u256, u256) {
-    (state.xp, state.a, state.n, state.fee, state.tokens)
+    (state.xp, state.a, state.n, state.fee, state.lp_supply)
   }
 }
