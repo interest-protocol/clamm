@@ -1,8 +1,7 @@
 // * 3 Pool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_3pool_swap_tests {
+module amm::stable_tuple_swap_tests {
  use std::option;
- use std::vector;
 
   use sui::clock::Clock;
   use sui::test_utils::assert_eq;
@@ -26,8 +25,6 @@ module amm::stable_tuple_3pool_swap_tests {
   use amm::stable_tuple_simulation::{Self as sim, State as SimState};
 
   const DAI_DECIMALS: u8 = 9;
-  const USDC_DECIMALS: u8 = 6; 
-  const USDT_DECIMALS: u8 = 9;
   const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
   const USDC_DECIMALS_SCALAR: u256 = 1000000; 
   const USDT_DECIMALS_SCALAR: u256 = 1000000000; 
@@ -155,6 +152,58 @@ module amm::stable_tuple_3pool_swap_tests {
       assert_eq(stable_tuple::view_admin_balance<USDC, LP_COIN>(&pool), admin_fee_out);
 
       test::return_to_sender(test, admin_cap);
+      test::return_shared(sim_state);
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 11)]  
+  fun swap_slippage() {
+   let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<Pool<StableTuple>>(test);
+      let c = test::take_shared<Clock>(test);
+      let sim_state = test::take_shared<SimState>(test); 
+
+
+      let (_, _, _, _, _, _, _, _, fees) = stable_tuple::view_state<LP_COIN>(&pool);
+
+      let amp = stable_tuple::a<LP_COIN>(&pool, &c);
+
+      let fee_in = stable_fees::calculate_fee_in_amount(fees, ((344 * DAI_DECIMALS_SCALAR) as u64));
+      let admin_fee_in = stable_fees::calculate_admin_amount(fees, fee_in);
+
+      let y = stable_tuple_math::y(
+        amp, 
+        0, 
+        1,
+        normalize_amount(1000) + ((344 * DAI_DECIMALS_SCALAR - ((fee_in + admin_fee_in) as u256)) * PRECISION / DAI_DECIMALS_SCALAR),
+        &vector[normalize_amount(1000), normalize_amount(1000), normalize_amount(1000)]
+      );
+
+      let dy = normalize_amount(1000) - y;
+
+      let dy = ((dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
+
+
+      burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(344, DAI_DECIMALS, ctx(test)),
+        dy, // does not have fee_out
+        ctx(test)
+      ));
+
       test::return_shared(sim_state);
       test::return_shared(c);
       test::return_shared(pool);
