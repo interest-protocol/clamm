@@ -29,7 +29,7 @@ module amm::volatile_math {
     let d = *vector::borrow(&x, 0); 
     let prev_d = 0;
 
-    while (diff(d, prev_d) > 1 || diff(d, prev_d) * PRECISION > d) {
+    while (diff(d, prev_d) > 1 || diff(d, prev_d) * PRECISION >= d) {
       prev_d = d;
       let temp = PRECISION;
 
@@ -40,7 +40,7 @@ module amm::volatile_math {
       };
       d = d * (((len as u256) - 1) * PRECISION + temp) / ((len as u256) * PRECISION);
     };
-    abort errors::failed_to_converge()
+    d
   }
 
   public fun reduction_coefficient(x: &vector<u256>, fee_gamma: u256): u256 {
@@ -48,7 +48,7 @@ module amm::volatile_math {
     let n_coins = vector::length(x);
 
     let i = 0;
-    let k = 0;
+    let k = PRECISION;
     while(i < n_coins) {
       k = k * (n_coins as u256) * *vector::borrow(x, i) / s;
       i = i + 1;
@@ -70,7 +70,7 @@ module amm::volatile_math {
     let fst = *vector::borrow(&x, 0);
     assert!(fst > 999999999 && fst < 1000000000000000 * PRECISION + 1, errors::unsafe_value());
 
-    let i = 0;
+    let i = 1;
     while (i < n_coins) {
       let frac = *vector::borrow(&x, (i as u64)) * PRECISION / fst;
       assert!(frac > 99999999999, errors::unsafe_value());
@@ -116,7 +116,7 @@ module amm::volatile_math {
     d
   }
 
-  public fun calculate_balance(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
+  public fun y(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
     let n_coins = vector::length(x);
     
     assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_amplifier());
