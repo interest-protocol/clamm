@@ -118,6 +118,21 @@ module amm::stable_pair {
     )
   }
 
+  public fun view_state<CoinX, CoinY, LpCoin>(pool: &Pool<StablePair>): (u64, u64, u64, u64, u64, u64, u64, u64, StableFees) {
+    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
+    (
+      balance::supply_value(&state.lp_coin_supply),
+      balance::value(&state.balance_x),
+      balance::value(&state.balance_y),
+      balance::value(&state.admin_fee_balance_x),
+      balance::value(&state.admin_fee_balance_y),
+      state.decimals_x,
+      state.decimals_y,
+      balance::value(&state.seed_liquidity),
+      state.fees
+    )
+  }
+
   public fun new<CoinX, CoinY, LpCoin>(
     coin_x: Coin<CoinX>,
     coin_y: Coin<CoinY>,
@@ -496,23 +511,5 @@ module amm::stable_pair {
 
     let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, amount_out);
     ((amount_in - fee_in), fee_in, fee_out)
-  }
-
-  // * Test Only Functions
-
-  #[test_only]
-  public fun view_state<CoinX, CoinY, LpCoin>(pool: &Pool<StablePair>): (u64, u64, u64, u64, u64, u64, u64, u64, StableFees) {
-    let state = load_state<CoinX, CoinY, LpCoin>(core::borrow_uid(pool));
-    (
-      balance::supply_value(&state.lp_coin_supply),
-      balance::value(&state.balance_x),
-      balance::value(&state.balance_y),
-      balance::value(&state.admin_fee_balance_x),
-      balance::value(&state.admin_fee_balance_y),
-      state.decimals_x,
-      state.decimals_y,
-      balance::value(&state.seed_liquidity),
-      state.fees
-    )
   }
 }   

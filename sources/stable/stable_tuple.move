@@ -125,6 +125,20 @@ module amm::stable_tuple {
     (amount_out - fee_out, fee_in, fee_out)
   }
 
+  public fun view_state<LpCoin>(pool: &Pool<StableTuple>): (vector<u256>,u256, u256, u256, u256, u64, u256, u64, &StableFees) {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    (
+      state.balances, 
+      state.initial_a, 
+      state.future_a, 
+      state.initial_a_time, 
+      state.future_a_time,
+      balance::supply_value(&state.lp_coin_supply),
+      state.lp_coin_decimals,
+      state.n_coins,
+      &state.fees
+    )
+  }  
 
   // * Mut Functions
 
@@ -300,7 +314,7 @@ module amm::stable_tuple {
     );
 
     // Has no fees to properly calculate new out balance
-    let normalized_value = ((coin_in_value - fee_in) as u256) * PRECISION / coin_in_state.decimals;
+    let normalized_value = ((coin_in_value - fee_in - admin_fee_in) as u256) * PRECISION / coin_in_state.decimals;
 
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);
 
@@ -320,7 +334,7 @@ module amm::stable_tuple {
     let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
     let admin_fee_out = stable_fees::calculate_admin_amount(&state.fees, fee_out);
 
-    let amount_out = amount_out - fee_out;
+    let amount_out = amount_out - fee_out - admin_fee_out;
 
     assert!(amount_out >= min_amount, errors::slippage());
 
@@ -852,20 +866,4 @@ module amm::stable_tuple {
     let state = load_state<LpCoin>(core::borrow_uid(pool));
     balance::value(df::borrow<AdminCoinBalanceKey, Balance<CoinType>>(&state.id, AdminCoinBalanceKey  { type: get<CoinType>() }))
   }
-
-  #[test_only]
-  public fun view_state<LpCoin>(pool: &Pool<StableTuple>): (vector<u256>,u256, u256, u256, u256, u64, u256, u64, &StableFees) {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
-    (
-      state.balances, 
-      state.initial_a, 
-      state.future_a, 
-      state.initial_a_time, 
-      state.future_a_time,
-      balance::supply_value(&state.lp_coin_supply),
-      state.lp_coin_decimals,
-      state.n_coins,
-      &state.fees
-    )
-  }  
 }
