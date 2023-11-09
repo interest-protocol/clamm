@@ -1,4 +1,5 @@
 module amm::volatile_math {
+  use std::debug::print;
   
   use std::vector;
 
@@ -19,7 +20,7 @@ module amm::volatile_math {
   const POW_10_16: u256 = 10_000_000_000_000_000;
   const POW_10_15: u256 = 1_000_000_000_000_000;
   const POW_10_14: u256 = 100_000_000_000_000;
-  const POW_10_10: u256 = 10_000_000_000;
+  const POW_10_11: u256 = 100_000_000_000;
   const POW_10_9: u256 = 1_000_000_000;
   
   public fun get_min_a(n_coins: u64): u256 {
@@ -72,19 +73,21 @@ module amm::volatile_math {
 
   public fun invariant_(ann: u256, gamma: u256, x_unsorted: &vector<u256>): u256 {
     let n_coins = vector::length(x_unsorted);
-    assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_amplifier());
-    assert!(gamma > MIN_GAMMA - 1 && gamma < MAX_GAMMA + 1, errors::invalid_gamma());
+    assert!(ann >= get_min_a(n_coins) && ann <= get_max_a(n_coins), errors::invalid_amplifier());
+    assert!(gamma >= MIN_GAMMA && gamma <= MAX_GAMMA, errors::invalid_gamma());
 
     let x = descending_insertion_sort(x_unsorted);
     let fst = *vector::borrow(&x, 0);
-    assert!(fst > POW_10_9 - 1 && fst < POW_10_15 * PRECISION + 1, errors::unsafe_value());
+
+    assert!(fst >= POW_10_9 && fst <= POW_10_15 * PRECISION, errors::unsafe_value());
 
     let n_coins_u256 = (n_coins as u256);
 
     let i = 1;
-    while (i < n_coins) {
+    while (n_coins > i) {
       let frac = *vector::borrow(&x, (i as u64)) * PRECISION / fst;
-      assert!(frac > POW_10_10 - 1, errors::unsafe_value());
+      print(&frac);
+      assert!(frac >= POW_10_11, errors::unsafe_value());
       i = i + 1;
     };
 
@@ -124,7 +127,7 @@ module amm::volatile_math {
     let i = 0;
     while (n_coins > i) {
       let frac = *vector::borrow(&x, i) * PRECISION / d;
-      assert!(frac > POW_10_16 - 1 && frac < POW_10_20 + 1, errors::unsafe_value());
+      assert!(frac >= POW_10_16 && frac <= POW_10_20, errors::unsafe_value());
       i = i + 1;
     };
 
@@ -134,8 +137,8 @@ module amm::volatile_math {
   public fun y(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u256): u256 {
     let n_coins = vector::length(x);
     
-    assert!(ann > get_min_a(n_coins) - 1 && ann < get_max_a(n_coins) + 1, errors::invalid_amplifier());
-    assert!(gamma > MIN_GAMMA - 1 && gamma < MAX_GAMMA + 1, errors::invalid_gamma());
+    assert!(ann >= get_min_a(n_coins) && ann <= get_max_a(n_coins), errors::invalid_amplifier());
+    assert!(gamma >= MIN_GAMMA && gamma <= MAX_GAMMA, errors::invalid_gamma());
     assert!(d > 99999999999999999 && d < 1000000000000000000000000000000001, errors::invalid_invariant());
 
     let j = 0;
