@@ -49,13 +49,14 @@ module amm::volatile_math {
 
     let i = 0;
     let k = PRECISION;
+
     while(i < n_coins) {
       k = k * (n_coins as u256) * *vector::borrow(x, i) / s;
       i = i + 1;
     };
 
     if (fee_gamma != 0) {
-      fee_gamma * PRECISION / (fee_gamma + (PRECISION - k))
+      fee_gamma * PRECISION / (fee_gamma + PRECISION - k)
     } else {
       k
     }
