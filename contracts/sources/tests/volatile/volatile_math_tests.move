@@ -144,6 +144,10 @@ module amm::volatile_math_tests {
       9901025100122167 // * check TS test one digit different
     );
   }
+
+  #[test]
+  fun invariant_() {
+
+  }
 }
 
-// x: &vector<u256>, fee_gamma: u256

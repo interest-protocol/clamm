@@ -9,10 +9,18 @@ module amm::volatile_math {
 
   use amm::errors;
 
-  const A_MULTIPLIER: u256 = 10000;
-  const MIN_GAMMA: u256 = 10_000_000_000; // 10e6
+  const A_MULTIPLIER: u256 = 10_000;
+  const MIN_GAMMA: u256 = 10_000_000_000; // 10e10
   const MAX_GAMMA: u256 = 50_000_000_000_000_000; // 5e16
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18 
+  
+  // Constants for powers of 10
+  const POW_10_20: u256 = 100_000_000_000_000_000_000;
+  const POW_10_16: u256 = 10_000_000_000_000_000;
+  const POW_10_15: u256 = 1_000_000_000_000_000;
+  const POW_10_14: u256 = 100_000_000_000_000;
+  const POW_10_10: u256 = 10_000_000_000;
+  const POW_10_9: u256 = 1_000_000_000;
   
   public fun get_min_a(n_coins: u64): u256 {
     (pow(n_coins, (n_coins as u8)) as u256) * A_MULTIPLIER / 100
@@ -69,33 +77,39 @@ module amm::volatile_math {
 
     let x = descending_insertion_sort(x_unsorted);
     let fst = *vector::borrow(&x, 0);
-    assert!(fst > 999999999 && fst < 1000000000000000 * PRECISION + 1, errors::unsafe_value());
+    assert!(fst > POW_10_9 - 1 && fst < POW_10_15 * PRECISION + 1, errors::unsafe_value());
+
+    let n_coins_u256 = (n_coins as u256);
 
     let i = 1;
     while (i < n_coins) {
       let frac = *vector::borrow(&x, (i as u64)) * PRECISION / fst;
-      assert!(frac > 99999999999, errors::unsafe_value());
+      assert!(frac > POW_10_10 - 1, errors::unsafe_value());
       i = i + 1;
     };
 
-    let d = (n_coins as u256) * geometric_mean(&x, false);
+    let d = n_coins_u256 * geometric_mean(&x, false);
     let s = sum(&x);
     let d_prev = 0;
 
-    while (diff(d, d_prev) * 100000000000000 > max(10000000000000000, d)) {
+    while (diff(d, d_prev) * POW_10_14 >= max(POW_10_16, d)) {
       d_prev = d;
       let k0 = PRECISION;
 
-      let j = 0;
-      while (j < n_coins) {
-        k0 = k0 * *vector::borrow(&x, j) * (n_coins as u256) / d;
-        j = j + 1;
+      let i = 0;
+      while (i < n_coins) {
+        k0 = k0 * *vector::borrow(&x, i) * n_coins_u256 / d;
+        i = i + 1;
       };
 
       let g1k0 = diff(gamma + PRECISION, k0) + 1;
+
       let mul1 = PRECISION * d / gamma * g1k0 / gamma * g1k0 * A_MULTIPLIER / ann;
-      let mul2 = (2 * PRECISION) * (n_coins as u256) * k0 / g1k0;
-      let neg_fprime = (s + s * mul2 / PRECISION) + mul1 * (n_coins as u256) / k0 - mul2 * d / PRECISION;
+
+      let mul2 = (2 * PRECISION) * n_coins_u256 * k0 / g1k0;
+      
+      let neg_fprime = (s + s * mul2 / PRECISION) + mul1 * n_coins_u256 / k0 - mul2 * d / PRECISION;
+
       let d_plus = d * (neg_fprime  + s) / neg_fprime;
       let d_minus = d * d / neg_fprime;
       
@@ -107,11 +121,11 @@ module amm::volatile_math {
       d = if (d_plus > d_minus) d_plus - d_minus else (d_minus - d_plus) / 2;
     };
     
-    let j = 0;
-    while (j < n_coins) {
-      let frac = *vector::borrow(&x, j) * PRECISION / d;
-      assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
-      j = j + 1;
+    let i = 0;
+    while (n_coins > i) {
+      let frac = *vector::borrow(&x, i) * PRECISION / d;
+      assert!(frac > POW_10_16 - 1 && frac < POW_10_20 + 1, errors::unsafe_value());
+      i = i + 1;
     };
 
     d
