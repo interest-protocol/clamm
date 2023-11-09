@@ -1,6 +1,4 @@
 module amm::volatile_math {
-  use std::debug::print;
-  
   use std::vector;
 
   use sui::math::pow;
@@ -86,7 +84,6 @@ module amm::volatile_math {
     let i = 1;
     while (n_coins > i) {
       let frac = *vector::borrow(&x, (i as u64)) * PRECISION / fst;
-      print(&frac);
       assert!(frac >= POW_10_11, errors::unsafe_value());
       i = i + 1;
     };
