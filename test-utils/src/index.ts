@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
 import {BigNumber} from 'bignumber.js';
-import {reductionCoefficient} from './volatile-simulation';
+import {reductionCoefficient, solveD} from './volatile-simulation';
 
 const geometricMean = (x: readonly Decimal[]) => {
   const a = new Decimal(
@@ -90,4 +90,12 @@ testReductionCoefficient(
     BigNumber('10000000000000000'),
     BigNumber('10000000000000000'),
   ],
+);
+
+console.log(
+  solveD(BigNumber(27000), BigNumber(10000000000), [
+    BigNumber('76543210987654321098765432'),
+    BigNumber('87654321098765432109876543'),
+    BigNumber('98765432109876543210987654'),
+  ]),
 );

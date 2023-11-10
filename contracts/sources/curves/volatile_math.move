@@ -36,14 +36,14 @@ module amm::volatile_math {
     let d = *vector::borrow(&x, 0); 
     let prev_d = 0;
 
-    while (diff(d, prev_d) > 1 || diff(d, prev_d) * PRECISION >= d) {
+    while (diff(prev_d, d) > 1 && diff(prev_d, d) * PRECISION >= d) {
       prev_d = d;
       let temp = PRECISION;
 
-      let j = 0;
-      while (j < len) {
-        temp = temp * (*vector::borrow(&x, j)) / d;  
-        j = j + 1;
+      let i = 0;
+      while (len > i) {
+        temp = temp * (*vector::borrow(&x, i)) / d;  
+        i = i + 1;
       };
       d = d * (((len as u256) - 1) * PRECISION + temp) / ((len as u256) * PRECISION);
     };

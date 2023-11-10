@@ -70,7 +70,14 @@ module amm::volatile_math_tests {
       ],
       true
       ),
-    21305618116999345586282362640576321707401596028664 // * close enough check our TS test 2.1305618116999345597e+49
+    21305618116999345593384235346242770238529674477412 // * close enough check our TS test 2.1305618116999345597e+49
+    );
+
+    assert_eq(volatile_math::geometric_mean(
+      &vector[98765432109876543210987654, 87654321098765432109876543, 76543210987654321098765432],
+      true
+      ),
+    87182300599334670776482378 // * close enough check our TS test 5.4804712762899335589e+49
     );
   }
 
@@ -152,6 +159,101 @@ module amm::volatile_math_tests {
     );
   }
 
+  // * This is tested agaisnt the Curve contract
+  #[test]
+  fun invariant_() {
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          1000000000010000000000,
+          1000000000010000000000,
+          1000000000010000000000
+        ]
+      ),
+      3000000000030000000000
+    );
+
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          23456789012345678901234567,
+          34567890123456789012345678,
+          45678901234567890123456789
+        ]
+      ),
+      100001671685781977817457539
+    );
+
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          12345678901234567890123456,
+          23456789012345678901234567,
+          34567890123456789012345678
+        ]
+      ),
+      64655748097706163049735054
+    );
+
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          98765432109876543210987654,
+          87654321098765432109876543,
+          76543210987654321098765432,
+        ]
+      ),
+       261547000160376643742836627
+    );
+
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          33333333333333333333333333,
+          22222222222222222222222222,
+          11111111111111111111111111,
+        ]
+      ),
+       60570746993165292455004669
+    );
+
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          66666666666666666666666666,
+          55555555555555555555555555,
+          44444444444444444444444444,
+        ]
+      ),
+       164414222681119968767118758
+    );
+
+    assert_eq(
+      volatile_math::invariant_(
+        27000, 
+        10000000000, 
+        &vector[
+          99999999999999999999999999,
+          88888888888888888888888888,
+          11111111111111111111111111,
+        ]
+      ),
+       138672482182892387902464828
+    );
+  }
+
   #[test]
   #[expected_failure(abort_code = 4)]  
   fun invariant_low_amp() {
@@ -163,7 +265,7 @@ module amm::volatile_math_tests {
   #[test]
   #[expected_failure(abort_code = 4)]  
   fun invariant_high_amp() {
-    let invalid_amp_high = 270000000 + 1; // Below MIN_A
+    let invalid_amp_high = 270000000 + 1; // Above MAX_A
 
     volatile_math::invariant_(invalid_amp_high, 1, &vector[PRECISION, PRECISION, PRECISION]);
   }

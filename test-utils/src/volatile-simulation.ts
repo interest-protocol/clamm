@@ -72,7 +72,6 @@ const invariant = (
 ): Bignumber => {
   let D = D0;
 
-  let i = 0;
   const S = x.reduce((acc, x) => acc.plus(x), Bignumber(0));
   const sortedX = x.slice().sort((a, b) => b.minus(a).toNumber());
   const N = Bignumber(x.length);
@@ -86,11 +85,20 @@ const invariant = (
       k0 = k0.multipliedBy(item).multipliedBy(N).dividedBy(D);
     }
 
-    let _g1k0 = gamma.plus(PRECISION).minus(k0).abs();
+    let _g1k0 = gamma.plus(PRECISION);
+
+    if (_g1k0.gt(k0)) {
+      _g1k0 = _g1k0.minus(k0).plus(1);
+    } else {
+      _g1k0 = k0.minus(_g1k0).plus(1);
+    }
 
     let mul1 = PRECISION.multipliedBy(D)
-      .dividedBy(gamma.multipliedBy(_g1k0))
-      .dividedBy(gamma.multipliedBy(_g1k0).multipliedBy(A_MULTIPLIER))
+      .dividedBy(gamma)
+      .multipliedBy(_g1k0)
+      .dividedBy(gamma)
+      .multipliedBy(_g1k0)
+      .multipliedBy(A_MULTIPLIER)
       .dividedBy(A);
 
     let mul2 = PRECISION.multipliedBy(2)
@@ -101,34 +109,50 @@ const invariant = (
     let neg_fprime = S.plus(S)
       .multipliedBy(mul2)
       .dividedBy(PRECISION)
-      .plus(mul1.multipliedBy(N))
-      .dividedBy(k0.minus(mul2.multipliedBy(D)))
-      .dividedBy(PRECISION);
+      .plus(
+        mul1
+          .multipliedBy(N)
+          .dividedBy(k0.minus(mul2.multipliedBy(D)))
+          .dividedBy(PRECISION),
+      );
 
     if (neg_fprime.isNegative()) throw new Error('Negative neg_fprime');
 
-    D = D.multipliedBy(neg_fprime)
-      .plus(D.multipliedBy(S))
-      .minus(D.pow(2))
-      .dividedBy(
-        neg_fprime
-          .minus(D.multipliedBy(mul1.dividedBy(neg_fprime)))
-          .dividedBy(PRECISION.multipliedBy(PRECISION.minus(k0)))
-          .dividedBy(k0),
-      );
+    const D_plus = D.multipliedBy(neg_fprime.plus(S)).dividedBy(neg_fprime);
+    let D_minus = D.multipliedBy(D).dividedBy(neg_fprime);
 
-    if (D.isNegative()) {
-      D = D.negated().dividedBy(2);
+    if (PRECISION.gt(k0)) {
+      D_minus = D_minus.plus(
+        D.multipliedBy(mul1.dividedBy(neg_fprime))
+          .dividedBy(PRECISION)
+          .multipliedBy(PRECISION.minus(k0))
+          .div(k0),
+      );
+    } else {
+      D_minus = D_minus.minus(
+        D.multipliedBy(mul1.dividedBy(neg_fprime))
+          .dividedBy(PRECISION)
+          .multipliedBy(k0.minus(PRECISION))
+          .div(k0),
+      );
     }
+
+    if (D_plus.gt(D_minus)) {
+      D = D_plus.minus(D_minus);
+    } else {
+      D = D_minus.minus(D_plus);
+    }
+
+    const diff = D_prev.gt(D) ? D_prev.minus(D) : D.minus(D_prev);
+
+    console.log(diff.toString());
 
     if (
-      D.minus(D_prev).abs().lte(Bignumber(100)) ||
-      D.minus(D_prev)
-        .abs()
-        .lte(D.dividedBy(TEN.pow(14)))
-    ) {
+      diff
+        .multipliedBy(BigNumber(10).pow(14))
+        .lt(BigNumber.max(D, BigNumber(10).pow(16)))
+    )
       return D;
-    }
   }
 
   throw new Error('Failed to converge');
@@ -301,7 +325,7 @@ const solveX = (
   return y(A, gamma, x, D, i);
 };
 
-const solveD = (
+export const solveD = (
   A: BigNumber,
   gamma: BigNumber,
   x: readonly BigNumber[],
