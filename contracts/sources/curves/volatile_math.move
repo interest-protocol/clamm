@@ -15,6 +15,7 @@ module amm::volatile_math {
   
   // Constants for powers of 10
   const POW_10_20: u256 = 100_000_000_000_000_000_000;
+  const POW_10_17: u256 = 100_000_000_000_000_000;
   const POW_10_16: u256 = 10_000_000_000_000_000;
   const POW_10_15: u256 = 1_000_000_000_000_000;
   const POW_10_14: u256 = 100_000_000_000_000;
@@ -136,12 +137,12 @@ module amm::volatile_math {
     
     assert!(ann >= get_min_a(n_coins) && ann <= get_max_a(n_coins), errors::invalid_amplifier());
     assert!(gamma >= MIN_GAMMA && gamma <= MAX_GAMMA, errors::invalid_gamma());
-    assert!(d > 99999999999999999 && d < 1000000000000000000000000000000001, errors::invalid_invariant());
+    assert!(d >= POW_10_17 && d <= POW_10_15 * PRECISION, errors::invalid_invariant());
 
     let j = 0;
-    while (j < 3) {
+    while (n_coins > j) {
       let frac = *vector::borrow(x, j) * PRECISION / d;
-      assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
+      assert!(frac >= POW_10_16 && frac <= POW_10_20, errors::unsafe_value());
       j = j + 1;
     };
 
@@ -153,9 +154,9 @@ module amm::volatile_math {
     *vector::borrow_mut(&mut new_x, (i as u64)) = 0;
     let x_sorted = descending_insertion_sort(&new_x);
 
-    let converge_limit = max(max(*vector::borrow(&x_sorted, 0) / 100000000000000, d / 100000000000000), 100);
+    let converge_limit = max(max(*vector::borrow(&x_sorted, 0) / POW_10_14, d / POW_10_14), 100);
 
-    j = 2;
+    let j = 2;
     while (j < n_coins + 1) {
       let x = *vector::borrow(&x_sorted, n_coins - j);
       y = y * d / (x * (n_coins as u256));
@@ -163,7 +164,7 @@ module amm::volatile_math {
       j = j + 1;
     };
 
-    j = 0;
+    let j = 0;
     while (j < n_coins - 1) {
       k0_i = k0_i * *vector::borrow(&x_sorted, j) * (n_coins as u256) / d;
       j = j + 1;
@@ -171,8 +172,8 @@ module amm::volatile_math {
 
     let y_prev = 0;
 
-    while(diff(y, y_prev) > max(converge_limit, y / 100000000000000)) {
-      let y_prev = y;
+    while(diff(y, y_prev) >= max(converge_limit, y / POW_10_14)) {
+      y_prev = y;
       let k0 = k0_i * y * (n_coins as u256) / d;
       let s = s_i + y;
 
@@ -194,7 +195,7 @@ module amm::volatile_math {
     };
     
     let frac = y * PRECISION / d;
-    assert!(frac > 9999999999999999 && frac < 100000000000000000001, errors::unsafe_value());
+    assert!(frac >= POW_10_16 && frac <= POW_10_20, errors::unsafe_value());
 
     y
   }
