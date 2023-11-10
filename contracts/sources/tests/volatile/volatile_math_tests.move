@@ -11,6 +11,7 @@ module amm::volatile_math_tests {
 
   const VALID_ANN: u256 = 270000000;
 
+  const POW_10_17: u256 = 100_000_000_000_000_000;
   const POW_10_15: u256 = 1_000_000_000_000_000;
   const POW_10_9: u256 = 1_000_000_000;
 
@@ -298,5 +299,43 @@ module amm::volatile_math_tests {
   #[expected_failure(abort_code = 5)]  
   fun invariant_invalid_balance_too_low() {
     volatile_math::invariant_(VALID_ANN, MAX_GAMMA / 2, &vector[POW_10_9, 100 - 1, PRECISION]);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 4)] 
+  fun y_low_amp() {
+    let invalid_amp_low = 2700 - 1; // Below MIN_A
+    volatile_math::y(invalid_amp_low, MAX_GAMMA / 2, &vector[2 * PRECISION, 3 * PRECISION, PRECISION], 15 * PRECISION, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 4)] 
+  fun y_high_amp() {
+    let invalid_amp_high = 270000000 + 1; // Above MAX_A
+    volatile_math::y(invalid_amp_high, MAX_GAMMA / 2, &vector[2 * PRECISION, 3 * PRECISION, PRECISION], 15 * PRECISION, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 3)]  
+  fun y_low_gamma() {
+    volatile_math::y(VALID_ANN, MIN_GAMMA - 1, &vector[PRECISION, PRECISION, PRECISION], 15 * PRECISION, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 3)]  
+  fun y_high_gamma() {
+    volatile_math::y(VALID_ANN, MAX_GAMMA + 1, &vector[PRECISION, PRECISION, PRECISION], 15 * PRECISION, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 6)]  
+  fun y_low_invariant() {
+    volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[PRECISION, PRECISION, PRECISION], POW_10_17 - 1, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 6)]  
+  fun y_high_invariant() {
+    volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[PRECISION, PRECISION, PRECISION], POW_10_15 * PRECISION + 1, 1);
   }
 }
