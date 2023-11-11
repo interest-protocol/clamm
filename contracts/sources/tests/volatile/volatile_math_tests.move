@@ -257,6 +257,84 @@ module amm::volatile_math_tests {
     );
   }
 
+  // * Tested agaisnt Curve contract
+  #[test]
+  fun y() {
+    let ann = 27000;
+    let gamma = 10000000000;
+    let balances = vector[1000000000010000000000 + 3 * PRECISION, 1000000000010000000000, 1000000000010000000000];
+    let d: u256 = 3000000000030000000000;
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 0),
+      1000000000010000000164
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 1),
+      997008887067534938648
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 2),
+      997008887067534938648
+    );
+
+    let balances = vector[23456789012345678901234567,34567890123456789012345678,45678901234567890123456789 + 4 * PRECISION];
+    let d: u256 = 100001671685781977852490804;
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 0),
+      23456786958278052267490556
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 1),
+      34567887096417113472229743
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 2),
+      45678901234567890179195521
+    );
+
+    let balances = vector[98765432109876543210987654, 87654321098765432109876543, 51028807325102880732510288];
+    let d: u256 = 261547000160376643742836627;
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 0),
+      148147876841464101893259752
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 1),
+      131481271806238708565846354
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 2),
+      76543210987654321058114319
+    );
+
+    let balances = vector[99999999999999999999999999,88888888888888888888888888,27111111111111111111111111];
+    let d: u256 = 138672482182892387902464828;
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 0),
+      40983673484263694029988653
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 1),
+      36429919106610415936464197
+    );
+
+    assert_eq(
+      volatile_math::y(ann, gamma, &balances, d, 2),
+      11111111111111111110978167
+    );
+  }
+
   #[test]
   #[expected_failure(abort_code = 4)]  
   fun invariant_low_amp() {

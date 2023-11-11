@@ -72,8 +72,9 @@ module amm::volatile_math {
 
   public fun invariant_(ann: u256, gamma: u256, x_unsorted: &vector<u256>): u256 {
     let n_coins = vector::length(x_unsorted);
-    assert!(ann >= get_min_a(n_coins) && ann <= get_max_a(n_coins), errors::invalid_amplifier());
-    assert!(gamma >= MIN_GAMMA && gamma <= MAX_GAMMA, errors::invalid_gamma());
+    
+    assert_ann_is_within_range(ann, n_coins);
+    assert_gamma_is_within_range(gamma);
 
     let x = descending_insertion_sort(x_unsorted);
     let fst = *vector::borrow(&x, 0);
@@ -135,8 +136,9 @@ module amm::volatile_math {
   public fun y(ann: u256, gamma: u256, x: &vector<u256>, d: u256, i: u64): u256 {
     let n_coins = vector::length(x);
     
-    assert!(ann >= get_min_a(n_coins) && ann <= get_max_a(n_coins), errors::invalid_amplifier());
-    assert!(gamma >= MIN_GAMMA && gamma <= MAX_GAMMA, errors::invalid_gamma());
+    assert_ann_is_within_range(ann, n_coins);
+    assert_gamma_is_within_range(gamma);
+    
     assert!(d >= POW_10_17 && d <= POW_10_15 * PRECISION, errors::invalid_invariant());
 
     let j = 0;
@@ -257,6 +259,14 @@ module amm::volatile_math {
     };
 
     y
+  }
+
+  fun assert_ann_is_within_range(ann: u256, n_coins: u64) {
+    assert!(ann >= get_min_a(n_coins) && ann <= get_max_a(n_coins), errors::invalid_amplifier());
+  }
+
+  fun assert_gamma_is_within_range(gamma: u256) {
+    assert!(gamma >= MIN_GAMMA && gamma <= MAX_GAMMA, errors::invalid_gamma());    
   }
 
   fun assert_balance_is_within_range(balance: u256) {
