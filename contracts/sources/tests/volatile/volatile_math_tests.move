@@ -15,6 +15,7 @@ module amm::volatile_math_tests {
   const POW_10_17: u256 = 100_000_000_000_000_000;
   const POW_10_16: u256 = 10_000_000_000_000_000;
   const POW_10_15: u256 = 1_000_000_000_000_000;
+  const POW_10_14: u256 = 100_000_000_000_000;
   const POW_10_9: u256 = 1_000_000_000;
 
   #[test]
@@ -371,6 +372,34 @@ module amm::volatile_math_tests {
       volatile_math::sqrt(112358132134558914423207911489),
       335198645782704370434704
     );        
+  }
+
+  #[test]
+  fun half_pow() {
+    assert_eq(
+      volatile_math::half_pow(POW_10_17, POW_10_15),
+      933392445312500000
+    );
+
+    assert_eq(
+      volatile_math::half_pow(2 * PRECISION, POW_10_16),
+      250000000000000000
+    );
+
+    assert_eq(
+      volatile_math::half_pow(60 * PRECISION, POW_10_17),
+      0
+    );
+
+    assert_eq(
+      volatile_math::half_pow(5 * PRECISION + 5 * POW_10_15, POW_10_14),
+      31143560648651123
+    );
+
+    assert_eq(
+      volatile_math::half_pow(0, PRECISION),
+      1000000000000000000
+    );
   }
 
   #[test]

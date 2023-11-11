@@ -138,7 +138,7 @@ module amm::volatile_math {
     
     assert_ann_is_within_range(ann, n_coins);
     assert_gamma_is_within_range(gamma);
-    
+
     assert!(d >= POW_10_17 && d <= POW_10_15 * PRECISION, errors::invalid_invariant());
 
     let j = 0;
@@ -227,10 +227,8 @@ module amm::volatile_math {
     let s = PRECISION;
     let neg = false;
 
-    let i = 0;
+    let i = 1;
     while (i < 256) {
-      i = i + 1;
-
       let k = i * PRECISION;
       let c = k - PRECISION;
       if (otherpow > c) {
@@ -241,8 +239,10 @@ module amm::volatile_math {
       };
 
       term = term * (c * x / PRECISION) / k;
-      if (neg) { s = s - term; } else { s = s + term; };
-      if (term < precision) return result * s
+      s = if (neg) s - term else s + term;
+      if (term < precision) return result * s / PRECISION;
+
+      i = i + 1;
     };
     abort errors::failed_to_converge()
   }
