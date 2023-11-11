@@ -11,7 +11,9 @@ module amm::volatile_math_tests {
 
   const VALID_ANN: u256 = 270000000;
 
+  const POW_10_20: u256 = 100_000_000_000_000_000_000;
   const POW_10_17: u256 = 100_000_000_000_000_000;
+  const POW_10_16: u256 = 10_000_000_000_000_000;
   const POW_10_15: u256 = 1_000_000_000_000_000;
   const POW_10_9: u256 = 1_000_000_000;
 
@@ -337,5 +339,17 @@ module amm::volatile_math_tests {
   #[expected_failure(abort_code = 6)]  
   fun y_high_invariant() {
     volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[PRECISION, PRECISION, PRECISION], POW_10_15 * PRECISION + 1, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 5)]  
+  fun y_low_balance() {
+    volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[POW_10_16 * POW_10_15 - 1, POW_10_16 * POW_10_15, POW_10_16 * POW_10_15], POW_10_15 * PRECISION, 1);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = 5)]  
+  fun y_high_balance() {
+    volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[(POW_10_20 * POW_10_15) * 10, POW_10_16 * POW_10_15, POW_10_16 * POW_10_15], POW_10_15 * PRECISION, 1);
   }
 }

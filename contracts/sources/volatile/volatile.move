@@ -254,7 +254,7 @@ module amm::volatile {
       };
    };
 
-   let y = volatile_math::y(a, gamma, &balances_price, state.d, (coin_out_state.index as u256));
+   let y = volatile_math::y(a, gamma, &balances_price, state.d, coin_out_state.index);
    let dy = *vector::borrow(&balances_price, coin_out_state.index) - y - 1;
    
    if (coin_out_state.index != 0) dy = fdiv_down(dy, coin_out_state.price);
@@ -474,7 +474,7 @@ module amm::volatile {
       }; 
     };
 
-    let coin_out_amount = *vector::borrow(&balances_in_price, coin_out_state.index) - volatile_math::y(a, gamma, &balances_in_price, state.d, (coin_out_state.index as u256));
+    let coin_out_amount = *vector::borrow(&balances_in_price, coin_out_state.index) - volatile_math::y(a, gamma, &balances_in_price, state.d, coin_out_state.index);
 
     let ref = vector::borrow_mut(&mut balances_in_price, coin_out_state.index);
     *ref = *ref - coin_out_amount;
@@ -873,7 +873,7 @@ module amm::volatile {
     let fee = fee(state, xp);
     let d_b = (lp_coin_amount as u256) * d / (balance::supply_value(&state.lp_coin_supply) as u256);
     let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
-    let y = volatile_math::y(a, gamma, &xp, d, (index_out as u256));
+    let y = volatile_math::y(a, gamma, &xp, d, index);
     let dy = fdiv_down((*vector::borrow(&xp, index_out) - y), price_scale_i);  
     let i_xp = vector::borrow_mut(&mut xp, index_out);
     *i_xp = y;
@@ -1102,7 +1102,7 @@ module amm::volatile {
       let i = 1;
       while ((state.n_coins as u64) > i) {
         let coin_state = vector::borrow_mut(&mut new_coin_states, i);
-        coin_state.last_price = coin_state.price * dx_price / (*vector::borrow(&balances, i) - volatile_math::y(a, gamma, &xp, d_unadjusted, (i as u256)));
+        coin_state.last_price = coin_state.price * dx_price / (*vector::borrow(&balances, i) - volatile_math::y(a, gamma, &xp, d_unadjusted, i));
         i = i + 1;
       };
      };
