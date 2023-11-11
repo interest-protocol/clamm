@@ -336,6 +336,44 @@ module amm::volatile_math_tests {
   }
 
   #[test]
+  fun sqrt() {
+    assert_eq(
+      volatile_math::sqrt(0),
+      0
+    );
+
+    assert_eq(
+      volatile_math::sqrt(11111111111111111110978167),
+      3333333333333333333313
+    );
+
+    assert_eq(
+      volatile_math::sqrt(1234567890123456789012345678906),
+      1111111106111111099361111
+    );
+
+    assert_eq(
+      volatile_math::sqrt(987654321098765432109876543210),
+      993807990055808231178923
+    );
+
+    assert_eq(
+      volatile_math::sqrt(314159265358979323846264338327),
+      560499121639792869931128
+    );
+
+    assert_eq(
+      volatile_math::sqrt(271828182845904523536028747135),
+      521371444217943838412954
+    );
+
+    assert_eq(
+      volatile_math::sqrt(112358132134558914423207911489),
+      335198645782704370434704
+    );        
+  }
+
+  #[test]
   #[expected_failure(abort_code = 4)]  
   fun invariant_low_amp() {
     let invalid_amp_low = 2700 - 1; // Below MIN_A
