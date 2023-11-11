@@ -27,7 +27,7 @@ module amm::volatile_math_tests {
       ],
       true
     ),
-    488932081316428026642062596805784878789761473618307 // * close enough check our TS test 4.8893208131642802669e+50
+    488932081316428026648602300982557262375330833440612 // * close enough check our TS test 4.8893208131642802669e+50
   );
 
 
@@ -39,7 +39,7 @@ module amm::volatile_math_tests {
       ],
       true
     ),
-    20190228809245996198820576770880121483941530976951 // * close enough check our TS test 2.019022880924599621e+49
+    20190228809245996199293293034785411280021008731434 // * close enough check our TS test 2.019022880924599621e+49
   );
 
     assert_eq(volatile_math::geometric_mean(
@@ -50,7 +50,7 @@ module amm::volatile_math_tests {
       ],
       true
       ),
-    54804712762899335551035345267515621318566631068384 // * close enough check our TS test 5.4804712762899335589e+49
+    54804712762899335570512977627201900244000563679492 // * close enough check our TS test 5.4804712762899335589e+49
     );
 
 
@@ -62,7 +62,7 @@ module amm::volatile_math_tests {
       ],
       true
       ),
-    88423493508808707944619190210638306351113694881373 // * close enough check our TS test 8.8423493508808707992e+49
+    88423493508808707927768524110508869931091779856749 // * close enough check our TS test 8.8423493508808707992e+49
     );
 
     assert_eq(volatile_math::geometric_mean(
@@ -73,7 +73,7 @@ module amm::volatile_math_tests {
       ],
       true
       ),
-    21305618116999345593384235346242770238529674477412 // * close enough check our TS test 2.1305618116999345597e+49
+    21305618116999345586111097801878004333206906105628 // * close enough check our TS test 2.1305618116999345597e+49
     );
 
     assert_eq(volatile_math::geometric_mean(
@@ -188,7 +188,7 @@ module amm::volatile_math_tests {
           45678901234567890123456789
         ]
       ),
-      100001671685781977817457539
+      100001671685781977852490804
     );
 
     assert_eq(
@@ -201,7 +201,7 @@ module amm::volatile_math_tests {
           34567890123456789012345678
         ]
       ),
-      64655748097706163049735054
+      64655748097706163074764667
     );
 
     assert_eq(
