@@ -8,7 +8,9 @@ module amm::test_utils {
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
   use suitears::coin_decimals::{Self, CoinDecimals};
-
+  
+  use amm::btc::{Self, BTC};
+  use amm::eth::{Self, ETH};
   use amm::dai::{Self, DAI};
   use amm::amm_admin as admin;
   use amm::usdt::{Self, USDT};
@@ -40,6 +42,8 @@ module amm::test_utils {
 
     next_tx(test, alice);
     {
+      btc::init_for_testing(ctx(test));
+      eth::init_for_testing(ctx(test));
       dai::init_for_testing(ctx(test));
       usdc::init_for_testing(ctx(test));
       usdt::init_for_testing(ctx(test));
@@ -59,6 +63,8 @@ module amm::test_utils {
       let frax_metadata = test::take_shared<CoinMetadata<FRAX>>(test);
       let lp_metadata = test::take_shared<CoinMetadata<LP_COIN>>(test);
       let true_usd_metadata = test::take_shared<CoinMetadata<TRUE_USD>>(test);
+      let eth_metadata = test::take_shared<CoinMetadata<ETH>>(test);
+      let btc_metadata = test::take_shared<CoinMetadata<BTC>>(test);
 
       coin_decimals::register_coin<USDT>(&mut coin_decimals_storage, &usdt_metadata);
       coin_decimals::register_coin<USDC>(&mut coin_decimals_storage, &usdc_metadata);
@@ -66,7 +72,11 @@ module amm::test_utils {
       coin_decimals::register_coin<LP_COIN>(&mut coin_decimals_storage, &lp_metadata);
       coin_decimals::register_coin<FRAX>(&mut coin_decimals_storage, &frax_metadata);
       coin_decimals::register_coin<TRUE_USD>(&mut coin_decimals_storage, &true_usd_metadata);
+      coin_decimals::register_coin<ETH>(&mut coin_decimals_storage, &eth_metadata);
+      coin_decimals::register_coin<BTC>(&mut coin_decimals_storage, &btc_metadata);
 
+      test::return_shared(btc_metadata);
+      test::return_shared(eth_metadata);  
       test::return_shared(coin_decimals_storage);
       test::return_shared(lp_metadata);
       test::return_shared(dai_metadata);
