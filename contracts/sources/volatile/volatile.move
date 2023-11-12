@@ -121,6 +121,44 @@ module amm::volatile {
 
   // * View Functions  ---- START ----
 
+  public fun view_state<LpCoin>(
+    pool: &Pool<Volatile>,
+    c: &Clock,
+  ): (u256, u256, u256, u64, u256, vector<u256>, u256, u256, u256, u256, u256, u256, u64, bool) {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let (a, gamma) = get_a_gamma(state, c);
+    (
+      a,
+      gamma,
+      state.d,
+      balance::supply_value(&state.lp_coin_supply),
+      state. n_coins,
+      state.balances,
+      state.xcp_profit,
+      state.xcp_profit_a,
+      state.virtual_price,
+      state.rebalancing_params.adjustment_step,
+      state.rebalancing_params.extra_profit,
+      state.rebalancing_params.ma_half_time,
+      state.last_prices_timestamp,
+      state.not_adjusted
+    )
+  }
+
+  public fun view_fees<LpCoin>(
+    pool: &Pool<Volatile>,
+    c: &Clock,
+  ): (u256, u256, u256, u256) {
+    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let (a, gamma) = get_a_gamma(state, c);
+    (
+      state.fees.admin_fee,
+      state.fees.gamma_fee,
+      state.fees.mid_fee,
+      state.fees.out_fee
+    )
+  }
+
   public fun a<LpCoin>(
     pool: &Pool<Volatile>,
     c: &Clock,
