@@ -59,8 +59,8 @@ module amm::volatile_math {
   * @param sort If we should sort before calculating the geometric mean 
   * @return u256 The geometric mean of `balances`
   */
-  public fun geometric_mean(unsorted_balances: &vector<u256>, sort: bool): u256 {
-    let balances = if (sort) { descending_insertion_sort(unsorted_balances) } else { *unsorted_balances };
+  public fun geometric_mean(unsorted_balances: vector<u256>, sort: bool): u256 {
+    let balances = if (sort) { descending_insertion_sort(unsorted_balances) } else { unsorted_balances };
 
     let len = vector::length(&balances);
     let d = *vector::borrow(&balances, 0); 
@@ -80,15 +80,15 @@ module amm::volatile_math {
     d
   }
 
-  public fun reduction_coefficient(x: &vector<u256>, fee_gamma: u256): u256 {
+  public fun reduction_coefficient(x: vector<u256>, fee_gamma: u256): u256 {
     let s = sum(x);
-    let n_coins = vector::length(x);
+    let n_coins = vector::length(&x);
 
     let i = 0;
     let k = PRECISION;
 
     while(i < n_coins) {
-      k = k * (n_coins as u256) * *vector::borrow(x, i) / s;
+      k = k * (n_coins as u256) * *vector::borrow(&x, i) / s;
       i = i + 1;
     };
 
@@ -108,8 +108,8 @@ module amm::volatile_math {
   * @param unsorted_balances The balances in the pool. 
   * @return u256 The invariant of the pool
   */
-  public fun invariant_(ann: u256, gamma: u256, unsorted_balances: &vector<u256>): u256 {
-    let n_coins = vector::length(unsorted_balances);
+  public fun invariant_(ann: u256, gamma: u256, unsorted_balances: vector<u256>): u256 {
+    let n_coins = vector::length(&unsorted_balances);
     
     assert_ann_is_within_range(ann, n_coins);
     assert_gamma_is_within_range(gamma);
@@ -128,8 +128,8 @@ module amm::volatile_math {
       i = i + 1;
     };
 
-    let d = n_coins_u256 * geometric_mean(&x, false);
-    let s = sum(&x);
+    let d = n_coins_u256 * geometric_mean(x, false);
+    let s = sum(x);
     let d_prev = 0;
 
     while (diff(d, d_prev) * POW_10_14 >= max(POW_10_16, d)) {
@@ -205,7 +205,7 @@ module amm::volatile_math {
 
     let new_x = *balances;
     *vector::borrow_mut(&mut new_x, coin_out_index) = 0;
-    let x_sorted = descending_insertion_sort(&new_x);
+    let x_sorted = descending_insertion_sort(new_x);
 
     let converge_limit = max(max(*vector::borrow(&x_sorted, 0) / POW_10_14, d / POW_10_14), 100);
 

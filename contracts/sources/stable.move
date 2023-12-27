@@ -1,4 +1,6 @@
-module amm::stable_implementation {
+module amm::interest_stable {
+  // === Imports ===
+
   use std::vector;
   use std::option::Option;
   use std::type_name::{TypeName, get};
@@ -12,25 +14,24 @@ module amm::stable_implementation {
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
 
-  use suitears::coin_decimals::{get_decimals_scalar, get_decimals, CoinDecimals};
+  use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
 
   use amm::errors;
   use amm::curves::Stable;
   use amm::amm_admin::Admin;
   use amm::pool_events as events;
-  use amm::utils::{
-    empty_vector,
-    are_coins_ordered,
-    make_coins_from_vector, 
-  };
   use amm::stable_fees::{
     Self, 
     StableFees,
   };
   use amm::interest_pool::{
     Self,
-    InterestPool,
-    new_pool
+    InterestPool
+  };
+  use amm::utils::{
+    empty_vector,
+    are_coins_ordered,
+    make_coins_from_vector, 
   };
   use amm::stable_math::{
     y,
@@ -39,71 +40,125 @@ module amm::stable_implementation {
     invariant_
   };
 
-  const MAX_A: u256 = 1000000; // 1 million
-  const MAX_A_CHANGE: u256 = 10;
-  const ROLL: u256 = 1_000_000_000; // 1e18
-  const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  // === Consntants ===  
 
+  const MAX_A: u256 = 1_000_000;
+  const MAX_A_CHANGE: u256 = 10;
+  // @dev 1 day in milliseconds
+  const MIN_RAMP_TIME: u64 = 86_400_000;
+  // @dev 1e18 
+  const PRECISION: u256 = 1_000_000_000_000_000_000; 
+
+  // === Structs ===  
+
+  // @dev Dynamic field key to access stae {State} of a pool.
   struct StateKey has drop, copy, store {}
 
+  // @dev Dynamic field key to access stae {CoinState} of a `sui::coin::Coin`
   struct CoinStatekey has drop, copy, store { type: TypeName }
 
+  // @dev Dynamic field key to access the fees accrued for the admin. 
   struct AdminCoinBalanceKey has drop, copy, store { type: TypeName }
 
   struct CoinState<phantom CoinType> has store {
+    // Decimals of the `sui::coin::Coin`
     decimals: u256,
+    // The index of the `sui::coin::Coin` in the state balances vector.  
     index: u64,
+    // Balance of the coin
     balance: Balance<CoinType>
   }
 
   struct State<phantom LpCoin> has key, store {
     id: UID,
+    // The supply of the pool's `LpCoin`.
     lp_coin_supply: Supply<LpCoin>,
+    // The decimal precision of the `LpCoin`.
     lp_coin_decimals: u256,
+    // The balances of the coin in the pool based in the coin index.   
     balances: vector<u256>,
+    // The initial amplifier factor.
     initial_a: u256,
+    // The new amplifier factor.
+    // We need to update the amplifier overtime to prevent impermanent loss. 
     future_a: u256,
+    // The initial ramp time.
     initial_a_time: u256,
+    // The future_a_time - initial_a_time gives us the duration of the ramp time to linearly update initial_a to future_a. 
     future_a_time: u256,
+    // Number of coins in the pool.   
     n_coins: u64,
+    // Holds the fee settings for the pool.  
     fees: StableFees
   }
 
-  // * View Functions
+  // === Public View Functions ===  
+
+  public fun balances<LpCoin>(pool: &InterestPool<Stable>): vector<u256> {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).balances
+  }
 
   public fun a<LpCoin>(
-    pool: &Pool<Stable>,
+    pool: &InterestPool<Stable>,
     c: &Clock,
   ): u256 {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
     get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c)
   }
+
+  public fun lp_coin_supply<LpCoin>(pool: &InterestPool<Stable>): u64 {
+    balance::supply_value(&borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).lp_coin_supply)
+  }
+
+  public fun lp_coin_decimals<LpCoin>(pool: &InterestPool<Stable>): u8 {
+    (borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).lp_coin_decimals as u8)
+  }  
+
+  public fun n_coins<LpCoin>(pool: &InterestPool<Stable>): u64 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).n_coins
+  }
+
+  public fun fees<LpCoin>(pool: &InterestPool<Stable>): StableFees {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).fees
+  }
+
+  public fun admin_balance<CoinType, LpCoin>(pool: &InterestPool<Stable>): u64 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    balance::value(df::borrow<AdminCoinBalanceKey, Balance<CoinType>>(&state.id, AdminCoinBalanceKey  { type: get<CoinType>() }))
+  } 
+
+  public fun coin_decimals<CoinType, LpCoin>(pool: &InterestPool<Stable>): u8 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    (borrow_coin_state<CoinType>(&state.id).decimals as u8)
+  } 
+
+  public fun coin_index<CoinType, LpCoin>(pool: &InterestPool<Stable>): u8 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    (borrow_coin_state<CoinType>(&state.id).index as u8)
+  }  
+
+  public fun coin_balance<CoinType, LpCoin>(pool: &InterestPool<Stable>): u64 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    balance::value(&borrow_coin_state<CoinType>(&state.id).balance)
+  }     
   
   // @dev Price is returned in 1e18
-  public fun get_lp_coin_price_in_underlying<LpCoin>(
-    pool: &Pool<Stable>,
+  public fun virtual_price<LpCoin>(
+    pool: &InterestPool<Stable>,
     c: &Clock,
   ): u256 {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
-
-    let k = invariant_(
-      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c), 
-      &state.balances
-    );
-
-    k * state.lp_coin_decimals / (balance::supply_value(&state.lp_coin_supply) as u256)
+    virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c)
   }
 
   public fun quote_swap<CoinIn, CoinOut, LpCoin>(
-    pool: &Pool<Stable>,
+    pool: &InterestPool<Stable>,
     c: &Clock,
     amount: u64    
   ): (u64, u64, u64) {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
 
-    let coin_in_state = load_coin_state<CoinIn>(&state.id);
-    let coin_out_state = load_coin_state<CoinOut>(&state.id);
+    let coin_in_state = borrow_coin_state<CoinIn>(&state.id);
+    let coin_out_state = borrow_coin_state<CoinOut>(&state.id);
 
     let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, amount);
 
@@ -114,7 +169,7 @@ module amm::stable_implementation {
       (coin_in_state.index as u256),
       (coin_out_state.index as u256),
       *vector::borrow(&state.balances, coin_in_state.index) + normalized_value,
-      &state.balances
+      state.balances
     );
 
     let amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
@@ -125,22 +180,7 @@ module amm::stable_implementation {
     (amount_out - fee_out, fee_in, fee_out)
   }
 
-  public fun view_state<LpCoin>(pool: &Pool<Stable>): (vector<u256>,u256, u256, u256, u256, u64, u256, u64, &StableFees) {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
-    (
-      state.balances, 
-      state.initial_a, 
-      state.future_a, 
-      state.initial_a_time, 
-      state.future_a_time,
-      balance::supply_value(&state.lp_coin_supply),
-      state.lp_coin_decimals,
-      state.n_coins,
-      &state.fees
-    )
-  }  
-
-  // * Mut Functions
+  // === Public Create Pool Functions ===  
 
   public fun new_3_pool<CoinA, CoinB, CoinC, LpCoin>(
     c: &Clock,
@@ -154,10 +194,10 @@ module amm::stable_implementation {
   ): Coin<LpCoin> {
     assert!(coin::value(&coin_a) != 0 && coin::value(&coin_b) != 0 && coin::value(&coin_c) != 0, errors::no_zero_liquidity_amounts());
 
-    let pool = new_pool<Stable>(make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), ctx);
+    let pool = interest_pool::new<Stable>(make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), ctx);
     // * IMPORTANT Make sure the n_coins argument is correct
     add_state<LpCoin>(
-      core::borrow_mut_uid(&mut pool), 
+      interest_pool::borrow_mut_uid(&mut pool), 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -165,12 +205,12 @@ module amm::stable_implementation {
       ctx
     );
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(&mut pool));
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    register_coin<CoinA>(&mut state.id, coin_decimals, 0);
-    register_coin<CoinB>(&mut state.id, coin_decimals, 1);
-    register_coin<CoinC>(&mut state.id, coin_decimals, 2);
+    add_coin<CoinA>(&mut state.id, coin_decimals, 0);
+    add_coin<CoinB>(&mut state.id, coin_decimals, 1);
+    add_coin<CoinC>(&mut state.id, coin_decimals, 2);
 
     let lp_coin = add_liquidity_3_pool(&mut pool, c, coin_a, coin_b, coin_c, 0, ctx);
 
@@ -200,14 +240,14 @@ module amm::stable_implementation {
       errors::no_zero_liquidity_amounts()
     );
 
-    let pool = new_pool<Stable>(
+    let pool = interest_pool::new<Stable>(
       make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
       ctx
     );
 
     // * IMPORTANT Make sure the n_coins argument is correct
     add_state<LpCoin>(
-      core::borrow_mut_uid(&mut pool), 
+      interest_pool::borrow_mut_uid(&mut pool), 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -215,13 +255,13 @@ module amm::stable_implementation {
       ctx
     );
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(&mut pool));
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    register_coin<CoinA>(&mut state.id, coin_decimals, 0);
-    register_coin<CoinB>(&mut state.id, coin_decimals, 1);
-    register_coin<CoinC>(&mut state.id, coin_decimals, 2);
-    register_coin<CoinD>(&mut state.id, coin_decimals, 3);
+    add_coin<CoinA>(&mut state.id, coin_decimals, 0);
+    add_coin<CoinB>(&mut state.id, coin_decimals, 1);
+    add_coin<CoinC>(&mut state.id, coin_decimals, 2);
+    add_coin<CoinD>(&mut state.id, coin_decimals, 3);
 
     let lp_coin = add_liquidity_4_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, 0, ctx);
 
@@ -253,14 +293,14 @@ module amm::stable_implementation {
       errors::no_zero_liquidity_amounts()
     );
 
-    let pool = new_pool<Stable>(
+    let pool = interest_pool::new<Stable>(
       make_coins_from_vector(vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>(), get<CoinE>()]), 
       ctx
     );
 
     // * IMPORTANT Make sure the n_coins argument is correct
     add_state<LpCoin>(
-      core::borrow_mut_uid(&mut pool), 
+      interest_pool::borrow_mut_uid(&mut pool), 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -268,14 +308,14 @@ module amm::stable_implementation {
       ctx
     );
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(&mut pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(&mut pool));
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    register_coin<CoinA>(&mut state.id, coin_decimals, 0);
-    register_coin<CoinB>(&mut state.id, coin_decimals, 1);
-    register_coin<CoinC>(&mut state.id, coin_decimals, 2);
-    register_coin<CoinD>(&mut state.id, coin_decimals, 3);
-    register_coin<CoinE>(&mut state.id, coin_decimals, 4);
+    add_coin<CoinA>(&mut state.id, coin_decimals, 0);
+    add_coin<CoinB>(&mut state.id, coin_decimals, 1);
+    add_coin<CoinC>(&mut state.id, coin_decimals, 2);
+    add_coin<CoinD>(&mut state.id, coin_decimals, 3);
+    add_coin<CoinE>(&mut state.id, coin_decimals, 4);
 
     let lp_coin = add_liquidity_5_pool(&mut pool, c, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
 
@@ -286,8 +326,10 @@ module amm::stable_implementation {
     lp_coin
   }
 
+  // === Public Swap Function ===  
+
   public fun swap<CoinIn, CoinOut, LpCoin>(
-    pool: &mut Pool<Stable>,
+    pool: &mut InterestPool<Stable>,
     c: &Clock,
     coin_in: Coin<CoinIn>,
     min_amount: u64,
@@ -298,10 +340,10 @@ module amm::stable_implementation {
     let coin_in_value = coin::value(&coin_in);
     assert!(coin_in_value != 0, errors::cannot_swap_zero_value());
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
 
-    let coin_in_state = load_coin_state<CoinIn>(&state.id);
-    let coin_out_state = load_coin_state<CoinOut>(&state.id);
+    let coin_in_state = borrow_coin_state<CoinIn>(&state.id);
+    let coin_out_state = borrow_coin_state<CoinOut>(&state.id);
 
 
     let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_value);
@@ -318,14 +360,14 @@ module amm::stable_implementation {
 
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);
 
-    let prev_k = invariant_(amp, &state.balances);
+    let prev_k = invariant_(amp, state.balances);
 
     let new_out_balance = y(
       amp,
       (coin_in_state.index as u256),
       (coin_out_state.index as u256),
       *vector::borrow(&state.balances, coin_in_state.index) + normalized_value,
-      &state.balances
+      state.balances
     );
 
     let normalized_amount_out = *vector::borrow(&state.balances, coin_out_state.index) - new_out_balance;
@@ -347,9 +389,9 @@ module amm::stable_implementation {
     *coin_out_balance = *coin_out_balance - ((((amount_out + admin_fee_out) as u256) * PRECISION / coin_out_state.decimals) as u256); 
 
     // * Invariant must hold after all balances updates
-    assert!(invariant_(amp, &state.balances) >= prev_k, errors::invalid_invariant());
+    assert!(invariant_(amp, state.balances) >= prev_k, errors::invalid_invariant());
 
-    let coin_in_state = load_mut_coin_state<CoinIn>(&mut state.id);
+    let coin_in_state = borrow_mut_coin_state<CoinIn>(&mut state.id);
 
     /*
     * The admin fees are not part of the liquidity (do not accrue swap fees) and not counted on the invariant calculation
@@ -360,9 +402,9 @@ module amm::stable_implementation {
     * 4 - Take coin_out for user
     */
     balance::join(&mut coin_in_state.balance, coin::into_balance(coin_in));
-    balance::join(load_mut_admin_balance<CoinIn>(&mut state.id), coin::into_balance(admin_coin_in));
+    balance::join(borrow_mut_admin_balance<CoinIn>(&mut state.id), coin::into_balance(admin_coin_in));
 
-    let coin_out_state = load_mut_coin_state<CoinOut>(&mut state.id);
+    let coin_out_state = borrow_mut_coin_state<CoinOut>(&mut state.id);
 
     let coin_out_balance = &mut coin_out_state.balance;
 
@@ -370,16 +412,17 @@ module amm::stable_implementation {
 
     let coin_out = coin::take(coin_out_balance, amount_out, ctx);
 
-    balance::join(load_mut_admin_balance<CoinOut>(&mut state.id), admin_balance_in);
+    balance::join(borrow_mut_admin_balance<CoinOut>(&mut state.id), admin_balance_in);
 
     events::emit_swap<Stable, CoinIn, CoinOut, LpCoin>(object::id(pool), coin_in_value, amount_out);
 
     coin_out
   }
 
+  // === Public Add Liquidity Functions ===  
 
   public fun add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    pool: &mut Pool<Stable>,
+    pool: &mut InterestPool<Stable>,
     c: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
@@ -388,37 +431,44 @@ module amm::stable_implementation {
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
+    let pool_id = object::id(pool);
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
 
-    events::emit_add_liquidity_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(
-      object::id(pool), 
-      coin::value(&coin_a), 
-      coin::value(&coin_b), 
-      coin::value(&coin_c)
-    );
-
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let prev_invariant = virtual_price_impl(state, c);
     
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
 
-    let prev_k = invariant_(amp, &state.balances);
+    let prev_k = invariant_(amp, state.balances);
 
-    deposit_coin<CoinA, LpCoin>(state, coin_a);
-    deposit_coin<CoinB, LpCoin>(state, coin_b);
-    deposit_coin<CoinC, LpCoin>(state, coin_c);
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
 
     let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
 
-    coin::from_balance(
+    events::emit_add_liquidity_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(
+      pool_id, 
+      coin_a_value, 
+      coin_b_value, 
+      coin_c_value, 
+      mint_amount
+    );
+
+    let lp_coin = coin::from_balance(
       balance::increase_supply(
         &mut state.lp_coin_supply, 
         mint_amount
       ), 
       ctx
-    )
+    );
+
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
   }
 
   public fun add_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
-    pool: &mut Pool<Stable>,
+    pool: &mut InterestPool<Stable>,
     c: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
@@ -433,38 +483,45 @@ module amm::stable_implementation {
         vector[get<CoinA>(), get<CoinB>(), get<CoinC>(), get<CoinD>()]), 
       errors::coins_must_be_in_order()
     );
-
-    events::emit_add_liquidity_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(
-      object::id(pool), 
-      coin::value(&coin_a), 
-      coin::value(&coin_b), 
-      coin::value(&coin_c), 
-      coin::value(&coin_d)
-    );
-
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    
+    let pool_id = object::id(pool);
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
+    let prev_invariant = virtual_price_impl(state, c);
     
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
-    let prev_k = invariant_(amp, &state.balances);
+    let prev_k = invariant_(amp, state.balances);
 
-    deposit_coin<CoinA, LpCoin>(state, coin_a);
-    deposit_coin<CoinB, LpCoin>(state, coin_b);
-    deposit_coin<CoinC, LpCoin>(state, coin_c);
-    deposit_coin<CoinD, LpCoin>(state, coin_d);
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
+    let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
 
     let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
 
-    coin::from_balance(
+    events::emit_add_liquidity_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(
+      pool_id, 
+      coin_a_value, 
+      coin_b_value, 
+      coin_c_value,
+      coin_d_value, 
+      mint_amount
+    );
+
+    let lp_coin = coin::from_balance(
       balance::increase_supply(
         &mut state.lp_coin_supply, 
         mint_amount
       ), 
       ctx
-    )
+    );
+
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
   }
 
   public fun add_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-    pool: &mut Pool<Stable>,
+    pool: &mut InterestPool<Stable>,
     c: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
@@ -481,39 +538,50 @@ module amm::stable_implementation {
       errors::coins_must_be_in_order()
     );
 
-    events::emit_add_liquidity_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-      object::id(pool), 
-      coin::value(&coin_a), 
-      coin::value(&coin_b), 
-      coin::value(&coin_c), 
-      coin::value(&coin_d), 
-      coin::value(&coin_e)
-    );
+    let pool_id = object::id(pool);
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let prev_invariant = virtual_price_impl(state, c);
     
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c);    
-    let prev_k = invariant_(amp, &state.balances);
+    let prev_k = invariant_(amp, state.balances);
 
-    deposit_coin<CoinA, LpCoin>(state, coin_a);
-    deposit_coin<CoinB, LpCoin>(state, coin_b);
-    deposit_coin<CoinC, LpCoin>(state, coin_c);
-    deposit_coin<CoinD, LpCoin>(state, coin_d);
-    deposit_coin<CoinE, LpCoin>(state, coin_e);
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
+    let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
+    let coin_e_value = deposit_coin<CoinE, LpCoin>(state, coin_e);
 
     let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
 
-    coin::from_balance(
+    events::emit_add_liquidity_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      pool_id, 
+      coin_a_value, 
+      coin_b_value, 
+      coin_c_value,
+      coin_d_value,
+      coin_e_value, 
+      mint_amount
+    );
+
+
+    let lp_coin = coin::from_balance(
       balance::increase_supply(
         &mut state.lp_coin_supply, 
         mint_amount
       ), 
       ctx
-    )
+    );
+
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
   }
 
+  // === Public Remove Liquidity Functions ===    
+
   public fun remove_one_coin_liquidity<CoinType, LpCoin>(
-    pool: &mut Pool<Stable>, 
+    pool: &mut InterestPool<Stable>, 
     c: &Clock,
     lp_coin: Coin<LpCoin>,
     min_amount: u64,
@@ -523,9 +591,11 @@ module amm::stable_implementation {
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_id = object::id(pool);
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
 
-    let coin_state = load_mut_coin_state<CoinType>(&mut state.id);
+    let prev_invariant = virtual_price_impl(state, c);
+
+    let coin_state = borrow_mut_coin_state<CoinType>(&mut state.id);
 
     let balances = state.balances;
 
@@ -535,7 +605,7 @@ module amm::stable_implementation {
     *current_coin_balance = y_lp(
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c),
       (coin_state.index as u256),
-      &balances,
+      balances,
       (lp_coin_value as u256),
       (balance::supply_value(&state.lp_coin_supply) as u256),
     );
@@ -548,12 +618,17 @@ module amm::stable_implementation {
 
     events::emit_remove_liquidity<Stable, CoinType, LpCoin>(pool_id, amount_to_take, lp_coin_value);
 
-    coin::take(&mut coin_state.balance, amount_to_take, ctx)
+    let coin_out = coin::take(&mut coin_state.balance, amount_to_take, ctx);
+
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());
+
+    coin_out
   }
 
   public fun remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    pool: &mut Pool<Stable>, 
+    pool: &mut InterestPool<Stable>, 
     lp_coin: Coin<LpCoin>,
+    c: &Clock,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
@@ -567,7 +642,9 @@ module amm::stable_implementation {
     let lp_coin_value = coin::value(&lp_coin);
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
+
+    let prev_invariant = virtual_price_impl(state, c);
 
     let (coin_a, coin_b, coin_c) = (
       take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
@@ -585,12 +662,15 @@ module amm::stable_implementation {
       lp_coin_value
     );
 
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());
+
     (coin_a, coin_b, coin_c)
   }
 
   public fun remove_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
-    pool: &mut Pool<Stable>, 
+    pool: &mut InterestPool<Stable>, 
     lp_coin: Coin<LpCoin>,
+    c: &Clock,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
@@ -604,7 +684,9 @@ module amm::stable_implementation {
     let lp_coin_value = coin::value(&lp_coin);
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
+
+    let prev_invariant = virtual_price_impl(state, c);
 
     let (coin_a, coin_b, coin_c, coin_d) = (
       take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
@@ -624,12 +706,15 @@ module amm::stable_implementation {
       lp_coin_value
     );
 
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());
+
     (coin_a, coin_b, coin_c, coin_d)
   }
 
   public fun remove_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-    pool: &mut Pool<Stable>, 
+    pool: &mut InterestPool<Stable>, 
     lp_coin: Coin<LpCoin>,
+    c: &Clock,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
@@ -643,7 +728,9 @@ module amm::stable_implementation {
     let lp_coin_value = coin::value(&lp_coin);
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
+
+    let prev_invariant = virtual_price_impl(state, c);
 
     let (coin_a, coin_b, coin_c, coin_d, coin_e) = (
       take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
@@ -665,15 +752,17 @@ module amm::stable_implementation {
       lp_coin_value
     );
 
+    assert!(virtual_price_impl(borrow_state<LpCoin>(interest_pool::borrow_uid(pool)), c) >= prev_invariant, errors::invalid_invariant());    
+
     (coin_a, coin_b, coin_c, coin_d, coin_e)
   }
 
-  // * Admin Function Functions
+  // === Admin Only Functions ===    
 
-  public fun ramp<LpCoin>(_:&Admin, pool: &mut Pool<Stable>, c: &Clock, future_a: u256, future_a_time: u256) {
+  public fun ramp<LpCoin>(pool: &mut InterestPool<Stable>, _: &Admin, c: &Clock, future_a: u256, future_a_time: u256) {
     let current_timestamp = clock::timestamp_ms(c);
     let pool_id = object::id(pool);
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
 
     assert!(current_timestamp > (state.initial_a_time as u64) + MIN_RAMP_TIME, errors::wait_one_day());
     assert!(future_a_time >= ((current_timestamp + MIN_RAMP_TIME) as u256), errors::future_ramp_time_is_too_short());
@@ -691,11 +780,11 @@ module amm::stable_implementation {
     events::emit_ramp_a<LpCoin>(pool_id, amp, future_a, future_a_time, current_timestamp);
   }
 
-  public fun stop_ramp<LpCoin>(_:&Admin, pool: &mut Pool<Stable>, c: &Clock) {
+  public fun stop_ramp<LpCoin>(pool: &mut InterestPool<Stable>, _: &Admin, c: &Clock) {
     let current_timestamp = clock::timestamp_ms(c);
 
     let pool_id = object::id(pool);
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
 
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c); 
 
@@ -708,13 +797,13 @@ module amm::stable_implementation {
   }
 
   public fun update_fee<LpCoin>(
+    pool: &mut InterestPool<Stable>,
     _: &Admin,
-    pool: &mut Pool<Stable>,
     fee_in_percent: Option<u256>,
     fee_out_percent: Option<u256>, 
     admin_fee_percent: Option<u256>,  
   ) {
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
     stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
     stable_fees::update_fee_out_percent(&mut state.fees, fee_out_percent);  
     stable_fees::update_admin_fee_percent(&mut state.fees, admin_fee_percent);
@@ -725,14 +814,14 @@ module amm::stable_implementation {
   }
 
   public fun take_fees<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>,
     _: &Admin,
-    pool: &mut Pool<Stable>,
     ctx: &mut TxContext
   ): Coin<CoinType> {
     let pool_id = object::id(pool);
 
-    let state = load_mut_state<LpCoin>(core::borrow_mut_uid(pool));
-    let admin_balance = load_mut_admin_balance<CoinType>(&mut state.id);
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
+    let admin_balance = borrow_mut_admin_balance<CoinType>(&mut state.id);
     let amount = balance::value(admin_balance);
 
     events::emit_take_fees<Stable, CoinType, LpCoin>(pool_id, amount);
@@ -740,37 +829,37 @@ module amm::stable_implementation {
     coin::take(admin_balance, amount, ctx)
   }
 
-  // * Private Functions
+  // === Private Functions ===    
 
   fun calculate_mint_amount<LpCoin>(state: &State<LpCoin>, amp: u256, prev_k: u256, lp_coin_min_amount: u64): u64 {
-    let new_k = invariant_(amp, &state.balances);
+    let new_k = invariant_(amp, state.balances);
 
     assert!(new_k > prev_k, errors::invalid_invariant());
 
     let supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
 
-    let mint_amount = if (supply_value == 0) { ((new_k / ROLL)  as u64) } else { ((supply_value * (new_k - prev_k) / prev_k) as u64) };
+    let mint_amount = if (supply_value == 0) { ((new_k / 1_000_000_000)  as u64) } else { ((supply_value * (new_k - prev_k) / prev_k) as u64) };
 
     assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
 
     mint_amount
   }
 
-  fun deposit_coin<CoinType, LpCoin>(state: &mut State<LpCoin>, coin_in: Coin<CoinType>) {
+  fun deposit_coin<CoinType, LpCoin>(state: &mut State<LpCoin>, coin_in: Coin<CoinType>): u64 {
     let coin_value = (coin::value(&coin_in) as u256);
 
     if (coin_value == 0) {
       coin::destroy_zero(coin_in);
-      return
+      return 0
     };
 
-    let coin_state = load_mut_coin_state<CoinType>(&mut state.id);
+    let coin_state = borrow_mut_coin_state<CoinType>(&mut state.id);
 
     // Update the balance for the coin
     let current_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
     *current_balance = *current_balance + (coin_value * PRECISION / coin_state.decimals);
 
-    balance::join(&mut coin_state.balance, coin::into_balance(coin_in));
+    balance::join(&mut coin_state.balance, coin::into_balance(coin_in))
   }
 
   fun take_coin<CoinType, LpCoin>(
@@ -779,7 +868,7 @@ module amm::stable_implementation {
     min_amounts: vector<u64>, 
     ctx: &mut TxContext
   ): Coin<CoinType> {
-    let coin_state = load_mut_coin_state<CoinType>(&mut state.id);    
+    let coin_state = borrow_mut_coin_state<CoinType>(&mut state.id);    
 
     let current_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
 
@@ -794,12 +883,12 @@ module amm::stable_implementation {
     coin::take(&mut coin_state.balance, (balance_to_remove as u64), ctx)
   }
 
-  fun register_coin<CoinType>(id: &mut UID, coin_decimals: &CoinDecimals, index: u64) {
+  fun add_coin<CoinType>(id: &mut UID, coin_decimals: &CoinDecimals, index: u64) {
     let coin_name = get<CoinType>();
 
     df::add(id, AdminCoinBalanceKey { type: coin_name }, balance::zero<CoinType>());
     df::add(id, CoinStatekey { type: coin_name }, CoinState {
-      decimals: (get_decimals_scalar<CoinType>(coin_decimals) as u256),
+      decimals: (scalar<CoinType>(coin_decimals) as u256),
       balance: balance::zero<CoinType>(),
       index
     });
@@ -814,7 +903,7 @@ module amm::stable_implementation {
     ctx: &mut TxContext
   ) {
     assert!(balance::supply_value(&lp_coin_supply) == 0, errors::supply_must_have_zero_value());
-    let lp_coin_decimals = get_decimals<LpCoin>(coin_decimals);
+    let lp_coin_decimals = decimals<LpCoin>(coin_decimals);
 
     assert!(lp_coin_decimals == 9, errors::must_have_9_decimals());
     dof::add(id, StateKey {}, 
@@ -826,44 +915,39 @@ module amm::stable_implementation {
         initial_a_time: 0,
         future_a_time: 0,
         lp_coin_supply,
-        lp_coin_decimals: (get_decimals_scalar<LpCoin>(coin_decimals) as u256),
+        lp_coin_decimals: (scalar<LpCoin>(coin_decimals) as u256),
         n_coins,
         fees: stable_fees::new()
       }
     );
   }
 
-  fun load_mut_coin_state<CoinType>(id: &mut UID): &mut CoinState<CoinType> {
-    df::borrow_mut(id, CoinStatekey { type: get<CoinType>() })
+  fun virtual_price_impl<LpCoin>(state: &State<LpCoin>, c: &Clock): u256 {
+    let k = invariant_(
+      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c), 
+      state.balances
+    );
+
+    k * state.lp_coin_decimals / (balance::supply_value(&state.lp_coin_supply) as u256)
   }
 
-  fun load_coin_state<CoinType>(id: &UID): &CoinState<CoinType> {
-    df::borrow(id, CoinStatekey { type: get<CoinType>() })
-  }  
-
-  fun load_mut_admin_balance<CoinType>(id: &mut UID): &mut Balance<CoinType> {
-    df::borrow_mut(id, AdminCoinBalanceKey  { type: get<CoinType>() })
-  } 
-
-
-  fun load_state<LpCoin>(id: &UID): &State<LpCoin> {
+  fun borrow_state<LpCoin>(id: &UID): &State<LpCoin> {
     dof::borrow(id, StateKey {})
   }
 
-  fun load_mut_state<LpCoin>(id: &mut UID): &mut State<LpCoin> {
+  fun borrow_mut_state<LpCoin>(id: &mut UID): &mut State<LpCoin> {
     dof::borrow_mut(id, StateKey {})
   }
 
-  #[test_only]
-  public fun view_coin_state<CoinType, LpCoin>(pool: &Pool<Stable>): (u256, u64, u64) {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
-    let coin_state = load_coin_state<CoinType>(&state.id);
-    (coin_state.decimals, coin_state.index, balance::value(&coin_state.balance))
+  fun borrow_coin_state<CoinType>(id: &UID): &CoinState<CoinType> {
+    df::borrow(id, CoinStatekey { type: get<CoinType>() })
+  }  
+
+  fun borrow_mut_coin_state<CoinType>(id: &mut UID): &mut CoinState<CoinType> {
+    df::borrow_mut(id, CoinStatekey { type: get<CoinType>() })
   }
 
-  #[test_only]
-  public fun view_admin_balance<CoinType, LpCoin>(pool: &Pool<Stable>): u64 {
-    let state = load_state<LpCoin>(core::borrow_uid(pool));
-    balance::value(df::borrow<AdminCoinBalanceKey, Balance<CoinType>>(&state.id, AdminCoinBalanceKey  { type: get<CoinType>() }))
-  }
+  fun borrow_mut_admin_balance<CoinType>(id: &mut UID): &mut Balance<CoinType> {
+    df::borrow_mut(id, AdminCoinBalanceKey  { type: get<CoinType>() })
+  } 
 }

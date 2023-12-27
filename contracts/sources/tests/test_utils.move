@@ -1,8 +1,9 @@
 #[test_only]
-module amm::test_utils {
+module amm::amm_test_utils {
 
   use sui::math;
   use sui::clock;
+  use sui::transfer;
   use sui::tx_context::TxContext;
   use sui::coin::{mint_for_testing, Coin, CoinMetadata};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
@@ -49,9 +50,10 @@ module amm::test_utils {
       usdt::init_for_testing(ctx(test));
       lp_coin::init_for_testing(ctx(test));
       admin::init_for_testing(ctx(test));
-      coin_decimals::init_for_testing(ctx(test));
       frax::init_for_testing(ctx(test));
       true_usd::init_for_testing(ctx(test));
+
+      transfer::public_share_object(coin_decimals::new(ctx(test)));
     };    
 
     next_tx(test, alice);
@@ -66,14 +68,14 @@ module amm::test_utils {
       let eth_metadata = test::take_shared<CoinMetadata<ETH>>(test);
       let btc_metadata = test::take_shared<CoinMetadata<BTC>>(test);
 
-      coin_decimals::register_coin<USDT>(&mut coin_decimals_storage, &usdt_metadata);
-      coin_decimals::register_coin<USDC>(&mut coin_decimals_storage, &usdc_metadata);
-      coin_decimals::register_coin<DAI>(&mut coin_decimals_storage, &dai_metadata);
-      coin_decimals::register_coin<LP_COIN>(&mut coin_decimals_storage, &lp_metadata);
-      coin_decimals::register_coin<FRAX>(&mut coin_decimals_storage, &frax_metadata);
-      coin_decimals::register_coin<TRUE_USD>(&mut coin_decimals_storage, &true_usd_metadata);
-      coin_decimals::register_coin<ETH>(&mut coin_decimals_storage, &eth_metadata);
-      coin_decimals::register_coin<BTC>(&mut coin_decimals_storage, &btc_metadata);
+      coin_decimals::add<USDT>(&mut coin_decimals_storage, &usdt_metadata);
+      coin_decimals::add<USDC>(&mut coin_decimals_storage, &usdc_metadata);
+      coin_decimals::add<DAI>(&mut coin_decimals_storage, &dai_metadata);
+      coin_decimals::add<LP_COIN>(&mut coin_decimals_storage, &lp_metadata);
+      coin_decimals::add<FRAX>(&mut coin_decimals_storage, &frax_metadata);
+      coin_decimals::add<TRUE_USD>(&mut coin_decimals_storage, &true_usd_metadata);
+      coin_decimals::add<ETH>(&mut coin_decimals_storage, &eth_metadata);
+      coin_decimals::add<BTC>(&mut coin_decimals_storage, &btc_metadata);
 
       test::return_shared(btc_metadata);
       test::return_shared(eth_metadata);  

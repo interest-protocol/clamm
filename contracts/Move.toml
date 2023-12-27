@@ -3,9 +3,10 @@ name = "AMM"
 version = "0.0.1"
 
 [dependencies]
-MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "testnet-v1.11.1", override = true }
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet-v1.11.1", override = true }
-SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "main" }
+MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/testnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "testnet" }
+
 [addresses]
 amm = "0x0"
 std = "0x1"

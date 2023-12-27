@@ -10,7 +10,7 @@ module amm::interest_pool {
 
   use amm::curves;
 
-  friend amm::stable_implementation;
+  friend amm::interest_stable;
   friend amm::volatile;
 
   struct InterestPool<phantom Curve> has key, store {
@@ -18,7 +18,7 @@ module amm::interest_pool {
     coins: VecSet<TypeName>
   }
 
-  public fun view_coins<Curve>(self: &InterestPool<Curve>): vector<TypeName> {
+  public fun coins<Curve>(self: &InterestPool<Curve>): vector<TypeName> {
     *vec_set::keys(&self.coins)
   }
 
@@ -30,7 +30,7 @@ module amm::interest_pool {
     &self.id
   }
 
-  public(friend) fun new_pool<Curve>(coins: VecSet<TypeName>, ctx: &mut TxContext): InterestPool<Curve>  {
+  public(friend) fun new<Curve>(coins: VecSet<TypeName>, ctx: &mut TxContext): InterestPool<Curve>  {
     curves::assert_is_curve<Curve>();
     InterestPool{
       id: object::new(ctx),

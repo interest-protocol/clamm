@@ -3,7 +3,7 @@ module amm::pool_events {
   use sui::event::emit;
 
   friend amm::volatile;
-  friend amm::stable_implementation;
+  friend amm::interest_stable;
 
   struct New2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has drop, copy {
     pool_id: ID

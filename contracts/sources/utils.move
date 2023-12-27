@@ -4,12 +4,12 @@ module amm::utils {
 
   use sui::vec_set::{Self, VecSet};
 
-  use suitears::comparator::{compare, is_equal};
+  use suitears::comparator::{compare, eq};
 
   use amm::interest_pool::{Self, InterestPool};
 
   public fun are_coins_ordered<Curve>(pool: &InterestPool<Curve>, coins: vector<TypeName>): bool {
-    is_equal(&compare(&interest_pool::view_coins(pool), &coins))
+    eq(&compare(&interest_pool::coins(pool), &coins))
   }
 
   public fun make_coins_from_vector(data: vector<TypeName>): VecSet<TypeName> {

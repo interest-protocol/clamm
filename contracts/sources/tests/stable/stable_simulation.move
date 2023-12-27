@@ -1,14 +1,14 @@
 #[test_only]
-module amm::stable_tuple_simulation {
+module amm::stable_simulation {
   use std::vector;
   
-  use suitears::fixed_point_wad::{wad_mul_down as fmul};
+  use suitears::fixed_point_wad::mul_down as fmul;
 
   use sui::object::{Self, UID};
   use sui::tx_context::TxContext;
   use sui::transfer::share_object;
 
-  use amm::stable_tuple_math::{
+  use amm::stable_math::{
     y as get_y,
     y_d as get_y_d,
     invariant_
@@ -53,15 +53,15 @@ module amm::stable_tuple_simulation {
   }
 
   public fun d(state: &State): u256 {
-    invariant_(state.a, &state.xp)
+    invariant_(state.a, state.xp)
   }
 
   public fun y(state: &State, i: u64, j: u64, x: u256): u256 {
-    get_y(state.a, (i as u256), (j as u256), x, &state.xp)
+    get_y(state.a, (i as u256), (j as u256), x, state.xp)
   }
 
   public fun y_d(state: &State, i: u64, d: u256): u256 {
-    get_y_d(state.a, (i as u256), &state.xp, d)
+    get_y_d(state.a, (i as u256), state.xp, d)
   }
 
   public fun dy(state: &State, i: u64, j: u64, dx: u256): u256 {

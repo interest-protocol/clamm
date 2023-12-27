@@ -49,11 +49,11 @@ module amm::stable_math {
   * @param balances All coin balances in the pool. 
   * @return u256 The current invariant 
   */
-  public fun invariant_(amp: u256, balances: &vector<u256>): u256 {
+  public fun invariant_(amp: u256, balances: vector<u256>): u256 {
     let s = sum(balances);
     if (s == 0) return 0;
     
-    let n_coins = vector::length(balances);
+    let n_coins = vector::length(&balances);
     let n_coins_u256 = (n_coins as u256);
 
     let prev_d = 0;
@@ -66,7 +66,7 @@ module amm::stable_math {
 
       let j = 0;
       while(j < n_coins) {
-        d_p = d_p * d / (*vector::borrow(balances, j) * n_coins_u256);
+        d_p = d_p * d / (*vector::borrow(&balances, j) * n_coins_u256);
         j = j + 1;
       };
 
@@ -96,14 +96,14 @@ module amm::stable_math {
     coin_in_index: u256, 
     coin_out_index: u256,
     new_balance_in: u256, 
-    balances: &vector<u256>
+    balances: vector<u256>
   ): u256 {
     assert!(coin_in_index != coin_out_index, errors::same_coin_index());
 
     let d = invariant_(amp, balances);
     let c = d;
     let s = 0;
-    let n_coins = (vector::length(balances) as u256);
+    let n_coins = (vector::length(&balances) as u256);
     let ann = amp * n_coins;
 
     let i = 0;
@@ -113,7 +113,7 @@ module amm::stable_math {
         s = s + new_balance_in;
         c = c * d / (new_balance_in * n_coins);
       } else if (i != coin_out_index) {
-        let x = *vector::borrow(balances, (i as u64));
+        let x = *vector::borrow(&balances, (i as u64));
         s = s + x;
         c = c * d / (x * n_coins);
       };
@@ -152,7 +152,7 @@ module amm::stable_math {
   public fun y_lp(
     amp: u256, 
     coin_index: u256, 
-    balances: &vector<u256>, 
+    balances: vector<u256>, 
     lp_burn_amount: u256,
     lp_supply_value: u256,
   ): u256 {
@@ -174,17 +174,17 @@ module amm::stable_math {
   * @param _invariant The new invariant of the pool. 
   * @return u256 The new balance for Coin at index `coin_index`. 
   */
-  public fun y_d(amp: u256, coin_index: u256, balances: &vector<u256>, _invariant: u256): u256 {
+  public fun y_d(amp: u256, coin_index: u256, balances: vector<u256>, _invariant: u256): u256 {
     let c = _invariant;
     let s = 0;
-    let n_coins = (vector::length(balances) as u256);
+    let n_coins = (vector::length(&balances) as u256);
     let ann = amp * n_coins;
 
     let i = 0;
 
     while (n_coins > i) {
       if (i != coin_index) {
-        let x = *vector::borrow(balances, (i as u64));
+        let x = *vector::borrow(&balances, (i as u64));
         s = s + x;
         c = c * _invariant / (x * n_coins);
       };

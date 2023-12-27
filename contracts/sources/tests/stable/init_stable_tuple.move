@@ -1,20 +1,20 @@
 #[test_only]
-module amm::init_stable_tuple {
+module amm::init_interest_stable {
   use sui::clock::Clock;
   use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use amm::stable_tuple;
+  use amm::interest_stable;
   use amm::dai::DAI;
   use amm::usdt::USDT;
   use amm::usdc::USDC;
   use amm::frax::FRAX;
   use amm::lp_coin::LP_COIN;
   use amm::true_usd::TRUE_USD;
-  use amm::stable_tuple_simulation::{Self as sim, State as SimState};
-  use amm::test_utils::{people, mint, normalize_amount, setup_dependencies};
+  use amm::stable_simulation::{Self as sim, State as SimState};
+  use amm::amm_test_utils::{people, mint, normalize_amount, setup_dependencies};
 
   const DAI_DECIMALS: u8 = 9;
   const FRAX_DECIMALS: u8 = 9;
@@ -41,7 +41,7 @@ module amm::init_stable_tuple {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(stable_tuple::new_3_pool(
+      burn(interest_stable::new_3_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -91,7 +91,7 @@ module amm::init_stable_tuple {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(stable_tuple::new_4_pool(
+      burn(interest_stable::new_4_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -148,7 +148,7 @@ module amm::init_stable_tuple {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(stable_tuple::new_5_pool(
+      burn(interest_stable::new_5_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
