@@ -56,7 +56,7 @@ module amm::stable_math {
     let n_coins = vector::length(&balances);
     let n_coins_u256 = (n_coins as u256);
 
-    let prev_d = 0;
+    let _prev_d = 0;
     let d = s;
     let ann = amp * n_coins_u256;
 
@@ -70,10 +70,10 @@ module amm::stable_math {
         j = j + 1;
       };
 
-      prev_d = d; 
+      _prev_d = d; 
       d = (ann * s + d_p * n_coins_u256) * d / ((ann -1) * d + (n_coins_u256 + 1) * d_p);
 
-      if (1 >= diff(d, prev_d)) return d;
+      if (1 >= diff(d, _prev_d)) return d;
 
       i = i + 1;
     };
@@ -124,14 +124,14 @@ module amm::stable_math {
     c = c * d / (ann * n_coins);
     let b = s + d / ann;
     let y = d;
-    let prev_y = 0;
+    let _prev_y = 0;
 
     let i = 0;
     while(255 > i) {
-      prev_y = y;
+      _prev_y = y;
       y = (y * y + c) / (2 * y + b - d);
 
-      if (diff(y, prev_y) > 1) return y;
+      if (diff(y, _prev_y) > 1) return y;
 
       i = i + 1;
     };
@@ -194,14 +194,14 @@ module amm::stable_math {
     c = c * _invariant / (ann * n_coins);
     let b = s + _invariant / ann;
     let y = _invariant;
-    let prev_y = 0;
+    let _prev_y = 0;
 
     let i = 0;
     while (255 > i) {
-      prev_y = y;
+      _prev_y = y;
       y = (y * y + c) / (2 * y + b - _invariant);
 
-      if (diff(y, prev_y) > 1) return y;
+      if (diff(y, _prev_y) > 1) return y;
     };
     y
   }

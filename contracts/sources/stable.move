@@ -182,6 +182,7 @@ module amm::interest_stable {
 
   // === Public Create Pool Functions ===  
 
+  #[lint_allow(share_owned)]
   public fun new_3_pool<CoinA, CoinB, CoinC, LpCoin>(
     c: &Clock,
     initial_a: u256,
@@ -221,6 +222,7 @@ module amm::interest_stable {
     lp_coin
   }
 
+  #[lint_allow(share_owned)]
   public fun new_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
     c: &Clock,
     initial_a: u256,
@@ -272,6 +274,7 @@ module amm::interest_stable {
     lp_coin
   }
 
+  #[lint_allow(share_owned)]
   public fun new_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     c: &Clock,
     initial_a: u256,

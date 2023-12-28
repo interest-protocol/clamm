@@ -107,7 +107,7 @@ module amm::stable_fees_tests {
   }
 
 #[test]
-#[expected_failure(abort_code = 12)]  
+#[expected_failure(abort_code = 11, location = amm::stable_fees)]  
 fun aborts_max_fee_in() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -124,7 +124,7 @@ fun aborts_max_fee_in() {
   }
 
 #[test]
-#[expected_failure(abort_code = 12)]  
+#[expected_failure(abort_code = 11, location = amm::stable_fees)]  
 fun aborts_max_fee_out() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -141,7 +141,7 @@ fun aborts_max_fee_out() {
   }
 
 #[test]
-#[expected_failure(abort_code = 12)]  
+#[expected_failure(abort_code = 11, location = amm::stable_fees)]  
 fun aborts_max_admin_fee() {
     let scenario = scenario();
     let (alice, _) = people();

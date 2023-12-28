@@ -67,13 +67,6 @@ module amm::pool_events {
     shares: u64
   }
 
-  struct RemoveLiquidity2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has copy, drop {
-    pool_id: ID,
-    amount_a: u64,
-    amount_b: u64,
-    shares: u64
-  }
-
   struct RemoveLiquidity3Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom CoinC, phantom LpCoin> has copy, drop {
     pool_id: ID,
     amount_a: u64,

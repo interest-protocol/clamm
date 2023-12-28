@@ -38,6 +38,7 @@ module amm::amm_test_utils {
     a * PRECISION
   }
 
+  #[lint_allow(share_owned)]
   public fun setup_dependencies(test: &mut Scenario) {
     let (alice, _) = people();
 

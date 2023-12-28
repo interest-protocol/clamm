@@ -8,6 +8,7 @@ module amm::dai {
 
   struct DAI has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: DAI, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<DAI>(
             witness, 
@@ -39,6 +40,7 @@ module amm::usdc {
 
   struct USDC has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: USDC, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<USDC>(
             witness, 
@@ -70,6 +72,7 @@ module amm::usdt {
 
   struct USDT has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: USDT, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<USDT>(
             witness, 
@@ -101,6 +104,7 @@ module amm::true_usd {
 
   struct TRUE_USD has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: TRUE_USD, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<TRUE_USD>(
             witness, 
@@ -132,6 +136,7 @@ module amm::frax {
 
   struct FRAX has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: FRAX, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<FRAX>(
             witness, 
@@ -163,6 +168,7 @@ module amm::btc {
 
   struct BTC has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: BTC, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<BTC>(
             witness, 
@@ -194,6 +200,7 @@ module amm::eth {
 
   struct ETH has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: ETH, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<ETH>(
             witness, 
@@ -225,6 +232,7 @@ module amm::lp_coin {
 
   struct LP_COIN has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: LP_COIN, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<LP_COIN>(
             witness, 
@@ -256,6 +264,7 @@ module amm::lp_coin_2 {
 
   struct LP_COIN_2 has drop {}
 
+  #[lint_allow(share_owned)]
   fun init(witness: LP_COIN_2, ctx: &mut TxContext) {
       let (treasury_cap, metadata) = coin::create_currency<LP_COIN_2>(
             witness, 
