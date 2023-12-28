@@ -127,11 +127,12 @@ module amm::stable_math {
     let _prev_y = 0;
 
     let i = 0;
+
     while(255 > i) {
       _prev_y = y;
       y = (y * y + c) / (2 * y + b - d);
 
-      if (diff(y, _prev_y) > 1) return y;
+      if (1 >= diff(y, _prev_y)) return y;
 
       i = i + 1;
     };
@@ -201,7 +202,7 @@ module amm::stable_math {
       _prev_y = y;
       y = (y * y + c) / (2 * y + b - _invariant);
 
-      if (diff(y, _prev_y) > 1) return y;
+      if (1 >= diff(y, _prev_y)) return y;
     };
     y
   }

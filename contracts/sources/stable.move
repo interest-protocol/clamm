@@ -1,6 +1,6 @@
 module amm::interest_stable {
   // === Imports ===
-
+  
   use std::vector;
   use std::option::Option;
   use std::type_name::{TypeName, get};
@@ -347,7 +347,6 @@ module amm::interest_stable {
 
     let coin_in_state = borrow_coin_state<CoinIn>(&state.id);
     let coin_out_state = borrow_coin_state<CoinOut>(&state.id);
-
 
     let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_value);
     let admin_fee_in = stable_fees::calculate_admin_amount(&state.fees, fee_in);
@@ -926,12 +925,16 @@ module amm::interest_stable {
   }
 
   fun virtual_price_impl<LpCoin>(state: &State<LpCoin>, c: &Clock): u256 {
+    let supply = (balance::supply_value(&state.lp_coin_supply) as u256);
+
+    if (supply == 0) return 0;
+
     let k = invariant_(
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, c), 
       state.balances
     );
 
-    k * state.lp_coin_decimals / (balance::supply_value(&state.lp_coin_supply) as u256)
+    k * state.lp_coin_decimals / supply
   }
 
   fun borrow_state<LpCoin>(id: &UID): &State<LpCoin> {
