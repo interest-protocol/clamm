@@ -89,7 +89,7 @@ module amm::stable_simulation {
     let _xp = state.xp;
     let d0 = d(state);
     let d1 = d0 - (token_amount * d0) / state.lp_supply;
-    let dy = *vector::borrow(&_xp, i) - y_d(state, i, d1);
+    let dy = *vector::borrow(&_xp, i) - (y_d(state, i, d1) + 1);
 
     dy
   } 

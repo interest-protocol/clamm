@@ -1,6 +1,6 @@
 // * 3 Pool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_ramp_tests {
+module amm::stable_ramp_tests {
   // use sui::clock::{Self, Clock};
   // use sui::test_utils::assert_eq;
   // use sui::test_scenario::{Self as test, next_tx};

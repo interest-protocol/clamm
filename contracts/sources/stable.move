@@ -14,6 +14,7 @@ module amm::interest_stable {
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
 
+  use suitears::math256::min;
   use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
 
   use amm::errors;
@@ -610,9 +611,9 @@ module amm::interest_stable {
       balances,
       (lp_coin_value as u256),
       (balance::supply_value(&state.lp_coin_supply) as u256),
-    );
+    ) + 1;
 
-    let amount_to_take = (((initial_coin_balance - *current_coin_balance) * coin_state.decimals / PRECISION) as u64);
+    let amount_to_take = (((initial_coin_balance - min(initial_coin_balance, *current_coin_balance)) * coin_state.decimals / PRECISION) as u64);
 
     assert!(amount_to_take >= min_amount, errors::slippage());
 

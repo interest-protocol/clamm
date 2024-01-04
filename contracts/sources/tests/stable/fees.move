@@ -1,6 +1,6 @@
 // * 3 Pool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_fees_tests {
+module amm::stable_swap_fees_tests {
   // use std::option;
 
   // use sui::clock::Clock;

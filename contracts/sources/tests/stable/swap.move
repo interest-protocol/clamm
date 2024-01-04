@@ -1,6 +1,6 @@
 // * 3 InterestPool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_swap_tests {
+module amm::stable_swap_tests {
  use std::option;
 
   use sui::clock::Clock;
