@@ -272,9 +272,9 @@ fun test_y_d() {
     );      
 }
 
-#[test]
-#[expected_failure(abort_code = amm::errors::SAME_COIN_INDEX, location = amm::stable_math)] 
-fun test_y_same_coin() {
+ #[test]
+ #[expected_failure(abort_code = amm::errors::SAME_COIN_INDEX, location = amm::stable_math)] 
+ fun test_y_same_coin() {
       y(
         0,
         1,
@@ -282,6 +282,6 @@ fun test_y_same_coin() {
         0,
         vector[]
       );
-}
+ }
   
 }
