@@ -5,7 +5,7 @@ module amm::stable_math_tests {
   use sui::tx_context;
   use sui::test_utils::assert_eq; 
 
-  use amm::stable_math::{a, y, invariant_, y_lp};
+  use amm::stable_math::{a, y, invariant_, y_lp, y_d};
 
   #[test]
   fun test_a() {
@@ -238,6 +238,39 @@ fun test_y_lp() {
        987654321098765
     );               
 }  
+
+#[test]
+fun test_y_d() {
+    assert_eq(
+      y_d(
+        33,
+        0,
+        vector[987654321098765, 384109823746109, 752784590271893],
+        123456789
+      ),  
+       0
+    );   
+
+    assert_eq(
+      y_d(
+        33,
+        0,
+        vector[987654321098765, 384109823746109, 752784590271893],
+        987654321098765
+      ),  
+        7389326498921
+    );    
+
+    assert_eq(
+      y_d(
+        33,
+        0,
+        vector[987654321098765, 384109823746109, 752784590271893],
+        1283950617428394
+      ),  
+         156547623622838
+    );      
+}
 
 #[test]
 #[expected_failure(abort_code = amm::errors::SAME_COIN_INDEX, location = amm::stable_math)] 
