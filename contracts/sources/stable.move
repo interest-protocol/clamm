@@ -805,14 +805,19 @@ module amm::interest_stable {
     fee_out_percent: Option<u256>, 
     admin_fee_percent: Option<u256>,  
   ) {
+    let pool_id = object::id(pool);
     let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
+
     stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
     stable_fees::update_fee_out_percent(&mut state.fees, fee_out_percent);  
     stable_fees::update_admin_fee_percent(&mut state.fees, admin_fee_percent);
-    
-    let (fee_in_percent, fee_out_percent, admin_fee_percent) = stable_fees::view(&state.fees);
 
-    events::emit_update_stable_fee<Stable, LpCoin>(object::id(pool), fee_in_percent, fee_out_percent, admin_fee_percent);
+    events::emit_update_stable_fee<Stable, LpCoin>(
+      pool_id, 
+      stable_fees::fee_in_percent(&state.fees), 
+      stable_fees::fee_out_percent(&state.fees), 
+      stable_fees::admin_fee_percent(&state.fees)
+    );
   }
 
   public fun take_fees<CoinType, LpCoin>(

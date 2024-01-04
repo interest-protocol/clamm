@@ -26,7 +26,9 @@ module amm::stable_fees_tests {
       
       let fees = stable_fees::new();
 
-      let (fee_in, fee_out, fee_admin) = stable_fees::view(&fees);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
       assert_eq(fee_in, INITIAL_FEE_PERCENT);
       assert_eq(fee_out, INITIAL_FEE_PERCENT);
@@ -52,7 +54,9 @@ module amm::stable_fees_tests {
       stable_fees::update_fee_out_percent(&mut fees, option::some(MAX_FEE_PERCENT));
       stable_fees::update_admin_fee_percent(&mut fees, option::some(1));
 
-      let (fee_in, fee_out, fee_admin) = stable_fees::view(&fees);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
       assert_eq(fee_in, MAX_FEE_PERCENT);
       assert_eq(fee_out, MAX_FEE_PERCENT);
@@ -62,7 +66,9 @@ module amm::stable_fees_tests {
       stable_fees::update_fee_out_percent(&mut fees, option::none());
       stable_fees::update_admin_fee_percent(&mut fees, option::none());
 
-      let (fee_in, fee_out, fee_admin) = stable_fees::view(&fees);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
       assert_eq(fee_in, MAX_FEE_PERCENT);
       assert_eq(fee_out, MAX_FEE_PERCENT);
@@ -72,7 +78,9 @@ module amm::stable_fees_tests {
       stable_fees::update_fee_out_percent(&mut fees, option::some(0));
       stable_fees::update_admin_fee_percent(&mut fees, option::some(0));
 
-      let (fee_in, fee_out, fee_admin) = stable_fees::view(&fees);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
       assert_eq(fee_in, 0);
       assert_eq(fee_out, 0);

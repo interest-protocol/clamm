@@ -23,8 +23,16 @@ module amm::stable_fees {
     }
   }
 
-  public fun view(fees: &StableFees): (u256, u256, u256) {
-    (fees.fee_in_percent, fees.fee_out_percent, fees.admin_fee_percent)
+  public fun fee_in_percent(fees: &StableFees): u256 {
+    fees.fee_in_percent
+  }
+
+  public fun fee_out_percent(fees: &StableFees): u256 {
+    fees.fee_out_percent
+  }
+
+  public fun admin_fee_percent(fees: &StableFees): u256 {
+    fees.admin_fee_percent
   }
 
   public fun update_fee_in_percent(fee: &mut StableFees, fee_in_percent: Option<u256>) {
