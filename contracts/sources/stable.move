@@ -99,6 +99,26 @@ module amm::interest_stable {
     borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).balances
   }
 
+  public fun initial_a<LpCoin>(pool: &InterestPool<Stable>): u256 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    state.initial_a
+  }
+
+  public fun future_a<LpCoin>(pool: &InterestPool<Stable>): u256 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    state.future_a
+  }  
+
+  public fun initial_a_time<LpCoin>(pool: &InterestPool<Stable>): u256 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    state.initial_a_time
+  }    
+
+  public fun future_a_time<LpCoin>(pool: &InterestPool<Stable>): u256 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    state.future_a_time
+  }    
+
   public fun a<LpCoin>(
     pool: &InterestPool<Stable>,
     c: &Clock,
