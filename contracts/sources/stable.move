@@ -22,7 +22,7 @@ module amm::interest_stable {
   use amm::amm_admin::Admin;
   use amm::pool_events as events;
   use amm::stable_fees::{Self, StableFees};
-  use amm::interest_pool::{Self,InterestPool};
+  use amm::interest_pool::{Self, InterestPool};
   use amm::stable_math::{y, y_lp, a as get_a, invariant_};
   use amm::utils::{empty_vector, are_coins_ordered, make_coins_from_vector};
 

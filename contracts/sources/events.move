@@ -2,6 +2,8 @@ module amm::pool_events {
   use sui::object::ID;
   use sui::event::emit;
 
+  use amm::curves::Volatile;
+
   friend amm::volatile;
   friend amm::interest_stable;
 
@@ -66,6 +68,13 @@ module amm::pool_events {
     amount: u64,
     shares: u64
   }
+
+  struct RemoveLiquidity2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has copy, drop {
+    pool_id: ID,
+    amount_a: u64,
+    amount_b: u64,
+    shares: u64
+  }  
 
   struct RemoveLiquidity3Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom CoinC, phantom LpCoin> has copy, drop {
     pool_id: ID,
@@ -149,6 +158,10 @@ module amm::pool_events {
     ma_half_time: u256
   }
 
+  struct ClaimAdminFees<phantom Curve, phantom LpCoin> has drop, copy {
+    amount: u64
+  }  
+
   public(friend) fun emit_new_2_pool<Curve, CoinA, CoinB, LpCoin>(id: ID) {
     emit(New2Pool<Curve, CoinA, CoinB, LpCoin> { pool_id: id });
   }
@@ -215,6 +228,15 @@ module amm::pool_events {
     emit(RemoveLiquidity<Curve, CoinType, LpCoin> { pool_id: id, amount, shares });
   }
 
+  public(friend) fun emit_remove_liquidity_2_pool<Curve, CoinA, CoinB,  LpCoin>(
+    id: ID, 
+    amount_a: u64,
+    amount_b: u64,
+    shares: u64
+  ) {
+    emit(RemoveLiquidity2Pool<Curve, CoinA, CoinB, LpCoin> { pool_id: id, amount_a, amount_b, shares });
+  }  
+
   public(friend) fun emit_remove_liquidity_3_pool<Curve, CoinA, CoinB, CoinC, LpCoin>(
     id: ID, 
     amount_a: u64,
@@ -259,7 +281,11 @@ module amm::pool_events {
 
   public(friend) fun emit_take_fees<Curve, CoinType, LpCoin>(pool_id: ID, amount: u64) {
     emit(TakeFee<Curve, CoinType, LpCoin> { pool_id, amount });
-  } 
+  }
+
+  public(friend) fun emit_claim_admin_fees<LpCoin>(amount: u64) {
+    emit(ClaimAdminFees<Volatile, LpCoin> {  amount });
+  }
 
   public(friend) fun emit_ramp_a<LpCoin>(
     pool_id: ID,
