@@ -1,371 +1,371 @@
-// * 5 Pool - DAI - USDC - USDT - FRAX - TRUE_USD
+// * 5 InterestPool - DAI - USDC - USDT - FRAX - TRUE_USD
 #[test_only]
 module amm::stable_tuple_5pool_curve_tests {
-  // use std::vector;
+  use std::vector;
 
-  // use sui::clock::Clock;
-  // use sui::test_utils::assert_eq;
-  // use sui::coin::{burn_for_testing as burn, mint_for_testing};
-  // use sui::test_scenario::{Self as test, next_tx, ctx};
+  use sui::clock::Clock;
+  use sui::test_utils::assert_eq;
+  use sui::coin::{burn_for_testing as burn, mint_for_testing};
+  use sui::test_scenario::{Self as test, next_tx, ctx};
 
-  // use suitears::math64::diff;
-  // use suitears::math256::diff as u256_diff;
+  use suitears::math64::diff;
+  use suitears::math256::diff as u256_diff;
 
-  // use amm::dai::DAI;
-  // use amm::usdt::USDT;
-  // use amm::usdc::USDC;
-  // use amm::frax::FRAX;
-  // use amm::stable_tuple;
-  // use amm::lp_coin::LP_COIN;
-  // use amm::true_usd::TRUE_USD;
-  // use amm::curves::StableTuple;
-  // use amm::interest_pool::Pool;
-  // use amm::init_stable_tuple::setup_5pool;
-  // use amm::stable_tuple_simulation::{Self as sim, State as SimState};
-  // use amm::test_utils::{people, scenario, mint, normalize_amount, add_decimals};
+  use amm::dai::DAI;
+  use amm::frax::FRAX;
+  use amm::usdt::USDT;
+  use amm::usdc::USDC;
+  use amm::curves::Stable;
+  use amm::interest_stable;
+  use amm::lp_coin::LP_COIN;
+  use amm::true_usd::TRUE_USD;
+  use amm::interest_pool::InterestPool;
+  use amm::init_interest_stable::setup_5pool;
+  use amm::stable_simulation::{Self as sim, State as SimState};
+  use amm::amm_test_utils::{people, scenario, mint, normalize_amount, add_decimals};
 
-  // const DAI_DECIMALS: u8 = 9;
-  // const USDC_DECIMALS: u8 = 6; 
-  // const USDT_DECIMALS: u8 = 9;
-  // const FRAX_DECIMALS: u8 = 9;
-  // const TRUE_USD_DECIMALS: u8 = 9;
-  // const USDC_DECIMALS_SCALAR: u256 = 1000000; 
-  // const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
-  // const N_COINS: u64 = 5;
+  const DAI_DECIMALS: u8 = 9;
+  const USDC_DECIMALS: u8 = 6; 
+  const USDT_DECIMALS: u8 = 9;
+  const FRAX_DECIMALS: u8 = 9;
+  const TRUE_USD_DECIMALS: u8 = 9;
+  const USDC_DECIMALS_SCALAR: u256 = 1000000; 
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  const N_COINS: u64 = 5;
 
-  // // * We p
-  // #[test]
-  // fun virtual_price_always_up() {
-  //  let scenario = scenario();
-  //   let (alice, _) = people();
+  #[test]
+  fun virtual_price_always_up() {
+   let scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
 
-  //   // Imbalanced set up
-  //   setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
+    // Imbalanced set up
+    setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
 
-  //   next_tx(test, alice);
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
-  //     let c = test::take_shared<Clock>(test); 
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test); 
 
-  //     let virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      let virtual_price = interest_stable::virtual_price<LP_COIN>(&pool, &c);
 
-  //     {
-  //       let i = 0;
-  //       while (N_COINS > i) {
+      {
+        let i = 0;
+        while (N_COINS > i) {
           
-  //         burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
-  //           &mut pool,
-  //           &c,
-  //           mint<DAI>(300, DAI_DECIMALS, ctx(test)),
-  //           0,
-  //           ctx(test)
-  //         ));
-  //         i = i + 1;
-  //       }
-  //     };
+          burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+            &mut pool,
+            &c,
+            mint<DAI>(300, DAI_DECIMALS, ctx(test)),
+            0,
+            ctx(test)
+          ));
+          i = i + 1;
+        }
+      };
 
-  //     let virtual_price_2 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
-  //     assert_eq(virtual_price_2 > virtual_price, true);
+      let virtual_price_2 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_2 > virtual_price, true);
 
-  //     {
-  //       let i = 0;
-  //       while (N_COINS > i) {
+      {
+        let i = 0;
+        while (N_COINS > i) {
           
-  //         burn(stable_tuple::add_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
-  //           &mut pool,
-  //           &c,
-  //           mint<DAI>(200, DAI_DECIMALS, ctx(test)),
-  //           mint<USDC>(300, USDC_DECIMALS, ctx(test)),
-  //           mint<USDT>(400, USDT_DECIMALS, ctx(test)),
-  //           mint<FRAX>(500, FRAX_DECIMALS, ctx(test)),
-  //           mint<TRUE_USD>(500, TRUE_USD_DECIMALS, ctx(test)),
-  //           0,
-  //           ctx(test)
-  //         ));
-  //         i = i + 1;
-  //       }        
-  //     };
+          burn(interest_stable::add_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+            &mut pool,
+            &c,
+            mint<DAI>(200, DAI_DECIMALS, ctx(test)),
+            mint<USDC>(300, USDC_DECIMALS, ctx(test)),
+            mint<USDT>(400, USDT_DECIMALS, ctx(test)),
+            mint<FRAX>(500, FRAX_DECIMALS, ctx(test)),
+            mint<TRUE_USD>(500, TRUE_USD_DECIMALS, ctx(test)),
+            0,
+            ctx(test)
+          ));
+          i = i + 1;
+        }        
+      };
 
-  //     let virtual_price_3 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
-  //     assert_eq(virtual_price_3 > virtual_price_2, true);
+      let virtual_price_3 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_3 > virtual_price_2, true);
 
-  //     {
-  //       let i = 0;
+      {
+        let i = 0;
 
-  //       let (_, _, _, _, _, supply,_, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+        let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
 
-  //       while (N_COINS > i) {
+        while (N_COINS > i) {
           
-  //         let (a, b, c, d, e) = stable_tuple::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
-  //           &mut pool,
-  //           mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
-  //           vector[0, 0 ,0, 0, 0],
-  //           ctx(test)
-  //         );
-  //         burn(a);
-  //         burn(b);
-  //         burn(c);
-  //         burn(d);
-  //         burn(e);
-  //         i = i + 1;
-  //       }        
-  //     }; 
+          let (a, b, c, d, e) = interest_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+            &mut pool,
+            mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
+            &c,
+            vector[0, 0 ,0, 0, 0],
+            ctx(test)
+          );
+          burn(a);
+          burn(b);
+          burn(c);
+          burn(d);
+          burn(e);
+          i = i + 1;
+        }        
+      }; 
 
-  //     let virtual_price_4 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
-  //     assert_eq(virtual_price_4 > virtual_price_3, true);     
+      let virtual_price_4 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_4 > virtual_price_3, true);     
 
-  //       {
-  //       let i = 0;
-  //       while (N_COINS > i) {
+        {
+        let i = 0;
+        while (N_COINS > i) {
 
-  //         let (_, _, _, _, _, supply,_, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+          let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
           
-  //         burn(stable_tuple::remove_one_coin_liquidity<DAI, LP_COIN>(
-  //           &mut pool,
-  //           &c,
-  //           mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
-  //           0,
-  //           ctx(test)
-  //         ));
-  //         i = i + 1;
-  //       }        
-  //     }; 
+          burn(interest_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
+            &mut pool,
+            &c,
+            mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
+            0,
+            ctx(test)
+          ));
+          i = i + 1;
+        }        
+      }; 
 
-  //     let virtual_price_5 = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
-  //     assert_eq(virtual_price_5 >= virtual_price_4, true); 
+      let virtual_price_5 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      assert_eq(virtual_price_5 >= virtual_price_4, true); 
 
-  //     test::return_shared(c);
-  //     test::return_shared(pool);            
-  //   };
-  //   test::end(scenario);      
-  // }
+      test::return_shared(c);
+      test::return_shared(pool);            
+    };
+    test::end(scenario);      
+  }
 
-  // // * Compare the balances after swap of the sim and the pool
-  // #[test]
-  // fun swaps() {
-  //   let scenario = scenario();
-  //   let (alice, _) = people();
+  // * Compare the balances after swap of the sim and the pool
+  #[test]
+  fun swaps() {
+    let scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
 
-  //   setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
+    setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
 
-  //   next_tx(test, alice);
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
-  //     let c = test::take_shared<Clock>(test); 
-  //     let sim_state = test::take_shared<SimState>(test);  
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test); 
+      let sim_state = test::take_shared<SimState>(test);  
 
-  //     let virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      let virtual_price = interest_stable::virtual_price<LP_COIN>(&pool, &c);
 
 
-  //     burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<DAI>(300, DAI_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(300, DAI_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<USDC, USDT, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<USDC>(450, USDC_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<USDC, USDT, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDC>(450, USDC_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<USDT, FRAX, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<USDT>(754, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<USDT, FRAX, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDT>(754, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<FRAX, TRUE_USD, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<FRAX>(666, FRAX_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<FRAX, TRUE_USD, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<FRAX>(666, FRAX_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<TRUE_USD, DAI, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<TRUE_USD>(758, FRAX_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<TRUE_USD, DAI, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<TRUE_USD>(758, FRAX_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     sim::swap(&mut sim_state, 0, 1, normalize_amount(300));
-  //     sim::swap(&mut sim_state, 1, 2, normalize_amount(450));
-  //     sim::swap(&mut sim_state, 2, 3, normalize_amount(754));
-  //     sim::swap(&mut sim_state, 3, 4, normalize_amount(666));
-  //     sim::swap(&mut sim_state, 4, 0, normalize_amount(758));
+      sim::swap(&mut sim_state, 0, 1, normalize_amount(300));
+      sim::swap(&mut sim_state, 1, 2, normalize_amount(450));
+      sim::swap(&mut sim_state, 2, 3, normalize_amount(754));
+      sim::swap(&mut sim_state, 3, 4, normalize_amount(666));
+      sim::swap(&mut sim_state, 4, 0, normalize_amount(758));
 
-  //     let new_virtual_price = stable_tuple::get_lp_coin_price_in_underlying<LP_COIN>(&pool, &c);
+      let new_virtual_price = interest_stable::virtual_price<LP_COIN>(&pool, &c);
 
-  //     let (pool_balances, _, _, _, _, _,_, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
-  //     let (sim_balances, _, n_coins, _, _) = sim::view_state(&sim_state);
+      let pool_balances = interest_stable::balances<LP_COIN>(&pool);
+      let (sim_balances, _, n_coins, _, _) = sim::view_state(&sim_state);
 
-  //     {
-  //       let i = 0;
-  //       while (n_coins > i) {
-  //         let pool_bal = *vector::borrow(&pool_balances, i);
-  //         let sim_bal = *vector::borrow(&sim_balances, i);
+      {
+        let i = 0;
+        while (n_coins > i) {
+          let pool_bal = *vector::borrow(&pool_balances, i);
+          let sim_bal = *vector::borrow(&sim_balances, i);
 
-  //         // Less than 1 USD loss
-  //         // Because in the contract we remove fees on 1e9 scalar
-  //         // In the sim the fees are calculated on a 1e18 scalar
-  //         let limit = PRECISION;
-  //         assert_eq(limit > u256_diff(pool_bal, sim_bal), true);
-  //         i = i + 1;
-  //       };
-  //     };
+          // Less than 1 USD loss
+          // Because in the contract we remove fees on 1e9 scalar
+          // In the sim the fees are calculated on a 1e18 scalar
+          let limit = PRECISION;
+          assert_eq(limit > u256_diff(pool_bal, sim_bal), true);
+          i = i + 1;
+        };
+      };
 
-  //     assert_eq(new_virtual_price > virtual_price, true);
+      assert_eq(new_virtual_price > virtual_price, true);
 
-  //     test::return_shared(c);
-  //     test::return_shared(pool);
-  //     test::return_shared(sim_state);   
-  //   };
-  //   test::end(scenario);  
-  // }
+      test::return_shared(c);
+      test::return_shared(pool);
+      test::return_shared(sim_state);   
+    };
+    test::end(scenario);  
+  }
 
-  // // * We test that the pool does not break in every imbalanced scenarios
-  // #[test]
-  // fun imbalanced_swaps() {
-  //   let scenario = scenario();
-  //   let (alice, _) = people();
+  // * We test that the pool does not break in every imbalanced scenarios
+  #[test]
+  fun imbalanced_swaps() {
+    let scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
 
-  //   // Imbalanced set up
-  //   setup_5pool(test, 10000, 10, 10, 5, 10);
+    // Imbalanced set up
+    setup_5pool(test, 10000, 10, 10, 5, 10);
 
-  //   next_tx(test, alice);
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
-  //     let c = test::take_shared<Clock>(test);
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test);
 
-  //     {
-  //       let i = 0;
-  //       while (N_COINS > i) {
-  //         assert_eq(
-  //             burn(stable_tuple::swap<FRAX, DAI, LP_COIN>(
-  //               &mut pool,
-  //               &c,
-  //               mint<FRAX>(30, USDT_DECIMALS, ctx(test)),
-  //               0,
-  //               ctx(test))) != 0,
-  //              true
-  //         );
-  //         i = i + 1;
-  //       }
-  //     };
+      {
+        let i = 0;
+        while (N_COINS > i) {
+          assert_eq(
+              burn(interest_stable::swap<FRAX, DAI, LP_COIN>(
+                &mut pool,
+                &c,
+                mint<FRAX>(30, USDT_DECIMALS, ctx(test)),
+                0,
+                ctx(test))) != 0,
+               true
+          );
+          i = i + 1;
+        }
+      };
 
-  //     {
-  //       let i = 0;
-  //       while (N_COINS > i) {
-  //         assert_eq(
-  //           burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
-  //             &mut pool,
-  //              &c,
-  //              mint<DAI>(25, DAI_DECIMALS, ctx(test)),
-  //              0,
-  //              ctx(test))) != 0,
-  //              true
-  //         );
-  //         i = i + 1;
-  //       }
-  //     };
+      {
+        let i = 0;
+        while (N_COINS > i) {
+          assert_eq(
+            burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+              &mut pool,
+               &c,
+               mint<DAI>(25, DAI_DECIMALS, ctx(test)),
+               0,
+               ctx(test))) != 0,
+               true
+          );
+          i = i + 1;
+        }
+      };
 
-  //     test::return_shared(c);
-  //     test::return_shared(pool);
-  //   };
-  //   test::end(scenario);   
-  // }
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario);   
+  }
 
-  // // * We compare the pool curve with our Sim curve
-  // #[test]
-  // fun curve() {
-  //   let scenario = scenario();
-  //   let (alice, _) = people();
+  // * We compare the pool curve with our Sim curve
+  #[test]
+  fun curve() {
+    let scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
 
-  //   setup_5pool(test, 100, 110, 121, 133, 146);
+    setup_5pool(test, 100, 110, 121, 133, 146);
 
-  //   next_tx(test, alice);
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
-  //     let c = test::take_shared<Clock>(test);
-  //     let sim_state = test::take_shared<SimState>(test);
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test);
+      let sim_state = test::take_shared<SimState>(test);
 
-  //     burn(stable_tuple::swap<DAI, USDC, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<DAI>(25, DAI_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(25, DAI_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<USDC, USDT, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<USDC>(30, USDC_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<USDC, USDT, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDC>(30, USDC_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<USDT, FRAX, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<USDT>(30, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<USDT, FRAX, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDT>(30, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<FRAX, TRUE_USD, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<FRAX>(35, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_stable::swap<FRAX, TRUE_USD, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<FRAX>(35, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(stable_tuple::swap<TRUE_USD, DAI, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<TRUE_USD>(40, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));      
+      burn(interest_stable::swap<TRUE_USD, DAI, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<TRUE_USD>(40, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));      
 
-  //     sim::swap(&mut sim_state, 0, 1, normalize_amount(25));
-  //     sim::swap(&mut sim_state, 1, 2, normalize_amount(30));
-  //     sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
-  //     sim::swap(&mut sim_state, 3, 4, normalize_amount(35));
-  //     sim::swap(&mut sim_state, 4, 0, normalize_amount(35));
+      sim::swap(&mut sim_state, 0, 1, normalize_amount(25));
+      sim::swap(&mut sim_state, 1, 2, normalize_amount(30));
+      sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
+      sim::swap(&mut sim_state, 3, 4, normalize_amount(35));
+      sim::swap(&mut sim_state, 4, 0, normalize_amount(35));
 
-  //     let (pool_dy, _, _) = stable_tuple::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
+      let (pool_dy, _, _) = interest_stable::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
 
-  //     let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
-  //     let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
+      let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
+      let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
 
-  //     // Difference of 1 cent
-  //     // happens because of fees rounding
-  //     assert_eq( (USDC_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
+      // Difference of 1 cent
+      // happens because of fees rounding
+      assert_eq( (USDC_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
 
-  //     test::return_shared(c);
-  //     test::return_shared(pool);
-  //     test::return_shared(sim_state);
-  //   };
+      test::return_shared(c);
+      test::return_shared(pool);
+      test::return_shared(sim_state);
+    };
 
-  //   test::end(scenario);
-  // }
+    test::end(scenario);
+  }
 }
