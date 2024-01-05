@@ -36,7 +36,7 @@ module amm::stable_tuple_4pool_new_tests {
     {
       let pool = test::take_shared<InterestPool<Stable>>(test);
 
-     let balances = interest_stable::balances<LP_COIN>(&pool);
+      let balances = interest_stable::balances<LP_COIN>(&pool);
       let initial_a = interest_stable::initial_a<LP_COIN>(&pool);
       let future_a = interest_stable::future_a<LP_COIN>(&pool);
       let initial_a_time = interest_stable::initial_a_time<LP_COIN>(&pool);
