@@ -616,7 +616,7 @@ module amm::interest_stable {
       balances,
       (lp_coin_value as u256),
       (balance::supply_value(&state.lp_coin_supply) as u256),
-    ) + 1;
+    ) + 1; // give an edge to the protocol
 
     let amount_to_take = (((initial_coin_balance - min(initial_coin_balance, *current_coin_balance)) * coin_state.decimals / PRECISION) as u64);
 
