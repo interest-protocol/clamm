@@ -21,25 +21,10 @@ module amm::interest_stable {
   use amm::curves::Stable;
   use amm::amm_admin::Admin;
   use amm::pool_events as events;
-  use amm::stable_fees::{
-    Self, 
-    StableFees,
-  };
-  use amm::interest_pool::{
-    Self,
-    InterestPool
-  };
-  use amm::utils::{
-    empty_vector,
-    are_coins_ordered,
-    make_coins_from_vector, 
-  };
-  use amm::stable_math::{
-    y,
-    y_lp,
-    a as get_a,
-    invariant_
-  };
+  use amm::stable_fees::{Self, StableFees};
+  use amm::interest_pool::{Self,InterestPool};
+  use amm::stable_math::{y, y_lp, a as get_a, invariant_};
+  use amm::utils::{empty_vector, are_coins_ordered, make_coins_from_vector};
 
   // === Consntants ===  
 
@@ -75,7 +60,7 @@ module amm::interest_stable {
     // The supply of the pool's `LpCoin`.
     lp_coin_supply: Supply<LpCoin>,
     // The decimal precision of the `LpCoin`.
-    lp_coin_decimals: u256,
+    lp_coin_decimals_scalar: u256,
     // The balances of the coin in the pool based in the coin index.   
     balances: vector<u256>,
     // The initial amplifier factor.
@@ -131,8 +116,8 @@ module amm::interest_stable {
     balance::supply_value(&borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).lp_coin_supply)
   }
 
-  public fun lp_coin_decimals<LpCoin>(pool: &InterestPool<Stable>): u8 {
-    (borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).lp_coin_decimals as u8)
+  public fun lp_coin_decimals_scalar<LpCoin>(pool: &InterestPool<Stable>): u256 {
+    (borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).lp_coin_decimals_scalar)
   }  
 
   public fun n_coins<LpCoin>(pool: &InterestPool<Stable>): u64 {
@@ -943,7 +928,7 @@ module amm::interest_stable {
         initial_a_time: 0,
         future_a_time: 0,
         lp_coin_supply,
-        lp_coin_decimals: (scalar<LpCoin>(coin_decimals) as u256),
+        lp_coin_decimals_scalar: (scalar<LpCoin>(coin_decimals) as u256),
         n_coins,
         fees: stable_fees::new()
       }
@@ -960,7 +945,7 @@ module amm::interest_stable {
       state.balances
     );
 
-    k * state.lp_coin_decimals / supply
+    k * state.lp_coin_decimals_scalar / supply
   }
 
   fun borrow_state<LpCoin>(id: &UID): &State<LpCoin> {
