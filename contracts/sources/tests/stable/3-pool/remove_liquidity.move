@@ -1,104 +1,115 @@
-// * 3 Pool - DAI - USDC - USDT
+// * 3 InterestPool - DAI - USDC - USDT
 #[test_only]
 module amm::stable_tuple_3pool_remove_liquidity_tests { 
-  // use sui::test_utils::assert_eq;
-  // use sui::test_scenario::{Self as test, next_tx, ctx};
-  // use sui::coin::{burn_for_testing as burn, mint_for_testing as mint};
+  use sui::clock;
+  use sui::test_utils::assert_eq;
+  use sui::test_scenario::{Self as test, next_tx, ctx};
+  use sui::coin::{burn_for_testing as burn, mint_for_testing as mint};
 
-  // use amm::dai::DAI;
-  // use amm::usdt::USDT;
-  // use amm::usdc::USDC;
-  // use amm::stable_tuple;
-  // use amm::lp_coin::LP_COIN;
-  // use amm::curves::StableTuple;
-  // use amm::interest_pool::Pool;
-  // use amm::init_stable_tuple::setup_3pool;
-  // use amm::test_utils::{people, scenario, normalize_amount};
+  use amm::dai::DAI;
+  use amm::usdt::USDT;
+  use amm::usdc::USDC;
+  use amm::curves::Stable;
+  use amm::interest_stable;
+  use amm::lp_coin::LP_COIN;
+  use amm::interest_pool::InterestPool;
+  use amm::init_interest_stable::setup_3pool;
+  use amm::amm_test_utils::{people, scenario, normalize_amount};
 
-  // const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
-  // const USDC_DECIMALS_SCALAR: u256 = 1000000; 
-  // const USDT_DECIMALS_SCALAR: u256 = 1000000000; 
-  // const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+  const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
+  const USDC_DECIMALS_SCALAR: u256 = 1000000; 
+  const USDT_DECIMALS_SCALAR: u256 = 1000000000; 
+  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
-  // #[test]
-  // fun remove_liquidity() {
-  //   let scenario = scenario();
-  //   let (alice, _) = people();
+  #[test]
+  fun remove_liquidity() {
+    let scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
     
-  //   setup_3pool(test, 800, 900, 1000);
+    setup_3pool(test, 800, 900, 1000);
 
-  //   next_tx(test, alice);    
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
+    next_tx(test, alice);    
+    {
+      let pool = test::take_shared<InterestPool<Stable>>(test);
 
-  //     let (_, _, _, _, _, supply, _, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+      
+      let c = clock::create_for_testing(ctx(test));
 
-  //     let(coin_dai, coin_usdc, coin_usdt) = stable_tuple::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
-  //       &mut pool,
-  //       mint<LP_COIN>(supply / 10, ctx(test)),
-  //       vector[0, 0, 0],
-  //       ctx(test)
-  //     );
+      let(coin_dai, coin_usdc, coin_usdt) = interest_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<LP_COIN>(supply / 10, ctx(test)),
+        &c,
+        vector[0, 0, 0],
+        ctx(test)
+      );
 
-  //     let (balances_2, _, _, _, _, supply_2, _, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+      let balances_2 = interest_stable::balances<LP_COIN>(&pool);
+      let supply_2 = interest_stable::lp_coin_supply<LP_COIN>(&pool);
 
-  //     let expected_dai_amount = (800 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
-  //     let expected_usdc_amount = (900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
-  //     let expected_usdt_amount = (1000 * USDT_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
+      let expected_dai_amount = (800 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
+      let expected_usdc_amount = (900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
+      let expected_usdt_amount = (1000 * USDT_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
 
-  //     let expected_balances = vector[
-  //       normalize_amount(800) - (expected_dai_amount * PRECISION / DAI_DECIMALS_SCALAR),
-  //       normalize_amount(900) - (expected_usdc_amount * PRECISION / USDC_DECIMALS_SCALAR),
-  //       normalize_amount(1000) - (expected_usdt_amount * PRECISION / USDT_DECIMALS_SCALAR)
-  //     ];
+      let expected_balances = vector[
+        normalize_amount(800) - (expected_dai_amount * PRECISION / DAI_DECIMALS_SCALAR),
+        normalize_amount(900) - (expected_usdc_amount * PRECISION / USDC_DECIMALS_SCALAR),
+        normalize_amount(1000) - (expected_usdt_amount * PRECISION / USDT_DECIMALS_SCALAR)
+      ];
 
-  //     assert_eq(burn(coin_dai), (expected_dai_amount as u64));
-  //     assert_eq(burn(coin_usdc), (expected_usdc_amount as u64));
-  //     assert_eq(burn(coin_usdt), (expected_usdt_amount as u64));
-  //     assert_eq(supply, supply_2 + (supply / 10));
-  //     assert_eq(expected_balances, balances_2);
+      assert_eq(burn(coin_dai), (expected_dai_amount as u64));
+      assert_eq(burn(coin_usdc), (expected_usdc_amount as u64));
+      assert_eq(burn(coin_usdt), (expected_usdt_amount as u64));
+      assert_eq(supply, supply_2 + (supply / 10));
+      assert_eq(expected_balances, balances_2);
 
+      clock::destroy_for_testing(c);
 
-  //     test::return_shared(pool);            
-  //   };
-  //   test::end(scenario); 
-  // }
+      test::return_shared(pool);            
+    };
+    test::end(scenario); 
+  }
 
-  // #[test]
-  // #[expected_failure(abort_code = 11)]  
-  // fun remove_liquidity_slippage() {
-  //   let scenario = scenario();
-  //   let (alice, _) = people();
+  #[test]
+  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_stable)]  
+  fun remove_liquidity_slippage() {
+    let scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
     
-  //   setup_3pool(test, 800, 900, 1000);
+    setup_3pool(test, 800, 900, 1000);
 
-  //   next_tx(test, alice);    
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
+    next_tx(test, alice);    
+    {
+      let pool = test::take_shared<InterestPool<Stable>>(test);
 
-  //     let (_, _, _, _, _, supply, _, _, _) = stable_tuple::view_state<LP_COIN>(&pool);
+      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
 
-  //     let expected_dai_amount = ((800 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
-  //     let expected_usdc_amount = ((900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
-  //     let expected_usdt_amount = ((1000 * USDT_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
+      let expected_dai_amount = ((800 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
+      let expected_usdc_amount = ((900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
+      let expected_usdt_amount = ((1000 * USDT_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
 
-  //     let(coin_dai, coin_usdc, coin_usdt) = stable_tuple::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
-  //       &mut pool,
-  //       mint<LP_COIN>(supply / 10, ctx(test)),
-  //       vector[expected_dai_amount, expected_usdc_amount, expected_usdt_amount + 1],
-  //       ctx(test)
-  //     );
+      let c = clock::create_for_testing(ctx(test));
 
-  //     burn(coin_dai);
-  //     burn(coin_usdc);
-  //     burn(coin_usdt);
+      let(coin_dai, coin_usdc, coin_usdt) = interest_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+        &mut pool,
+        mint<LP_COIN>(supply / 10, ctx(test)),
+        &c,
+        vector[expected_dai_amount, expected_usdc_amount, expected_usdt_amount + 1],
+        ctx(test)
+      );
 
-  //     test::return_shared(pool);            
-  //   };
-  //   test::end(scenario); 
-  // }
+      burn(coin_dai);
+      burn(coin_usdc);
+      burn(coin_usdt);
+
+      clock::destroy_for_testing(c);
+
+      test::return_shared(pool);            
+    };
+    test::end(scenario); 
+  }
 }
