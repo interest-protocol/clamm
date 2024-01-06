@@ -8,14 +8,14 @@ module amm::volatile_2pool_new_tests {
   // use sui::test_utils::assert_eq;
   // use sui::test_scenario::{Self as test, next_tx}; 
 
-  // use amm::volatile;
+  // use amm::interest_amm_volatile;
   // use amm::eth::ETH;
   // use amm::usdc::USDC;
   // use amm::lp_coin::LP_COIN;
   // use amm::curves::Volatile;
-  // use amm::interest_pool::Pool;
-  // use amm::init_volatile::setup_2pool;
-  // use amm::test_utils::{people, scenario, normalize_amount};
+  // use amm::interest_pool::InterestPool;
+  // use amm::init_interest_amm_volatile::setup_2pool;
+  // use amm::amm_test_utils ::{people, scenario, normalize_amount};
 
 
   // const A: u256  = 36450000;
@@ -43,9 +43,7 @@ module amm::volatile_2pool_new_tests {
 
   //   next_tx(test, alice);
   //   {
-  //     let pool = test::take_shared<Pool<Volatile>>(test);
-
-      
+  //     let pool = test::take_shared<InterestPool<Volatile>>(test);
 
   //     test::return_shared(pool);
   //   };

@@ -400,7 +400,7 @@ module amm::volatile_math_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = 4)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::volatile_math)]  
   fun invariant_low_amp() {
     let invalid_amp_low = 2700 - 1; // Below MIN_A
 
@@ -408,7 +408,7 @@ module amm::volatile_math_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = 4)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::volatile_math)]  
   fun invariant_high_amp() {
     let invalid_amp_high = 270000000 + 1; // Above MAX_A
 
@@ -416,81 +416,81 @@ module amm::volatile_math_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = 3)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_GAMMA, location = amm::volatile_math)]  
   fun invariant_low_gamma() {
     volatile_math::invariant_(VALID_ANN, MIN_GAMMA - 1, vector[PRECISION, PRECISION, PRECISION]);
   }
 
   #[test]
-  #[expected_failure(abort_code = 3)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_GAMMA, location = amm::volatile_math)]  
   fun invariant_high_gamma() {
     volatile_math::invariant_(VALID_ANN, MAX_GAMMA + 1, vector[PRECISION, PRECISION, PRECISION]);
   }
 
   #[test]
-  #[expected_failure(abort_code = 5)]  
+  #[expected_failure(abort_code = amm::errors::UNSAFE_VALUE, location = amm::volatile_math)]  
   fun invariant_low_quote_value() {
     volatile_math::invariant_(VALID_ANN, MAX_GAMMA, vector[POW_10_9 - 1, PRECISION, PRECISION]);
   }
 
   #[test]
-  #[expected_failure(abort_code = 5)]  
+  #[expected_failure(abort_code = amm::errors::UNSAFE_VALUE, location = amm::volatile_math)]  
   fun invariant_high_quote_value() {
     volatile_math::invariant_(VALID_ANN, MAX_GAMMA, vector[POW_10_15 * PRECISION + 1, PRECISION, PRECISION]);
   }
 
   #[test]
-  #[expected_failure(abort_code = 5)]  
+  #[expected_failure(abort_code = amm::errors::UNSAFE_VALUE, location = amm::volatile_math)]  
   fun invariant_invalid_balance_too_low() {
     volatile_math::invariant_(VALID_ANN, MAX_GAMMA / 2, vector[POW_10_9, 100 - 1, PRECISION]);
   }
 
   #[test]
-  #[expected_failure(abort_code = 4)] 
+  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::volatile_math)] 
   fun y_low_amp() {
     let invalid_amp_low = 2700 - 1; // Below MIN_A
     volatile_math::y(invalid_amp_low, MAX_GAMMA / 2, &vector[2 * PRECISION, 3 * PRECISION, PRECISION], 15 * PRECISION, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 4)] 
+  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::volatile_math)] 
   fun y_high_amp() {
     let invalid_amp_high = 270000000 + 1; // Above MAX_A
     volatile_math::y(invalid_amp_high, MAX_GAMMA / 2, &vector[2 * PRECISION, 3 * PRECISION, PRECISION], 15 * PRECISION, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 3)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_GAMMA, location = amm::volatile_math)]  
   fun y_low_gamma() {
     volatile_math::y(VALID_ANN, MIN_GAMMA - 1, &vector[PRECISION, PRECISION, PRECISION], 15 * PRECISION, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 3)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_GAMMA, location = amm::volatile_math)]  
   fun y_high_gamma() {
     volatile_math::y(VALID_ANN, MAX_GAMMA + 1, &vector[PRECISION, PRECISION, PRECISION], 15 * PRECISION, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 6)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_INVARIANT, location = amm::volatile_math)]  
   fun y_low_invariant() {
     volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[PRECISION, PRECISION, PRECISION], POW_10_17 - 1, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 6)]  
+  #[expected_failure(abort_code = amm::errors::INVALID_INVARIANT, location = amm::volatile_math)]  
   fun y_high_invariant() {
     volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[PRECISION, PRECISION, PRECISION], POW_10_15 * PRECISION + 1, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 5)]  
+  #[expected_failure(abort_code = amm::errors::UNSAFE_VALUE, location = amm::volatile_math)]  
   fun y_low_balance() {
     volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[POW_10_16 * POW_10_15 - 1, POW_10_16 * POW_10_15, POW_10_16 * POW_10_15], POW_10_15 * PRECISION, 1);
   }
 
   #[test]
-  #[expected_failure(abort_code = 5)]  
+  #[expected_failure(abort_code = amm::errors::UNSAFE_VALUE, location = amm::volatile_math)]  
   fun y_high_balance() {
     volatile_math::y(VALID_ANN, MAX_GAMMA / 2, &vector[(POW_10_20 * POW_10_15) * 10, POW_10_16 * POW_10_15, POW_10_16 * POW_10_15], POW_10_15 * PRECISION, 1);
   }
