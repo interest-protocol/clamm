@@ -10,8 +10,8 @@ module amm::interest_pool {
 
   use amm::curves;
 
-  friend amm::interest_stable;
-  friend amm::volatile;
+  friend amm::interest_amm_stable;
+  friend amm::interest_amm_volatile;
 
   struct InterestPool<phantom Curve> has key, store {
     id: UID,

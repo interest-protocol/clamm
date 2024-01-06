@@ -15,11 +15,11 @@ module amm::stable_tuple_4pool_curve_tests {
   use amm::frax::FRAX;
   use amm::usdt::USDT;
   use amm::usdc::USDC;
-  use amm::interest_stable;
+  use amm::interest_amm_stable;
   use amm::lp_coin::LP_COIN;
   use amm::curves::Stable;
   use amm::interest_pool::InterestPool;
-  use amm::init_interest_stable::setup_4pool;
+  use amm::init_interest_amm_stable::setup_4pool;
   use amm::stable_simulation::{Self as sim, State as SimState};
   use amm::amm_test_utils::{people, scenario, mint, normalize_amount, add_decimals};
 
@@ -46,13 +46,13 @@ module amm::stable_tuple_4pool_curve_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let virtual_price = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
 
       {
         let i = 0;
         while (N_COINS > i) {
           
-          burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+          burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
             &mut pool,
             &c,
             mint<DAI>(300, DAI_DECIMALS, ctx(test)),
@@ -63,14 +63,14 @@ module amm::stable_tuple_4pool_curve_tests {
         }
       };
 
-      let virtual_price_2 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_2 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_2 > virtual_price, true);
 
       {
         let i = 0;
         while (N_COINS > i) {
           
-          burn(interest_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
+          burn(interest_amm_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
             &mut pool,
             &c,
             mint<DAI>(200, DAI_DECIMALS, ctx(test)),
@@ -84,17 +84,17 @@ module amm::stable_tuple_4pool_curve_tests {
         }        
       };
 
-      let virtual_price_3 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_3 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_3 > virtual_price_2, true);
 
       {
         let i = 0;
 
-        let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+        let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
 
         while (N_COINS > i) {
           
-          let (a, b, c, d) = interest_stable::remove_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
+          let (a, b, c, d) = interest_amm_stable::remove_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
             &mut pool,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
             &c,
@@ -109,16 +109,16 @@ module amm::stable_tuple_4pool_curve_tests {
         }        
       }; 
 
-      let virtual_price_4 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_4 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_4 > virtual_price_3, true);     
 
         {
         let i = 0;
         while (N_COINS > i) {
 
-          let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+          let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
           
-          burn(interest_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
+          burn(interest_amm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
             &mut pool,
             &c,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
@@ -129,7 +129,7 @@ module amm::stable_tuple_4pool_curve_tests {
         }        
       }; 
 
-      let virtual_price_5 = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_5 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_5 >= virtual_price_4, true); 
 
       test::return_shared(c);
@@ -154,10 +154,10 @@ module amm::stable_tuple_4pool_curve_tests {
       let c = test::take_shared<Clock>(test); 
       let sim_state = test::take_shared<SimState>(test);  
 
-      let virtual_price = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
 
 
-      burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(300, DAI_DECIMALS, ctx(test)),
@@ -165,7 +165,7 @@ module amm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<USDC, USDT, LP_COIN>(
+      burn(interest_amm_stable::swap<USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<USDC>(450, USDC_DECIMALS, ctx(test)),
@@ -173,7 +173,7 @@ module amm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<USDT, FRAX, LP_COIN>(
+      burn(interest_amm_stable::swap<USDT, FRAX, LP_COIN>(
         &mut pool,
         &c,
         mint<USDT>(754, USDT_DECIMALS, ctx(test)),
@@ -181,7 +181,7 @@ module amm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<FRAX, DAI, LP_COIN>(
+      burn(interest_amm_stable::swap<FRAX, DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<FRAX>(666, FRAX_DECIMALS, ctx(test)),
@@ -194,9 +194,9 @@ module amm::stable_tuple_4pool_curve_tests {
       sim::swap(&mut sim_state, 2, 3, normalize_amount(754));
       sim::swap(&mut sim_state, 3, 0, normalize_amount(666));
 
-      let new_virtual_price = interest_stable::virtual_price<LP_COIN>(&pool, &c);
+      let new_virtual_price = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
 
-      let pool_balances = interest_stable::balances<LP_COIN>(&pool);
+      let pool_balances = interest_amm_stable::balances<LP_COIN>(&pool);
       let (sim_balances, _, n_coins, _, _) = sim::view_state(&sim_state);
 
       {
@@ -243,7 +243,7 @@ module amm::stable_tuple_4pool_curve_tests {
         let i = 0;
         while (N_COINS > i) {
           assert_eq(
-              burn(interest_stable::swap<FRAX, DAI, LP_COIN>(
+              burn(interest_amm_stable::swap<FRAX, DAI, LP_COIN>(
                 &mut pool,
                 &c,
                 mint<FRAX>(30, FRAX_DECIMALS, ctx(test)),
@@ -259,7 +259,7 @@ module amm::stable_tuple_4pool_curve_tests {
         let i = 0;
         while (N_COINS > i) {
           assert_eq(
-            burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+            burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
               &mut pool,
                &c,
                mint<DAI>(25, DAI_DECIMALS, ctx(test)),
@@ -293,7 +293,7 @@ module amm::stable_tuple_4pool_curve_tests {
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(25, DAI_DECIMALS, ctx(test)),
@@ -301,7 +301,7 @@ module amm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<USDC, USDT, LP_COIN>(
+      burn(interest_amm_stable::swap<USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<USDC>(30, USDC_DECIMALS, ctx(test)),
@@ -309,7 +309,7 @@ module amm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<USDT, FRAX, LP_COIN>(
+      burn(interest_amm_stable::swap<USDT, FRAX, LP_COIN>(
         &mut pool,
         &c,
         mint<USDT>(30, USDT_DECIMALS, ctx(test)),
@@ -317,7 +317,7 @@ module amm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<FRAX, DAI, LP_COIN>(
+      burn(interest_amm_stable::swap<FRAX, DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<FRAX>(35, FRAX_DECIMALS, ctx(test)),
@@ -330,7 +330,7 @@ module amm::stable_tuple_4pool_curve_tests {
       sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
       sim::swap(&mut sim_state, 3, 0, normalize_amount(35));
 
-      let (pool_dy, _, _) = interest_stable::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
+      let (pool_dy, _, _) = interest_amm_stable::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
 
       let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
       let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);

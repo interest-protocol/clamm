@@ -14,10 +14,10 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
   use amm::usdc::USDC;
   use amm::stable_math;
   use amm::curves::Stable;
-  use amm::interest_stable;
+  use amm::interest_amm_stable;
   use amm::lp_coin::LP_COIN;
   use amm::interest_pool::InterestPool;
-  use amm::init_interest_stable::setup_4pool;
+  use amm::init_interest_amm_stable::setup_4pool;
   use amm::amm_test_utils::{people, scenario, normalize_amount, mint};
 
   const INITIAL_A: u256 = 360;
@@ -40,12 +40,12 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let balances = interest_stable::balances<LP_COIN>(&pool);
-      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
+      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let k0 = stable_math::invariant_(INITIAL_A, balances);
 
-      let lp_coin = interest_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
+      let lp_coin = interest_amm_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(100, DAI_DECIMALS, ctx(test)),
@@ -56,9 +56,9 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
         ctx(test)
       );
 
-      let new_balances = interest_stable::balances<LP_COIN>(&pool);
-      let new_supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
-      let n_coins = interest_stable::n_coins<LP_COIN>(&pool);
+      let new_balances = interest_amm_stable::balances<LP_COIN>(&pool);
+      let new_supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let n_coins = interest_amm_stable::n_coins<LP_COIN>(&pool);
 
       let k1 = stable_math::invariant_(INITIAL_A, new_balances);
 
@@ -95,7 +95,7 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::COINS_MUST_BE_IN_ORDER, location = amm::interest_stable)]  
+  #[expected_failure(abort_code = amm::errors::COINS_MUST_BE_IN_ORDER, location = amm::interest_amm_stable)]  
   fun add_liquidity_coins_wrong_order() {
    let scenario = scenario();
     let (alice, _) = people();
@@ -111,7 +111,7 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
       let c = test::take_shared<Clock>(test);
   
 
-      burn(interest_stable::add_liquidity_4_pool<FRAX, USDC, DAI, USDT, LP_COIN>(
+      burn(interest_amm_stable::add_liquidity_4_pool<FRAX, USDC, DAI, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<FRAX>(130, FRAX_DECIMALS, ctx(test)),
@@ -129,7 +129,7 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_stable)]  
+  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_amm_stable)]  
   fun add_liquidity_coins_slippage() {
    let scenario = scenario();
     let (alice, _) = people();
@@ -143,8 +143,8 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let balances = interest_stable::balances<LP_COIN>(&pool);
-      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
+      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let k0 = stable_math::invariant_(INITIAL_A, balances);
 
@@ -159,7 +159,7 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
 
       let mint_amount = (((supply as u256) * (k1 - k0) / k0) as u64);
 
-      burn(interest_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
+      burn(interest_amm_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(100, DAI_DECIMALS, ctx(test)),

@@ -11,11 +11,11 @@ module amm::stable_tuple_5pool_new_tests {
   use amm::usdt::USDT;
   use amm::usdc::USDC;
   use amm::curves::Stable;
-  use amm::interest_stable;
+  use amm::interest_amm_stable;
   use amm::lp_coin::LP_COIN;
   use amm::true_usd::TRUE_USD;
   use amm::interest_pool::InterestPool;
-  use amm::init_interest_stable::setup_5pool;
+  use amm::init_interest_amm_stable::setup_5pool;
   use amm::amm_test_utils::{people, scenario, normalize_amount};
 
   const INITIAL_A: u256 = 360;
@@ -38,14 +38,14 @@ module amm::stable_tuple_5pool_new_tests {
     {
       let pool = test::take_shared<InterestPool<Stable>>(test);
 
-      let balances = interest_stable::balances<LP_COIN>(&pool);
-      let initial_a = interest_stable::initial_a<LP_COIN>(&pool);
-      let future_a = interest_stable::future_a<LP_COIN>(&pool);
-      let initial_a_time = interest_stable::initial_a_time<LP_COIN>(&pool);
-      let future_a_time = interest_stable::future_a_time<LP_COIN>(&pool);
-      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);   
-      let lp_coin_decimals_scalar = interest_stable::lp_coin_decimals_scalar<LP_COIN>(&pool);  
-      let n_coins = interest_stable::n_coins<LP_COIN>(&pool);  
+      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
+      let initial_a = interest_amm_stable::initial_a<LP_COIN>(&pool);
+      let future_a = interest_amm_stable::future_a<LP_COIN>(&pool);
+      let initial_a_time = interest_amm_stable::initial_a_time<LP_COIN>(&pool);
+      let future_a_time = interest_amm_stable::future_a_time<LP_COIN>(&pool);
+      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);   
+      let lp_coin_decimals_scalar = interest_amm_stable::lp_coin_decimals_scalar<LP_COIN>(&pool);  
+      let n_coins = interest_amm_stable::n_coins<LP_COIN>(&pool);  
 
       assert_eq(n_coins, 5);
       assert_eq(vector::length(&balances), 5);
@@ -67,33 +67,33 @@ module amm::stable_tuple_5pool_new_tests {
         };
       };
 
-      let index = interest_stable::coin_index<DAI, LP_COIN>(&pool);
-      let balance = interest_stable::coin_balance<DAI, LP_COIN>(&pool);
+      let index = interest_amm_stable::coin_index<DAI, LP_COIN>(&pool);
+      let balance = interest_amm_stable::coin_balance<DAI, LP_COIN>(&pool);
 
       assert_eq(index, 0);
       assert_eq(balance, 100 * DAI_DECIMALS_SCALAR);
 
-      let index = interest_stable::coin_index<USDC, LP_COIN>(&pool);
-      let balance = interest_stable::coin_balance<USDC, LP_COIN>(&pool);
+      let index = interest_amm_stable::coin_index<USDC, LP_COIN>(&pool);
+      let balance = interest_amm_stable::coin_balance<USDC, LP_COIN>(&pool);
 
       assert_eq(index, 1);
       assert_eq(balance, 2000 * USDC_DECIMALS_SCALAR);
 
-       let index = interest_stable::coin_index<USDT, LP_COIN>(&pool);
-      let balance = interest_stable::coin_balance<USDT, LP_COIN>(&pool);
+       let index = interest_amm_stable::coin_index<USDT, LP_COIN>(&pool);
+      let balance = interest_amm_stable::coin_balance<USDT, LP_COIN>(&pool);
 
       assert_eq(index, 2);
       assert_eq(balance, 30000 * USDT_DECIMALS_SCALAR);
 
 
-      let index = interest_stable::coin_index<FRAX, LP_COIN>(&pool);
-      let balance = interest_stable::coin_balance<FRAX, LP_COIN>(&pool);
+      let index = interest_amm_stable::coin_index<FRAX, LP_COIN>(&pool);
+      let balance = interest_amm_stable::coin_balance<FRAX, LP_COIN>(&pool);
 
       assert_eq(index, 3);
       assert_eq(balance, 45000 * FRAX_DECIMALS_SCALAR);
 
-      let index = interest_stable::coin_index<TRUE_USD, LP_COIN>(&pool);
-      let balance = interest_stable::coin_balance<TRUE_USD, LP_COIN>(&pool);
+      let index = interest_amm_stable::coin_index<TRUE_USD, LP_COIN>(&pool);
+      let balance = interest_amm_stable::coin_balance<TRUE_USD, LP_COIN>(&pool);
 
       assert_eq(index, 4);
       assert_eq(balance, 45000 * TRUE_USD_DECIMALS_SCALAR);

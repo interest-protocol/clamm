@@ -1,5 +1,5 @@
 #[test_only]
-module amm::init_volatile{
+module amm::init_interest_amm_volatile {
   // use sui::clock::Clock;
   // use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
   // use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};

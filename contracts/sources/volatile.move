@@ -1,6 +1,7 @@
 // CurveV2 in Move - All logic from Curve
 // It is best to for the first coin to be a stable coin as all Coins r quoted from it
-module amm::volatile {
+// https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
+module amm::interest_amm_volatile {
   use std::vector;
   use std::type_name::{get, TypeName};
 
@@ -13,7 +14,7 @@ module amm::volatile {
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
   
-  use suitears::math256::{Self, sum, diff, mul_div_up};
+  use suitears::math256::{Self, min, sum, diff, mul_div_up};
   use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
   use suitears::fixed_point_wad::{mul_down, div_down, div_up, mul_up};
 
@@ -44,6 +45,7 @@ module amm::volatile {
   const MAX_A_CHANGE: u256 = 10;
   const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
   const MAX_ADMIN_FEE: u256 = 10000000000;
+  const TWENTY_SECONDS: u64 = 20000;
 
   // * Structs ---- START ----
 
@@ -227,18 +229,7 @@ module amm::volatile {
 
   public fun balances_in_price<LpCoin>(pool: &InterestPool<Volatile>): vector<u256> {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
-
-    let balances = state.balances;
-
-    let i = 1;
-    while ((state.n_coins as u64) > i) {
-      let coin_state = vector::borrow(&coin_states, i);
-      let ref = vector::borrow_mut(&mut balances, i);
-      *ref = mul_down(*ref, coin_state.price);
-      i = i + 1;
-    };
-
-    balances
+    balances_in_price_impl(state, coin_states)
   }
 
   public fun fee<LpCoin>(pool: &InterestPool<Volatile>): u256 {
@@ -271,7 +262,6 @@ module amm::volatile {
   }
 
   public fun quote_liquidity_amount<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>, is_add: bool): u64 {
-    
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
 
     let supply = (balance::supply_value(&state.lp_coin_supply) as u256);
@@ -507,6 +497,7 @@ module amm::volatile {
     
     let coin_in_value = coin::value(&coin_in);
     assert!(coin_in_value != 0, errors::no_zero_coin());
+
     let pool_id = object::id(pool);
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
     let coin_in_index = borrow_coin_state<CoinIn>(&state.id).index;
@@ -522,23 +513,8 @@ module amm::volatile {
     let tweak_price_index = coin_out_state.index;
     let timestamp = clock::timestamp_ms(c);
 
-
     let coin_out_b = *vector::borrow(&state.balances, coin_out_state.index);
-    let balances_in_price = state.balances;
-
-    // Block scope
-    {  
-      // * Convert Balances in token => Balance in CoinA Price (usually USD)
-      // * We skip the first coin as it is the quote coin
-      let index = 1;
-      while ((state.n_coins as u64) > index) {
-
-        let bal = vector::borrow_mut(&mut balances_in_price, index);
-        *bal = mul_down(*bal, vector::borrow(&coin_states, index).price);
-
-        index = index + 1;
-      };
-    };
+    let balances_in_price = balances_in_price_impl(state, coin_states);
 
     // Block scope
     {
@@ -556,12 +532,15 @@ module amm::volatile {
       }; 
     };
 
-    let coin_out_amount = *vector::borrow(&balances_in_price, coin_out_state.index) - volatile_math::y(a, gamma, &balances_in_price, state.d, coin_out_state.index);
+    let new_out_balance = volatile_math::y(a, gamma, &balances_in_price, state.d, coin_out_state.index) + 1;
+    let current_out_balance = *vector::borrow(&balances_in_price, coin_out_state.index);
+
+    let coin_out_amount = current_out_balance - min(current_out_balance, new_out_balance);
 
     let ref = vector::borrow_mut(&mut balances_in_price, coin_out_state.index);
     *ref = *ref - coin_out_amount;
 
-    coin_out_amount = coin_out_amount -1;
+    coin_out_amount = coin_out_amount;
 
     // Convert from Price => Coin Balance
     coin_out_amount = if (coin_out_state.index != 0) div_down(coin_out_amount, coin_out_state.price) else coin_out_amount;
@@ -589,8 +568,8 @@ module amm::volatile {
     } else if (coin_in_state.index == 0) {
       div_down(coin_in_amount, coin_out_amount)
     } else {
-       tweak_price_index = coin_in_state.index; 
-       div_down(coin_out_amount, coin_in_amount)
+      tweak_price_index = coin_in_state.index; 
+      div_down(coin_out_amount, coin_in_amount)
     };
 
     let lp_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
@@ -1018,7 +997,7 @@ module amm::volatile {
       assert!(remove_amount >= min_amount, errors::slippage());
 
       coin::take(borrow_mut_coin_balance(&mut state.id), remove_amount, ctx)
-    }
+  }
 
   fun add_state<LpCoin>(
     id: &mut UID,
@@ -1138,19 +1117,16 @@ module amm::volatile {
     new_d: u256, 
     lp_supply: u256
   ) {
-
-    let new_coin_states = coin_states;
-
     // Update Moving Average
     
-    if (timestamp > state.last_prices_timestamp) {  
-      let alpha = volatile_math::half_pow(div_down(((timestamp - state.last_prices_timestamp) as u256), state.rebalancing_params.ma_half_time), 10000000000);
+    if (timestamp > state.last_prices_timestamp + TWENTY_SECONDS) {  
+      let alpha = volatile_math::half_pow(div_down(((timestamp - (state.last_prices_timestamp + TWENTY_SECONDS)) as u256), state.rebalancing_params.ma_half_time), 10000000000);
 
       // update prices (do not update the first one)
       let index = 1;
 
       while ((state.n_coins as u64) > index) {
-        let coin_state = vector::borrow_mut(&mut new_coin_states, index);
+        let coin_state = vector::borrow_mut(&mut coin_states, index);
         coin_state.price_oracle = (coin_state.last_price * (PRECISION - alpha) + coin_state.price_oracle * alpha) / PRECISION;
 
         index = index + 1;
@@ -1162,13 +1138,13 @@ module amm::volatile {
     
     if (p_i != 0) {
       if (i != 0) {
-        let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+        let coin_state = vector::borrow_mut(&mut coin_states, i);
         coin_state.last_price = p_i;
         } else {
           // We do not change the first coin
           let i = 1;
           while ((state.n_coins as u64) > i) {
-            let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+            let coin_state = vector::borrow_mut(&mut coin_states, i);
             coin_state.last_price = div_down(coin_state.last_price, p_i);
             i = i + 1;
           };
@@ -1179,10 +1155,10 @@ module amm::volatile {
       let ref = vector::borrow_mut(&mut xp, 0);
       *ref = *ref + dx_price;
 
-      // We do nt change the first coin
+      // We do not change the first coin
       let i = 1;
       while ((state.n_coins as u64) > i) {
-        let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+        let coin_state = vector::borrow_mut(&mut coin_states, i);
         coin_state.last_price = coin_state.price * dx_price / (*vector::borrow(&balances, i) - volatile_math::y(a, gamma, &xp, d_unadjusted, i));
         i = i + 1;
       };
@@ -1196,7 +1172,7 @@ module amm::volatile {
     // We do nt change the first coin
     let i = 1;
     while ((state.n_coins as u64) > i) {
-      let coin_state = vector::borrow(&new_coin_states, i);
+      let coin_state = vector::borrow(&coin_states, i);
       vector::push_back(&mut xp, div_down(d_unadjusted, state.n_coins * coin_state.price));
       i = i + 1;
     };
@@ -1228,7 +1204,7 @@ module amm::volatile {
       // We do nt change the first coin
       let i = 1;
       while ((state.n_coins as u64) > i) {
-        let coin_state = vector::borrow(&new_coin_states, i);
+        let coin_state = vector::borrow(&coin_states, i);
 
         let ratio = diff(PRECISION, div_down(coin_state.price_oracle, coin_state.price));
         norm = norm + math256::pow(ratio, 2);
@@ -1241,10 +1217,10 @@ module amm::volatile {
         let p_new = empty_vector(state.n_coins);
         let xp = balances;
 
-        // We do nt change the first coin
+        // We do not change the first coin
         let i = 1;
         while ((state.n_coins as u64) > i) {
-          let coin_state = vector::borrow(&new_coin_states, i);
+          let coin_state = vector::borrow(&coin_states, i);
 
           let value = vector::borrow_mut(&mut p_new, i);
           *value = (coin_state.price * (norm - adjustment_step) + adjustment_step * coin_state.price_oracle) / norm;
@@ -1272,10 +1248,10 @@ module amm::volatile {
           state.virtual_price = old_virtual_price;
            let i = 1;
            while ((state.n_coins as u64) > i) {
-            let coin_state = vector::borrow_mut(&mut new_coin_states, i);
+            let coin_state = vector::borrow_mut(&mut coin_states, i);
             coin_state.price = *vector::borrow(&p_new, i);
            };
-           update_coin_state_prices(state, new_coin_states);
+           update_coin_state_prices(state, coin_states);
           return
         } else {
           state.not_adjusted = false;
@@ -1283,7 +1259,7 @@ module amm::volatile {
       };
     };
 
-    update_coin_state_prices(state, new_coin_states);
+    update_coin_state_prices(state, coin_states);
     state.d = d_unadjusted;
     state.virtual_price = virtual_price;
   }
@@ -1311,6 +1287,20 @@ module amm::volatile {
   }
 
   // * Utilities
+
+  fun balances_in_price_impl<LpCoin>(state: &State<LpCoin>, coin_states: vector<CoinState>): vector<u256> {
+    let balances = state.balances;
+
+    let i = 1;
+    while ((state.n_coins as u64) > i) {
+      let coin_state = vector::borrow(&coin_states, i);
+      let ref = vector::borrow_mut(&mut balances, i);
+      *ref = mul_down(*ref, coin_state.price);
+      i = i + 1;
+    };
+
+    balances    
+  }  
 
   fun xcp_impl<LpCoin>(state: &State<LpCoin>, coin_states: vector<CoinState>, d: u256): u256 {
     let x = vector::singleton(d / state.n_coins);
@@ -1349,19 +1339,19 @@ module amm::volatile {
     fee * s_diff / s + NOISE_FEE
   }
 
-  // * Load State Functions
+  // * Borrow State Functions
 
   fun borrow_state_and_coin_states<LpCoin>(pool: &InterestPool<Volatile>): (&State<LpCoin>, vector<CoinState>) {
     let coins = interest_pool::coins(pool);    
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
-    let coin_states = load_coin_state_vector_in_order(state, coins);
+    let coin_states = borrow_coin_state_vector_in_order(state, coins);
     (state, coin_states)
   }
 
   fun borrow_mut_state_and_coin_states<LpCoin>(pool: &mut InterestPool<Volatile>): (&mut State<LpCoin>, vector<CoinState>) {
     let coins = interest_pool::coins(pool);    
     let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
-    let coin_states = load_coin_state_vector_in_order(state, coins);
+    let coin_states = borrow_coin_state_vector_in_order(state, coins);
     (state, coin_states)
   }
 
@@ -1377,7 +1367,7 @@ module amm::volatile {
     };
   }
 
-  fun load_coin_state_vector_in_order<LpCoin>(state: &State<LpCoin>, coins: vector<TypeName>): vector<CoinState> {
+  fun borrow_coin_state_vector_in_order<LpCoin>(state: &State<LpCoin>, coins: vector<TypeName>): vector<CoinState> {
     let data = vector::empty();
     let i = 0;
     while ((state.n_coins as u64) > i) {

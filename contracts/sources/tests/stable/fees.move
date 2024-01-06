@@ -13,11 +13,11 @@ module amm::stable_swap_fees_tests {
   use amm::usdc::USDC;
   use amm::stable_fees;
   use amm::curves::Stable;
-  use amm::interest_stable;
+  use amm::interest_amm_stable;
   use amm::amm_admin::Admin;
   use amm::lp_coin::LP_COIN;
   use amm::interest_pool::InterestPool;
-  use amm::init_interest_stable::setup_3pool;
+  use amm::init_interest_amm_stable::setup_3pool;
   use amm::amm_test_utils::{people, scenario, mint};
 
   const DAI_DECIMALS: u8 = 9;
@@ -41,7 +41,7 @@ module amm::stable_swap_fees_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let admin_cap = test::take_from_sender<Admin>(test);
 
-      interest_stable::update_fee<LP_COIN>(
+      interest_amm_stable::update_fee<LP_COIN>(
                 &mut pool,
         &admin_cap,
         option::some(MAX_FEE_PERCENT),
@@ -49,7 +49,7 @@ module amm::stable_swap_fees_tests {
           option::some(MAX_ADMIN_FEE),
       );
 
-      let fees = interest_stable::fees<LP_COIN>(&pool);
+      let fees = interest_amm_stable::fees<LP_COIN>(&pool);
 
       let fee_in = stable_fees::fee_in_percent(&fees);
       let fee_out = stable_fees::fee_out_percent(&fees);
@@ -81,7 +81,7 @@ module amm::stable_swap_fees_tests {
       let admin_cap = test::take_from_sender<Admin>(test);
       let c = test::take_shared<Clock>(test);
 
-      interest_stable::update_fee<LP_COIN>(
+      interest_amm_stable::update_fee<LP_COIN>(
                 &mut pool,
         &admin_cap,
         option::some(MAX_FEE_PERCENT),
@@ -90,7 +90,7 @@ module amm::stable_swap_fees_tests {
       );
 
       // Swap to collect fees
-      burn(interest_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(300, DAI_DECIMALS, ctx(test)),
@@ -98,7 +98,7 @@ module amm::stable_swap_fees_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<USDC, USDT, LP_COIN>(
+      burn(interest_amm_stable::swap<USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<USDC>(300, USDC_DECIMALS, ctx(test)),
@@ -106,7 +106,7 @@ module amm::stable_swap_fees_tests {
         ctx(test)
       ));
 
-      burn(interest_stable::swap<USDT, DAI, LP_COIN>(
+      burn(interest_amm_stable::swap<USDT, DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<USDT>(300, USDT_DECIMALS, ctx(test)),
@@ -114,27 +114,27 @@ module amm::stable_swap_fees_tests {
         ctx(test)
       ));
 
-      let balances= interest_stable::balances<LP_COIN>(&pool);
+      let balances= interest_amm_stable::balances<LP_COIN>(&pool);
 
-      let admin_dai_balance = interest_stable::admin_balance<DAI, LP_COIN>(&pool);
-      let admin_dai = interest_stable::take_fees<DAI, LP_COIN>(&mut pool, &admin_cap, ctx(test));
+      let admin_dai_balance = interest_amm_stable::admin_balance<DAI, LP_COIN>(&pool);
+      let admin_dai = interest_amm_stable::take_fees<DAI, LP_COIN>(&mut pool, &admin_cap, ctx(test));
 
       assert_eq(burn(admin_dai), admin_dai_balance);
-      assert_eq(interest_stable::admin_balance<DAI, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_stable::admin_balance<DAI, LP_COIN>(&pool), 0);
 
-      let admin_usdc_balance = interest_stable::admin_balance<USDC, LP_COIN>(&pool);
-      let admin_usdc = interest_stable::take_fees<USDC, LP_COIN>(&mut pool, &admin_cap, ctx(test));
+      let admin_usdc_balance = interest_amm_stable::admin_balance<USDC, LP_COIN>(&pool);
+      let admin_usdc = interest_amm_stable::take_fees<USDC, LP_COIN>(&mut pool, &admin_cap, ctx(test));
 
       assert_eq(burn(admin_usdc), admin_usdc_balance);
-      assert_eq(interest_stable::admin_balance<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_stable::admin_balance<USDC, LP_COIN>(&pool), 0);
 
-      let admin_usdt_balance = interest_stable::admin_balance<USDT, LP_COIN>(&pool);
-      let admin_usdt = interest_stable::take_fees<USDT, LP_COIN>(&mut pool,&admin_cap,ctx(test));
+      let admin_usdt_balance = interest_amm_stable::admin_balance<USDT, LP_COIN>(&pool);
+      let admin_usdt = interest_amm_stable::take_fees<USDT, LP_COIN>(&mut pool,&admin_cap,ctx(test));
 
       assert_eq(burn(admin_usdt), admin_usdt_balance);
-      assert_eq(interest_stable::admin_balance<USDT, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_stable::admin_balance<USDT, LP_COIN>(&pool), 0);
 
-      let balances_2 = interest_stable::balances<LP_COIN>(&pool);
+      let balances_2 = interest_amm_stable::balances<LP_COIN>(&pool);
 
       // Admin Balances does not come from pool reserves
       assert_eq(balances_2, balances);

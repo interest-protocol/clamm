@@ -1,12 +1,12 @@
 #[test_only]
-module amm::init_interest_stable {
+module amm::init_interest_amm_stable {
   use sui::clock::Clock;
   use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use amm::interest_stable;
+  use amm::interest_amm_stable;
   use amm::dai::DAI;
   use amm::usdt::USDT;
   use amm::usdc::USDC;
@@ -41,7 +41,7 @@ module amm::init_interest_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_stable::new_3_pool(
+      burn(interest_amm_stable::new_3_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -91,7 +91,7 @@ module amm::init_interest_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_stable::new_4_pool(
+      burn(interest_amm_stable::new_4_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -148,7 +148,7 @@ module amm::init_interest_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_stable::new_5_pool(
+      burn(interest_amm_stable::new_5_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),

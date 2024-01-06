@@ -11,11 +11,11 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
   use amm::usdt::USDT;
   use amm::usdc::USDC;
   use amm::curves::Stable;
-  use amm::interest_stable;
+  use amm::interest_amm_stable;
   use amm::lp_coin::LP_COIN;
   use amm::true_usd::TRUE_USD;
   use amm::interest_pool::InterestPool;
-  use amm::init_interest_stable::setup_5pool;
+  use amm::init_interest_amm_stable::setup_5pool;
   use amm::amm_test_utils::{people, scenario, normalize_amount};
 
   const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
@@ -38,11 +38,11 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
     {
       let pool = test::take_shared<InterestPool<Stable>>(test);
 
-      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let c = clock::create_for_testing(ctx(test));
 
-      let(coin_dai, coin_usdc, coin_usdt, coin_frax, coin_true_usd) = interest_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+      let(coin_dai, coin_usdc, coin_usdt, coin_frax, coin_true_usd) = interest_amm_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
         &mut pool,
         mint<LP_COIN>(supply / 10, ctx(test)),
         &c,
@@ -50,8 +50,8 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
         ctx(test)
       );
 
-      let balances_2 = interest_stable::balances<LP_COIN>(&pool);
-      let supply_2 = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances_2 = interest_amm_stable::balances<LP_COIN>(&pool);
+      let supply_2 = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let expected_dai_amount = (2100 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
       let expected_usdc_amount = (800 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
@@ -83,7 +83,7 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_stable)]  
+  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_amm_stable)]  
   fun remove_liquidity_slippage() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -96,7 +96,7 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
     {
       let pool = test::take_shared<InterestPool<Stable>>(test);
 
-      let supply = interest_stable::lp_coin_supply<LP_COIN>(&pool);
+      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let expected_dai_amount = ((2100 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
       let expected_usdc_amount = ((800 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
@@ -106,7 +106,7 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
 
       let c = clock::create_for_testing(ctx(test));
 
-      let(coin_dai, coin_usdc, coin_usdt, coin_frax, coin_true_usd) = interest_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+      let(coin_dai, coin_usdc, coin_usdt, coin_frax, coin_true_usd) = interest_amm_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
         &mut pool,
         mint<LP_COIN>(supply / 10, ctx(test)),
         &c,

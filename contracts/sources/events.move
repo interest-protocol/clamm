@@ -4,9 +4,9 @@ module amm::pool_events {
 
   use amm::curves::Volatile;
 
-  friend amm::volatile;
-  friend amm::interest_stable;
-
+  friend amm::interest_amm_stable;
+  friend amm::interest_amm_volatile;
+  
   struct New2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has drop, copy {
     pool_id: ID
   }

@@ -1,4 +1,4 @@
-module amm::interest_stable {
+module amm::interest_amm_stable {
   // === Imports ===
   
   use std::vector;
