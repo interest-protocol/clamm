@@ -1454,23 +1454,23 @@ module amm::interest_amm_volatile {
     let pool_id = object::id(pool);
 
     let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(pool));
-    assert!(timestamp > state.a_gamma.initial_time + (MIN_RAMP_TIME - 1), errors::wait_one_day());
-    assert!(future_time > timestamp + (MIN_RAMP_TIME - 1), errors::future_ramp_time_is_too_short());
+    assert!(timestamp >= state.a_gamma.initial_time + MIN_RAMP_TIME, errors::wait_one_day());
+    assert!(future_time >= timestamp + MIN_RAMP_TIME, errors::future_ramp_time_is_too_short());
 
     let (a, gamma) = get_a_gamma(state, c);
 
     assert!(future_a != 0, 0);
-    assert!(state.max_a + 1 > future_a, 0);
-    assert!(future_gamma > MIN_GAMMA - 1, 0);
-    assert!(MAX_GAMMA + 1 > future_gamma, 0);
+    assert!(state.max_a >= future_a, 0);
+    assert!(future_gamma >= MIN_GAMMA, 0);
+    assert!(MAX_GAMMA >= future_gamma, 0);
 
     let ratio = div_down(future_a, a);
     assert!(1 + MAX_A_CHANGE * PRECISION > ratio, 0);
-    assert!(ratio > PRECISION / MAX_A_CHANGE - 1, 0);
+    assert!(ratio >= PRECISION / MAX_A_CHANGE, 0);
 
     ratio = div_down(future_gamma, gamma);
     assert!(1 + MAX_A_CHANGE * PRECISION > ratio, 0);
-    assert!(ratio > PRECISION / MAX_A_CHANGE - 1, 0);
+    assert!(ratio >= PRECISION / MAX_A_CHANGE, 0);
 
     state.a_gamma.a = a;
     state.a_gamma.gamma = gamma;
