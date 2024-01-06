@@ -376,17 +376,19 @@ module amm::interest_amm_volatile {
       ctx
     );
 
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(&mut pool));
+
     // @dev This is the quote coin in the pool 
     // So we do not need to pass a price
     register_coin<CoinA>(
-      interest_pool::borrow_mut_uid(&mut pool), 
+      &mut state.id, 
       coin_decimals,
       0, // * First coin does not have a price. The other coins are priced in this coin. So we put Zero.
       0
     );
 
     register_coin<CoinB>(
-      interest_pool::borrow_mut_uid(&mut pool), 
+      &mut state.id, 
       coin_decimals,
       price,
       1
@@ -824,14 +826,14 @@ module amm::interest_amm_volatile {
       if (timestamp >= state.a_gamma.future_time) state.a_gamma.future_time = 1;
       volatile_math::invariant_(a, gamma, old_balances)
     } else  state.d;
-    let new_d = volatile_math::invariant_(a, gamma, new_balances);
 
+    let new_d = volatile_math::invariant_(a, gamma, new_balances);
 
     let lp_coin_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
 
     // Calculate how many tokens to mint to the user
     let d_token = if (old_d != 0)
-      lp_coin_supply * new_d / old_d - lp_coin_supply
+      ((lp_coin_supply * new_d / old_d) - lp_coin_supply) * ROLL
     else 
       xcp_impl(state, coin_states, new_d);
 
@@ -883,12 +885,15 @@ module amm::interest_amm_volatile {
       state.xcp_profit = PRECISION;
     };
 
-    assert!((d_token as u64) >= lp_coin_min_amount, errors::slippage());
+    // Bring back to 1e9 scalar
+    let d_token_scale_down = ((d_token / ROLL) as u64);
+
+    assert!(d_token_scale_down >= lp_coin_min_amount, errors::slippage());
 
     coin::from_balance(
       balance::increase_supply(
         &mut state.lp_coin_supply, 
-        (d_token as u64)
+        d_token_scale_down
       ), 
       ctx
     )
