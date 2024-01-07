@@ -62,7 +62,7 @@ module amm::interest_amm_volatile {
     price: u256, // 1e18
     price_oracle: u256, // 1e18
     last_price: u256, // 1e18
-    decimals: u256,
+    decimals_scalar: u256,
     type: TypeName
   }
 
@@ -212,14 +212,9 @@ module amm::interest_amm_volatile {
     borrow_coin_state<CoinType>(&state.id).price_oracle
   }  
 
-  public fun coin_last_price<CoinType, LpCoin>(pool: &InterestPool<Volatile>): u256 {
+  public fun coin_decimals_scalar<CoinType, LpCoin>(pool: &InterestPool<Volatile>): u256 {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));  
-    borrow_coin_state<CoinType>(&state.id).price_oracle
-  }    
-
-  public fun coin_last_decimals<CoinType, LpCoin>(pool: &InterestPool<Volatile>): u256 {
-    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));  
-    borrow_coin_state<CoinType>(&state.id).decimals
+    borrow_coin_state<CoinType>(&state.id).decimals_scalar
   }  
 
   public fun coin_type<CoinType, LpCoin>(pool: &InterestPool<Volatile>): TypeName {
@@ -258,7 +253,7 @@ module amm::interest_amm_volatile {
       false
     );
 
-    (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals) as u64)
+    (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64)
   }
 
   public fun quote_liquidity_amount<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>, is_add: bool): u64 {
@@ -274,7 +269,7 @@ module amm::interest_amm_volatile {
       while((state.n_coins as u64) > index) {
         let ref = vector::borrow_mut(&mut balances, index);
         let coin_state = vector::borrow(&coin_states, index);
-        let amount = div_down((*vector::borrow(&amounts, index) as u256), coin_state.decimals);
+        let amount = div_down((*vector::borrow(&amounts, index) as u256), coin_state.decimals_scalar);
         
         if (is_add) {
           *ref = *ref + amount;
@@ -315,7 +310,7 @@ module amm::interest_amm_volatile {
         let coin_state = vector::borrow(&coin_states, index);
 
         
-        bal = if (index == coin_in_state.index) bal + div_down((amount as u256), coin_in_state.decimals) else bal;
+        bal = if (index == coin_in_state.index) bal + div_down((amount as u256), coin_in_state.decimals_scalar) else bal;
 
 
         vector::push_back(&mut balances_price,if (index == 0) bal else mul_down(bal, coin_state.price));
@@ -331,7 +326,7 @@ module amm::interest_amm_volatile {
 
    dy = dy - fee_impl(state, balances_price) * dy / 10000000000;
 
-   (mul_down(dy, coin_out_state.decimals) as u64)
+   (mul_down(dy, coin_out_state.decimals_scalar) as u64)
   } 
 
   // * View Functions  ---- END ----
@@ -550,7 +545,7 @@ module amm::interest_amm_volatile {
     coin_out_amount = coin_out_amount - fee_impl(state, balances_in_price) * coin_out_amount / 10000000000;
 
     // Scale to the right decimal house
-    let amount_out = (mul_down(coin_out_amount, (coin_out_state.decimals as u256)) as u64);
+    let amount_out = (mul_down(coin_out_amount, (coin_out_state.decimals_scalar as u256)) as u64);
     assert!(amount_out >= mint_amount, errors::slippage());
 
     let ref = vector::borrow_mut(&mut state.balances, coin_out_state.index);
@@ -563,7 +558,7 @@ module amm::interest_amm_volatile {
     let ref = vector::borrow_mut(&mut balances_in_price, coin_out_state.index);
     *ref = coin_out_b;
 
-    let coin_in_amount = div_down((coin_in_value as u256), (coin_in_state.decimals as u256));
+    let coin_in_amount = div_down((coin_in_value as u256), (coin_in_state.decimals_scalar as u256));
 
     let p = if (coin_in_state.index != 0 && coin_out_state.index != 0) {
       coin_in_state.last_price * coin_in_amount / coin_out_amount
@@ -767,7 +762,7 @@ module amm::interest_amm_volatile {
     lp_supply_value
     );
 
-    let remove_amount = (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals) as u64);
+    let remove_amount = (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64);
     assert!(remove_amount >= min_amount, errors::slippage());
 
     events::emit_remove_liquidity<Volatile, CoinOut, LpCoin>(pool_id, remove_amount, lp_coin_amount);
@@ -979,7 +974,7 @@ module amm::interest_amm_volatile {
 
     // Update the balance for the coin
     let current_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
-    *current_balance = *current_balance + div_down(coin_value, coin_state.decimals);
+    *current_balance = *current_balance + div_down(coin_value, coin_state.decimals_scalar);
 
     balance::join(borrow_mut_coin_balance(&mut state.id), coin::into_balance(coin_in));
   }
@@ -998,7 +993,7 @@ module amm::interest_amm_volatile {
 
       *current_balance = *current_balance - coin_amount;
 
-      let remove_amount = (mul_down(coin_amount, coin_state.decimals) as u64);
+      let remove_amount = (mul_down(coin_amount, coin_state.decimals_scalar) as u64);
       assert!(remove_amount >= min_amount, errors::slippage());
 
       coin::take(borrow_mut_coin_balance(&mut state.id), remove_amount, ctx)
@@ -1081,7 +1076,7 @@ module amm::interest_amm_volatile {
       price,
       price_oracle: price,
       last_price: price,
-      decimals: (scalar<CoinType>(coin_decimals) as u256),
+      decimals_scalar: (scalar<CoinType>(coin_decimals) as u256),
       type: coin_name
     });
     df::add(id, CoinBalanceKey { type: coin_name }, balance::zero<CoinType>());    

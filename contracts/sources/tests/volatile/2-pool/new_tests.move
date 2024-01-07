@@ -2,6 +2,7 @@
 #[test_only]
 module amm::volatile_2pool_new_tests {
   use std::vector;
+  use std::type_name;
   
   use sui::clock;
   use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
@@ -29,12 +30,13 @@ module amm::volatile_2pool_new_tests {
   const MA_TIME: u256 = 600_000; // 10 minutes
   const PRECISION: u256 = 1_000_000_000_000_000_000;
   const INITIAL_ETH_PRICE: u256 = 1500 * 1_000_000_000_000_000_000;
+  const MAX_ADMIN_FEE: u256 = 10000000000;
 
   const ETH_DECIMALS_SCALAR: u64 = 1000000000;
   const USDC_DECIMALS_SCALAR: u64 = 1000000; 
 
   #[test]
-  fun sets_initial_state_correctly() {
+  fun sets_2pool_state_correctly() {
    let scenario = scenario();
     let (alice, _) = people();
 
@@ -57,6 +59,34 @@ module amm::volatile_2pool_new_tests {
         interest_amm_volatile::gamma<LP_COIN>(&pool, &c),
         GAMMA
       );
+
+      assert_eq(interest_amm_volatile::lp_coin_supply<LP_COIN>(&pool), 387298334620741);
+      assert_eq(interest_amm_volatile::balances<LP_COIN>(&pool), vector[normalize_amount(15000), normalize_amount(10)]);
+      assert_eq(interest_amm_volatile::xcp_profit<LP_COIN>(&pool), PRECISION);
+      assert_eq(interest_amm_volatile::xcp_profit_a<LP_COIN>(&pool), PRECISION);
+      assert_eq(interest_amm_volatile::virtual_price<LP_COIN>(&pool), PRECISION);
+      assert_eq(interest_amm_volatile::extra_profit<LP_COIN>(&pool), ALLOWED_EXTRA_PROFIT);
+      assert_eq(interest_amm_volatile::adjustment_step<LP_COIN>(&pool), ADJUSTMENT_STEP);
+      assert_eq(interest_amm_volatile::ma_half_time<LP_COIN>(&pool), MA_TIME);
+      assert_eq(interest_amm_volatile::mid_fee<LP_COIN>(&pool), MID_FEE);
+      assert_eq(interest_amm_volatile::out_fee<LP_COIN>(&pool), OUT_FEE);
+      assert_eq(interest_amm_volatile::gamma_fee<LP_COIN>(&pool), FEE_GAMMA);
+      assert_eq(interest_amm_volatile::admin_fee<LP_COIN>(&pool), MAX_ADMIN_FEE);
+      assert_eq(interest_amm_volatile::last_prices_timestamp<LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_volatile::last_prices_timestamp<LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_volatile::coin_price<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_volatile::coin_price<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);
+      assert_eq(interest_amm_volatile::coin_index<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_volatile::coin_index<ETH, LP_COIN>(&pool), 1);
+      assert_eq(interest_amm_volatile::coin_price_oracle<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);      
+      assert_eq(interest_amm_volatile::coin_price_oracle<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_amm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);     
+      assert_eq(interest_amm_volatile::coin_decimals_scalar<USDC, LP_COIN>(&pool), (USDC_DECIMALS_SCALAR as u256));
+      assert_eq(interest_amm_volatile::coin_decimals_scalar<ETH, LP_COIN>(&pool), (ETH_DECIMALS_SCALAR as u256)); 
+      assert_eq(interest_amm_volatile::coin_type<USDC, LP_COIN>(&pool), type_name::get<USDC>());
+      assert_eq(interest_amm_volatile::coin_type<ETH, LP_COIN>(&pool), type_name::get<ETH>()); 
+      assert_eq(interest_amm_volatile::balances_in_price<LP_COIN>(&pool), vector[normalize_amount(15000), 10 * INITIAL_ETH_PRICE]);
 
       clock::destroy_for_testing(c);
 
