@@ -19,7 +19,6 @@ module amm::volatile_2pool_new_tests {
   use amm::init_interest_amm_volatile::setup_2pool;
   use amm::amm_test_utils ::{people, scenario, normalize_amount};
 
-
   const A: u256  = 36450000;
   const GAMMA: u256 = 70000000000000;
   const MID_FEE: u256 = 4000000;
@@ -30,8 +29,10 @@ module amm::volatile_2pool_new_tests {
   const MA_TIME: u256 = 600_000; // 10 minutes
   const PRECISION: u256 = 1_000_000_000_000_000_000;
   const INITIAL_ETH_PRICE: u256 = 1500 * 1_000_000_000_000_000_000;
+  const BTC_INITIAL_PRICE: u256 = 47500 * 1_000_000_000_000_000_000;
   const MAX_ADMIN_FEE: u256 = 10000000000;
 
+  const BTC_DECIMALS_SCALAR: u64 = 1000000000;
   const ETH_DECIMALS_SCALAR: u64 = 1000000000;
   const USDC_DECIMALS_SCALAR: u64 = 1000000; 
 
