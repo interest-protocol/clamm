@@ -1,9 +1,12 @@
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpers';
 import { expect } from 'chai';
+
 import hre from 'hardhat';
 
 const A = '36450000';
 const GAMMA = '70000000000000';
+const ETH_PRECISION = 1_000_000_000_000_000_000n;
+const USDC_PRECISION = 1_000_000n;
 const MID_FEE = '4000000';
 const OUT_FEE = '40000000';
 const ALLOWED_EXTRA_PROFIT = '2000000000000';
@@ -11,34 +14,25 @@ const FEE_GAMMA = '10000000000000000';
 const ADJUSTMENT_STEP = '1500000000000000';
 const ADMIN_FEE = '2000000000';
 const MA_HALF_TIME = '600000';
-const ETH_INITIAL_PRICE = 1500n * 1_000_000_000_000_000_000n;
+const ETH_INITIAL_PRICE = 1500n * ETH_PRECISION;
+const MAX_U256 =
+  '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
 describe('Volatile 2 Pool', function () {
   async function deploy2PoolFixture() {
-    const [owner, otherAccount] = await hre.ethers.getSigners();
+    const [owner, bob, alice] = await hre.ethers.getSigners();
 
     const weth = await hre.ethers.deployContract('ETH');
 
-    let lpCoin = await hre.viem.deployContract('LpCoin');
-    let usdc = await hre.viem.deployContract('USDC');
-    let eth = await hre.viem.deployContract('ETH');
+    let lpCoin = await hre.ethers.deployContract('LpCoin');
+    let usdc = await hre.ethers.deployContract('USDC');
+    let eth = await hre.ethers.deployContract('ETH');
 
-    // owner: address,
-    // admin_fee_receiver: address,
-    // A: uint256,
-    // gamma: uint256,
-    // mid_fee: uint256,
-    // out_fee: uint256,
-    // allowed_extra_profit: uint256,
-    // fee_gamma: uint256,
-    // adjustment_step: uint256,
-    // admin_fee: uint256,
-    // ma_half_time: uint256,
-    // initial_price: uint256,
-    // _token: address,
-    // _coins: address[2]
+    let lpCoinAddress = await lpCoin.getAddress();
+    let usdcAddress = await usdc.getAddress();
+    let ethAddress = await eth.getAddress();
 
-    const pool = await hre.viem.deployContract('2-pool', [
+    const pool = (await hre.ethers.deployContract('2-pool', [
       owner.address,
       owner.address,
       A,
@@ -51,25 +45,69 @@ describe('Volatile 2 Pool', function () {
       ADMIN_FEE,
       MA_HALF_TIME,
       ETH_INITIAL_PRICE,
-      lpCoin.address,
-      [usdc.address, eth.address],
+      lpCoinAddress,
+      [usdcAddress, ethAddress],
+    ])) as any;
+
+    await pool.waitForDeployment();
+
+    const poolAddress = (await pool.getAddress()) as `0x${string}`;
+
+    // Approve
+    await Promise.all([
+      usdc.connect(alice).approve(poolAddress, BigInt(MAX_U256)),
+      usdc.connect(bob).approve(poolAddress, BigInt(MAX_U256)),
+      eth.connect(alice).approve(poolAddress, BigInt(MAX_U256)),
+      eth.connect(bob).approve(poolAddress, BigInt(MAX_U256)),
+    ]);
+
+    // Mint Coins
+    await Promise.all([
+      usdc.connect(alice).mint(alice.address, 1_000_000n * USDC_PRECISION),
+      usdc.connect(bob).mint(bob.address, 1_000_000n * USDC_PRECISION),
+      eth.connect(alice).mint(alice.address, 1_000_000n * ETH_PRECISION),
+      eth.connect(alice).mint(bob.address, 1_000_000n * ETH_PRECISION),
     ]);
 
     return {
       pool,
-      owner,
       lpCoin,
       eth,
       usdc,
       weth,
-      otherAccount,
+      owner,
+      alice,
+      bob,
+      poolAddress,
     };
   }
 
   describe('Add liquidity', function () {
-    it('Has the correct metadata', async function () {
-      const { pool } = await loadFixture(deploy2PoolFixture);
-      expect(await pool.read.A()).to.equal(A);
+    it('mints the correct amount lp coin when adding both tokens', async function () {
+      const { pool, alice, bob, lpCoin } = await loadFixture(
+        deploy2PoolFixture
+      );
+
+      expect(await lpCoin.totalSupply()).to.be.equal(0);
+
+      await pool
+        .connect(alice)
+        .add_liquidity([4500n * USDC_PRECISION, 3n * ETH_PRECISION], 0n);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(116189500386222506555n);
+
+      expect(await lpCoin.balanceOf(alice.address)).to.be.equal(
+        116189500386222506555n
+      );
+
+      expect(await pool.balances(0n)).to.be.equal(4500000000n);
+      expect(await pool.balances(1n)).to.be.equal(3000000000000000000n);
+      expect(await pool.last_prices()).to.be.equal(1500000000000000000000n);
+      expect(await pool.price_scale()).to.be.equal(1500000000000000000000n);
+      expect(await pool.price_oracle()).to.be.equal(1500000000000000000000n);
+      expect(await pool.xcp_profit()).to.be.equal(1000000000000000000n);
+      expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
+      expect(await pool.virtual_price()).to.be.equal(1000000000000000000n);
     });
   });
 });

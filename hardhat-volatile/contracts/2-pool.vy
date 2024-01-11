@@ -892,17 +892,9 @@ def add_liquidity(amounts: uint256[2], min_mint_amount: uint256, use_eth: bool =
     xp = [xp[0] * PRECISIONS[0], xp[1] * price_scale / PRECISION]
     xp_old = [xp_old[0] * PRECISIONS[0], xp_old[1] * price_scale / PRECISION]
 
-    if not use_eth:
-        assert msg.value == 0  # dev: nonzero eth amount
-
     for i in range(2):
-        if use_eth and i == 0:
-            assert msg.value == amounts[i]  # dev: incorrect eth amount
         if amounts[i] > 0:
-            if (not use_eth) or (i != 0):
-                assert ERC20(_coins[i]).transferFrom(msg.sender, self, amounts[i])
-                if i == 0:
-                    WETH(_coins[i]).withdraw(amounts[i])
+            assert ERC20(_coins[i]).transferFrom(msg.sender, self, amounts[i])
             amountsp[i] = xp[i] - xp_old[i]
 
     t: uint256 = self.future_A_gamma_time

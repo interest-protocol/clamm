@@ -32,11 +32,17 @@ contract LpCoin is ERC20 {
         return d_supply;
     }
 
-    function mint(address to, uint256 amount) external {
+    function burnFrom(address to, uint256 value) external returns (bool) {
+        _burn(to, value);
+        return true;
+    }
+
+    function mint(address to, uint256 amount) external returns (bool) {
         _mint(to, amount);
+        return true;
     }
 
     function decimals() public pure override returns (uint8) {
-        return 9;
+        return 18;
     }
 }
