@@ -3,19 +3,33 @@ pragma solidity ^0.8.4;
 
 import {ERC20} from "./ERC20.sol";
 
-contract USDC is ERC20 {
+contract LpCoin is ERC20 {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                       ERC20 METADATA                       */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     /// @dev Returns the name of the token.
     function name() public view virtual override returns (string memory) {
-        return "USD Coin";
+        return "LpCoin";
     }
 
     /// @dev Returns the symbol of the token.
     function symbol() public view virtual override returns (string memory) {
-        return "USDC";
+        return "LPCOIN";
+    }
+
+    function mint_relative(
+        address to,
+        uint256 amount
+    ) external returns (uint256) {
+        uint256 supply = totalSupply();
+        uint256 d_supply = (supply * amount) / 1 ether;
+
+        if (d_supply != 0) {
+            _mint(to, d_supply);
+        }
+
+        return d_supply;
     }
 
     function mint(address to, uint256 amount) external {
@@ -23,6 +37,6 @@ contract USDC is ERC20 {
     }
 
     function decimals() public pure override returns (uint8) {
-        return 6;
+        return 9;
     }
 }

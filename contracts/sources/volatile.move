@@ -256,7 +256,7 @@ module amm::interest_amm_volatile {
     (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64)
   }
 
-  public fun quote_liquidity_amount<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>, is_add: bool): u64 {
+  public fun quote_liquidity<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>, is_add: bool): u64 {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
 
     let supply = (balance::supply_value(&state.lp_coin_supply) as u256);

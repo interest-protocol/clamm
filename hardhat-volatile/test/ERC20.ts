@@ -21,7 +21,7 @@ describe('BTC', function () {
   describe('Deployment', function () {
     it('Has the correct metadata', async function () {
       const { btc } = await loadFixture(deployBTCFixture);
-      expect(await btc.read.decimals()).to.equal(9);
+      expect(await btc.read.decimals()).to.equal(18);
       expect(await btc.read.name()).to.equal('Bitcoin');
       expect(await btc.read.symbol()).to.equal('BTC');
     });

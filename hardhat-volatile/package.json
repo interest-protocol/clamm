@@ -3,6 +3,11 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-toolbox-viem": "^2.0.0",
+    "@nomiclabs/hardhat-vyper": "^3.0.5",
     "hardhat": "^2.19.4"
+  },
+  "dependencies": {
+    "@typechain/ethers-v6": "^0.5.1",
+    "typechain": "^8.3.2"
   }
 }
