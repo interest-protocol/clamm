@@ -110,6 +110,7 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.xcp_profit()).to.be.equal(1000000000000000000n);
       expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
       expect(await pool.virtual_price()).to.be.equal(1000000000000000000n);
+      expect(await pool.D()).to.be.equal(9000000000000000000000n);
     });
   });
 });
