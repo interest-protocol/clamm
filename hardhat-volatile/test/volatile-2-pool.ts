@@ -88,7 +88,9 @@ describe('Volatile 2 Pool', function () {
         deploy2PoolFixture
       );
 
-      expect(await lpCoin.totalSupply()).to.be.equal(0);
+      expect(await lpCoin.totalSupply()).to.be.equal(0n);
+      expect(await pool.balances(0n)).to.be.equal(0n);
+      expect(await pool.balances(1n)).to.be.equal(0n);
 
       await pool
         .connect(alice)
