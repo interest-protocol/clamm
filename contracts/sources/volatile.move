@@ -1136,7 +1136,7 @@ module amm::interest_amm_volatile {
     // Update Moving Average
     
     if (timestamp > state.last_prices_timestamp + TWENTY_SECONDS) {  
-      let alpha = volatile_math::half_pow(div_down(((timestamp - (state.last_prices_timestamp + TWENTY_SECONDS)) as u256), state.rebalancing_params.ma_half_time), 10000000000);
+      let alpha = volatile_math::half_pow(div_down(((timestamp - state.last_prices_timestamp) as u256), state.rebalancing_params.ma_half_time), 10000000000);
 
       // update prices (do not update the first one)
       let index = 1;
