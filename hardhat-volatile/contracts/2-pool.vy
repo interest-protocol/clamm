@@ -721,8 +721,6 @@ def _exchange(sender: address, mvalue: uint256, i: uint256, j: uint256, dx: uint
     else:
         assert mvalue == 0  # dev: nonzero eth amount
         assert ERC20(_coins[i]).transferFrom(sender, self, dx)
-        if i == 0:
-            WETH(_coins[i]).withdraw(dx)
 
     y: uint256 = xp[j]
     x0: uint256 = xp[i]
@@ -769,8 +767,6 @@ def _exchange(sender: address, mvalue: uint256, i: uint256, j: uint256, dx: uint
     if use_eth and j == 0:
         raw_call(sender, b"", value=dy)
     else:
-        if j == 0:
-            WETH(_coins[j]).deposit(value=dy)
         assert ERC20(_coins[j]).transfer(sender, dy)
 
     y *= prec_j
