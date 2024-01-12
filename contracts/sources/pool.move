@@ -1,6 +1,3 @@
-/*
-* TODO Hook Contracts should implement a standarded interface
-*/
 module amm::interest_pool {
   use std::type_name::TypeName;
 

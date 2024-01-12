@@ -111,6 +111,21 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
       expect(await pool.virtual_price()).to.be.equal(1000000000000000000n);
       expect(await pool.D()).to.be.equal(9000000000000000000000n);
+
+      await pool
+        .connect(bob)
+        .add_liquidity([6000n * USDC_PRECISION, 5n * ETH_PRECISION], 0n);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(290178641323480024837n);
+      expect(await pool.balances(0n)).to.be.equal(10500000000n);
+      expect(await pool.balances(1n)).to.be.equal(8000000000000000000n);
+      expect(await pool.last_prices()).to.be.equal(1367804588351816940129n);
+      expect(await pool.price_scale()).to.be.equal(1500000000000000000000n);
+      expect(await pool.price_oracle()).to.be.equal(1500000000000000000000n);
+      expect(await pool.xcp_profit()).to.be.equal(1000056223489999239n);
+      expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
+      expect(await pool.virtual_price()).to.be.equal(1000056223489999239n);
+      expect(await pool.D()).to.be.equal(22478404648725576997253n);
     });
   });
 });
