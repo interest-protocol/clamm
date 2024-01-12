@@ -805,13 +805,30 @@ module amm::interest_amm_volatile {
     let xx = new_balances;
     let (a, gamma) = get_a_gamma(state, c);
 
+
+    {
+      let i: u64 = 0;
+      while (n_coins_u64 > i) {
+        let old_bal = vector::borrow_mut(&mut old_balances, i);
+        let new_bal = vector::borrow_mut(&mut new_balances, i);
+        vector::push_back(&mut amounts, *new_bal - *old_bal);
+
+        let p = *new_bal - *old_bal;
+
+        // If amount was sent
+        if (p != 0) 
+          ix = if (ix == INF_COINS) i else INF_COINS - 1;
+  
+        i = i + 1;
+      };
+    };
+
     // Convert balances to first coin price (usually Stable Coin USD)
     {
       let i: u64 = 1;
       while (n_coins_u64 > i) {
         let old_bal = vector::borrow_mut(&mut old_balances, i);
         let new_bal = vector::borrow_mut(&mut new_balances, i);
-        vector::push_back(&mut amounts, *new_bal - *old_bal);
         let coin_state = vector::borrow(&coin_states, i);
 
         // Divide first to prevent overflow - these values r already scaled to 1e18
@@ -824,13 +841,13 @@ module amm::interest_amm_volatile {
         if (p != 0) {
           let new_p = vector::borrow_mut(&mut amounts_p, i);
           *new_p = p;
-
-          ix = if (ix == INF_COINS) i else INF_COINS - 1;
         };
 
         i = i + 1;
       };
     };
+
+    assert!(ix != INF_COINS, errors::must_supply_one_coin());
 
     // Calculate the previous and new invariant with current prices
     let old_d = if (state.a_gamma.future_time != 0) {
@@ -844,7 +861,7 @@ module amm::interest_amm_volatile {
 
     // Calculate how many tokens to mint to the user
     let d_token = if (old_d != 0)
-      ((lp_coin_supply * new_d * ROLL / old_d) - lp_coin_supply)
+      lp_coin_supply * new_d / old_d - lp_coin_supply
     else 
       xcp_impl(state, coin_states, new_d);
 
@@ -860,21 +877,22 @@ module amm::interest_amm_volatile {
       let p = 0;
       if (d_token > 1000 && n_coins_u64 > ix) {
           let s = 0;
-
           let i = 0;
           while (n_coins_u64 > i) {
             let coin_state = vector::borrow(&coin_states, i);
 
-            if (i != ix)
-              s = s + *vector::borrow(&xx, 0)
-            else 
-              s = s + mul_down(*vector::borrow(&xx, i), coin_state.last_price);
+            if (i != ix) {
+              if (i == 0)
+                s = s + *vector::borrow(&xx, 0)
+              else 
+                s = s + mul_down(*vector::borrow(&xx, i), coin_state.last_price);
+            };
 
             i = i + 1;
           };
 
           s = s * d_token / lp_supply;
-          p = div_down(s, (*vector::borrow(&amounts, ix) * PRECISION - d_token * *vector::borrow(&xx, ix) * PRECISION / lp_supply));
+          p = div_down(s, *vector::borrow(&amounts, ix) - (d_token * *vector::borrow(&xx, ix) / lp_supply));
       };
 
       tweak_price(
@@ -1197,7 +1215,7 @@ module amm::interest_amm_volatile {
     let virtual_price = PRECISION;
 
     if (old_virtual_price != 0) {
-      virtual_price = volatile_math::geometric_mean(xp, true) * ROLL / lp_supply;
+      virtual_price = div_down(volatile_math::geometric_mean(xp, true), lp_supply);
       xcp_profit = old_xcp_profit * virtual_price / old_virtual_price;
       
       if (old_virtual_price > virtual_price && state.a_gamma.future_time == 0) abort errors::incurred_a_loss();

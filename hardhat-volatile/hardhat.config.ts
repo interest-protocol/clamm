@@ -6,7 +6,7 @@ import '@nomiclabs/hardhat-vyper';
 const config: HardhatUserConfig = {
   solidity: '0.8.23',
   vyper: {
-    version: '0.3.1',
+    version: '0.3.7',
   },
 };
 

@@ -1,4 +1,4 @@
-# @version 0.3.1
+# @version 0.3.7
 # (c) Curve.Fi, 2021
 # Pool for two crypto assets
 
@@ -913,7 +913,7 @@ def add_liquidity(amounts: uint256[2], min_mint_amount: uint256, use_eth: bool =
     else:
         d_token = self.get_xcp(D)  # making initial virtual price equal to 1
     assert d_token > 0  # dev: nothing minted
-
+    
     if old_D > 0:
         d_token_fee = self._calc_token_fee(amountsp, xp) * d_token / 10**10 + 1
         d_token -= d_token_fee
@@ -940,7 +940,7 @@ def add_liquidity(amounts: uint256[2], min_mint_amount: uint256, use_eth: bool =
                 p = S * PRECISION / (amounts[ix] * precision - d_token * xx[ix] * precision / token_supply)
                 if ix == 0:
                     p = (10**18)**2 / p
-
+                    
         self.tweak_price(A_gamma, xp, p, D)
 
     else:
