@@ -597,7 +597,7 @@ module amm::interest_amm_volatile {
       tweak_price_index,
       p,
       0,
-      lp_supply
+      lp_supply * ROLL
     ); 
 
     events::emit_swap<Volatile, CoinIn, CoinOut, LpCoin>(pool_id, coin_in_value, amount_out);
@@ -763,7 +763,7 @@ module amm::interest_amm_volatile {
     let current_balance = vector::borrow_mut(&mut state.balances, index_out);
     *current_balance = *current_balance - amount_out;
 
-    let lp_supply_value = (balance::supply_value(&state.lp_coin_supply) as u256);
+    let lp_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
 
     tweak_price(
       state,
@@ -775,7 +775,7 @@ module amm::interest_amm_volatile {
       index_out,
       p,
     d,
-    lp_supply_value
+    lp_supply * ROLL
     );
 
     let remove_amount = (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64);
