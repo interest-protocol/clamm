@@ -110,6 +110,11 @@ module amm::interest_amm_volatile {
 
   // * View Functions  ---- START ----
 
+  public fun invariant_<LpCoin>(pool: &InterestPool<Volatile>): u256 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    state.d
+  }  
+
   public fun a<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock): u256 {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
     let (a, _) = get_a_gamma(state, c);
@@ -202,6 +207,11 @@ module amm::interest_amm_volatile {
     borrow_coin_state<CoinType>(&state.id).price
   }
 
+  public fun coin_last_price<CoinType, LpCoin>(pool: &InterestPool<Volatile>): u256 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));  
+    borrow_coin_state<CoinType>(&state.id).last_price
+  }  
+
   public fun coin_index<CoinType, LpCoin>(pool: &InterestPool<Volatile>): u64 {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));  
     borrow_coin_state<CoinType>(&state.id).index
@@ -220,7 +230,13 @@ module amm::interest_amm_volatile {
   public fun coin_type<CoinType, LpCoin>(pool: &InterestPool<Volatile>): TypeName {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));  
     borrow_coin_state<CoinType>(&state.id).type
-  }        
+  }  
+
+  public fun coin_balance<LpCoin, CoinType>(pool: &InterestPool<Volatile>): u64 {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool)); 
+    let coin_balance = borrow_coin_balance<CoinType>(&state.id);  
+    balance::value(coin_balance)
+  }          
 
   public fun balances_in_price<LpCoin>(pool: &InterestPool<Volatile>): vector<u256> {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
@@ -824,11 +840,11 @@ module amm::interest_amm_volatile {
 
     let new_d = volatile_math::invariant_(a, gamma, new_balances);
 
-    let lp_coin_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
+    let lp_coin_supply = (balance::supply_value(&state.lp_coin_supply) as u256) * ROLL;
 
     // Calculate how many tokens to mint to the user
     let d_token = if (old_d != 0)
-      ((lp_coin_supply * new_d / old_d) - lp_coin_supply) * ROLL
+      ((lp_coin_supply * new_d * ROLL / old_d) - lp_coin_supply)
     else 
       xcp_impl(state, coin_states, new_d);
 
@@ -1388,6 +1404,10 @@ module amm::interest_amm_volatile {
 
   fun borrow_mut_coin_balance<CoinType>(id: &mut UID): &mut Balance<CoinType>  {
     df::borrow_mut(id, CoinBalanceKey { type: get<CoinType>() })
+  }
+
+  fun borrow_coin_balance<CoinType>(id: &UID): &Balance<CoinType>  {
+    df::borrow(id, CoinBalanceKey { type: get<CoinType>() })
   }
 
   fun borrow_coin_state_with_key(id: &UID, type: TypeName): &CoinState {
