@@ -3,7 +3,7 @@
 #[test_only]
 module amm::volatile_2pool_add_liquidity_tests {
   use sui::clock;
-  use sui::coin::{burn_for_testing as burn};
+  use sui::coin::{Self, burn_for_testing as burn};
 
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx}; 
@@ -85,7 +85,7 @@ module amm::volatile_2pool_add_liquidity_tests {
       test::return_shared(pool);
     };
 
-     next_tx(test, bob);
+    next_tx(test, bob);
     {
       let pool = test::take_shared<InterestPool<Volatile>>(test);
 
@@ -98,8 +98,9 @@ module amm::volatile_2pool_add_liquidity_tests {
         ctx(test)
       ));
 
-      assert_eq(interest_amm_volatile::lp_coin_supply<LP_COIN>(&pool), 290062042772);
+      assert_eq(interest_amm_volatile::lp_coin_supply<LP_COIN>(&pool), 290178641322);
       // Tested via hardhat
+      assert_eq(290178641323, 290178641323480024837 / POW_10_9);
 
       assert_eq(
         interest_amm_volatile::balances<LP_COIN>(&pool),
@@ -127,7 +128,7 @@ module amm::volatile_2pool_add_liquidity_tests {
       );      
      assert_eq(
         interest_amm_volatile::xcp_profit<LP_COIN>(&pool),
-        1000458224059486969
+        1000056223491914378
       );  
      assert_eq(
         interest_amm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -135,7 +136,7 @@ module amm::volatile_2pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_amm_volatile::virtual_price<LP_COIN>(&pool),
-        1000458224059486969
+        1000056223491914378
       );        
      assert_eq(
         interest_amm_volatile::invariant_<LP_COIN>(&pool),
@@ -144,6 +145,68 @@ module amm::volatile_2pool_add_liquidity_tests {
 
       test::return_shared(pool);
     };   
+
+    next_tx(test, bob);
+    {
+      let pool = test::take_shared<InterestPool<Volatile>>(test);
+
+      burn(interest_amm_volatile::add_liquidity_2_pool<USDC, ETH, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDC>(3555, 6, ctx(test)),
+        coin::zero(ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      assert_eq(interest_amm_volatile::lp_coin_supply<LP_COIN>(&pool), 335767435232);
+      // Tested via hardhat
+      assert_eq(335767435234, 335767435234073784787 / POW_10_9);
+
+      assert_eq(
+        interest_amm_volatile::balances<LP_COIN>(&pool),
+        vector[14055 * POW_10_18, 8 * POW_10_18]
+      );
+      assert_eq(
+        interest_amm_volatile::coin_balance<LP_COIN, USDC>(&pool),
+        14055 * USDC_DECIMALS_SCALAR
+      );
+     assert_eq(
+        interest_amm_volatile::coin_balance<LP_COIN, ETH>(&pool),
+        8 * ETH_DECIMALS_SCALAR
+      );
+     assert_eq(
+        interest_amm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
+        1516005048653128167559
+      );      
+     assert_eq(
+        interest_amm_volatile::coin_price<ETH, LP_COIN>(&pool),
+        1500000000000000000000
+      );
+     assert_eq(
+        interest_amm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
+        1500000000000000000000
+      );      
+     assert_eq(
+        interest_amm_volatile::xcp_profit<LP_COIN>(&pool),
+        1000178579901483538
+      );  
+     assert_eq(
+        interest_amm_volatile::xcp_profit_a<LP_COIN>(&pool),
+        POW_10_18
+      );  
+     assert_eq(
+        interest_amm_volatile::virtual_price<LP_COIN>(&pool),
+        1000178579901483538
+      );        
+     assert_eq(
+        interest_amm_volatile::invariant_<LP_COIN>(&pool),
+        26013078280601615786050
+      );   
+
+      test::return_shared(pool);
+    };   
+
     clock::destroy_for_testing(c);
     test::end(scenario);     
   }

@@ -805,7 +805,7 @@ module amm::interest_amm_volatile {
     let xx = new_balances;
     let (a, gamma) = get_a_gamma(state, c);
 
-
+    // Block Scope
     {
       let i: u64 = 0;
       while (n_coins_u64 > i) {
@@ -823,7 +823,7 @@ module amm::interest_amm_volatile {
       };
     };
 
-    // Convert balances to first coin price (usually Stable Coin USD)
+    // Block Scope
     {
       let i: u64 = 1;
       while (n_coins_u64 > i) {
@@ -834,6 +834,16 @@ module amm::interest_amm_volatile {
         // Divide first to prevent overflow - these values r already scaled to 1e18
         *old_bal = mul_down(*old_bal, coin_state.price);
         *new_bal = mul_down(*new_bal, coin_state.price);
+        i = i + 1;
+      };
+    };
+
+    // Block Scope
+    {
+      let i: u64 = 0;
+      while (n_coins_u64 > i) {
+        let old_bal = vector::borrow_mut(&mut old_balances, i);
+        let new_bal = vector::borrow_mut(&mut new_balances, i);
 
         let p = *new_bal - *old_bal;
 
