@@ -874,7 +874,7 @@ module amm::interest_amm_volatile {
           };
 
           s = s * d_token / lp_supply;
-          p = div_down(s, (*vector::borrow(&amounts, ix) * ROLL - d_token * *vector::borrow(&xx, ix) * ROLL / lp_supply));
+          p = div_down(s, (*vector::borrow(&amounts, ix) * PRECISION - d_token * *vector::borrow(&xx, ix) * PRECISION / lp_supply));
       };
 
       tweak_price(
