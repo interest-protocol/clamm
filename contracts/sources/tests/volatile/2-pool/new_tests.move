@@ -1,11 +1,9 @@
 // * 2 Pool - USDC - ETH
 #[test_only]
 module amm::volatile_2pool_new_tests {
-  use std::vector;
   use std::type_name;
   
   use sui::clock;
-  use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
 
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx}; 
@@ -29,10 +27,8 @@ module amm::volatile_2pool_new_tests {
   const MA_TIME: u256 = 600_000; // 10 minutes
   const PRECISION: u256 = 1_000_000_000_000_000_000;
   const INITIAL_ETH_PRICE: u256 = 1500 * 1_000_000_000_000_000_000;
-  const BTC_INITIAL_PRICE: u256 = 47500 * 1_000_000_000_000_000_000;
   const MAX_ADMIN_FEE: u256 = 10000000000;
 
-  const BTC_DECIMALS_SCALAR: u64 = 1000000000;
   const ETH_DECIMALS_SCALAR: u64 = 1000000000;
   const USDC_DECIMALS_SCALAR: u64 = 1000000; 
 
@@ -61,7 +57,7 @@ module amm::volatile_2pool_new_tests {
         GAMMA
       );
 
-      assert_eq(interest_amm_volatile::lp_coin_supply<LP_COIN>(&pool), 387298334620741);
+      assert_eq(interest_amm_volatile::lp_coin_supply<LP_COIN>(&pool), 387298334620);
       assert_eq(interest_amm_volatile::balances<LP_COIN>(&pool), vector[normalize_amount(15000), normalize_amount(10)]);
       assert_eq(interest_amm_volatile::xcp_profit<LP_COIN>(&pool), PRECISION);
       assert_eq(interest_amm_volatile::xcp_profit_a<LP_COIN>(&pool), PRECISION);

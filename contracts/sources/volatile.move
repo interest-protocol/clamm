@@ -32,7 +32,7 @@ module amm::interest_amm_volatile {
     make_coins_from_vector,
   };
 
-  const ROLL: u256 = 1_000_000; // 1e9 - LpCoins have 9 decimals 
+  const ROLL: u256 = 1_000_000_000; // 1e9 - LpCoins have 9 decimals 
   const MIN_FEE: u256 = 5 * 100_000;
   const MAX_FEE: u256 = 10 * 1_000_000_000;
   const ONE_WEEK: u256 = 7 * 86400000; // 1 week in milliseconds
