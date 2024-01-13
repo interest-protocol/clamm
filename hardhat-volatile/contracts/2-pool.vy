@@ -603,6 +603,7 @@ def tweak_price(A_gamma: uint256[2],_xp: uint256[2], p_i: uint256, new_D: uint25
         ma_half_time: uint256 = self.ma_half_time
         alpha: uint256 = self.halfpow((block.timestamp - last_prices_timestamp) * 10**18 / ma_half_time)
         price_oracle = (last_prices * (10**18 - alpha) + price_oracle * alpha) / 10**18
+
         self.price_oracle = price_oracle
         self.last_prices_timestamp = block.timestamp
 
@@ -782,7 +783,7 @@ def _exchange(sender: address, mvalue: uint256, i: uint256, j: uint256, dx: uint
             p = _dx * 10**18 / _dy
         else:  # j == 0
             p = _dy * 10**18 / _dx
-
+  
     self.tweak_price(A_gamma, xp, p, 0)
 
     log TokenExchange(sender, i, dx, j, dy)

@@ -576,17 +576,22 @@ module amm::interest_amm_volatile {
 
     let coin_in_amount = div_down((coin_in_value as u256), (coin_in_state.decimals_scalar as u256));
 
-    let p = if (coin_in_state.index != 0 && coin_out_state.index != 0) {
-      coin_in_state.last_price * coin_in_amount / coin_out_amount
-    } else if (coin_in_state.index == 0) {
-      div_down(coin_in_amount, coin_out_amount)
-    } else {
-      tweak_price_index = coin_in_state.index; 
-      div_down(coin_out_amount, coin_in_amount)
+    let p = 0;
+    if (coin_in_amount > 100000 && coin_out_amount > 100000) {
+      p = if (coin_in_state.index != 0 && coin_out_state.index != 0) {
+
+        coin_in_state.last_price * coin_in_amount / coin_out_amount
+      } else if (coin_in_state.index == 0) {
+        div_down(coin_in_amount, coin_out_amount)
+      } else {
+        tweak_price_index = coin_in_state.index; 
+        div_down(coin_out_amount, coin_in_amount)
+      };
     };
 
     let lp_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
-     
+
+    
     tweak_price(
       state,
       coin_states,
@@ -1164,13 +1169,14 @@ module amm::interest_amm_volatile {
     // Update Moving Average
     
     if (timestamp > state.last_prices_timestamp + TWENTY_SECONDS) {  
-      let alpha = volatile_math::half_pow(div_down(((timestamp - state.last_prices_timestamp) as u256), state.rebalancing_params.ma_half_time), 10000000000);
+      let alpha = volatile_math::half_pow(div_down((((timestamp - state.last_prices_timestamp) / 1000 )as u256), state.rebalancing_params.ma_half_time), 100000000000);
 
       // update prices (do not update the first one)
       let index = 1;
 
       while ((state.n_coins as u64) > index) {
         let coin_state = vector::borrow_mut(&mut coin_states, index);
+
         coin_state.price_oracle = (coin_state.last_price * (PRECISION - alpha) + coin_state.price_oracle * alpha) / PRECISION;
 
         index = index + 1;
@@ -1287,7 +1293,7 @@ module amm::interest_amm_volatile {
 
         old_virtual_price = ROLL * volatile_math::geometric_mean(xp, true) / lp_supply;
 
-        if (old_virtual_price > PRECISION && (2 * (old_virtual_price - PRECISION) > xcp_profit - PRECISION)) {
+        if (old_virtual_price > PRECISION && (2 * old_virtual_price - PRECISION > xcp_profit)) {
           state.d = d;
           state.virtual_price = old_virtual_price;
            let i = 1;
@@ -1400,7 +1406,7 @@ module amm::interest_amm_volatile {
   }
 
   fun update_coin_state_prices<LpCoin>(state: &mut State<LpCoin>, new_coin_states: vector<CoinState>) {
-    let i = 0;
+    let i = 1;
     while ((state.n_coins as u64) > i) {
       let new_state = vector::borrow(&new_coin_states, i);
       let current_state = borrow_mut_coin_state_with_key(&mut state.id, new_state.type);

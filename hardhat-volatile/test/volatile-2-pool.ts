@@ -1,5 +1,9 @@
-import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpers';
+import {
+  loadFixture,
+  time,
+} from '@nomicfoundation/hardhat-toolbox-viem/network-helpers';
 import { expect } from 'chai';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 
 import hre from 'hardhat';
 
@@ -176,6 +180,86 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.last_prices()).to.be.equal(2786752167064038352149n);
       expect(await pool.price_scale()).to.be.equal(1500000000000000000000n);
       expect(await pool.price_oracle()).to.be.equal(1500015648683286431117n);
+      expect(await pool.xcp_profit()).to.be.equal(1001168132261547627n);
+      expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
+      expect(await pool.virtual_price()).to.be.equal(1001168132261547627n);
+      expect(await pool.D()).to.be.equal(18964038331684244298722n);
+
+      await pool.connect(alice).add_liquidity([0, 7n * ETH_PRECISION], 0n);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(388129423446248101851n);
+      expect(await pool.balances(0n)).to.be.equal(13000000000n);
+      expect(await pool.balances(1n)).to.be.equal(11567622127595462231n);
+      expect(await pool.last_prices()).to.be.equal(1767841266387619535092n);
+      expect(await pool.price_scale()).to.be.equal(1500000000000000000000n);
+      expect(await pool.price_oracle()).to.be.equal(1500017130886751532092n);
+      expect(await pool.xcp_profit()).to.be.equal(1001695159717659519n);
+      expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
+      expect(await pool.virtual_price()).to.be.equal(1001695159717659519n);
+      expect(await pool.D()).to.be.equal(30115339782508672015786n);
+    });
+
+    it('mints the correct lp coin amount after swaps with time delay', async function () {
+      const { pool, alice, bob, lpCoin } = await loadFixture(
+        deploy2PoolFixture
+      );
+
+      await pool
+        .connect(alice)
+        .add_liquidity([4500n * USDC_PRECISION, 3n * ETH_PRECISION], 0n);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(116189500386222506555n);
+
+      expect(await lpCoin.balanceOf(alice.address)).to.be.equal(
+        116189500386222506555n
+      );
+
+      await time.increase(20);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool.connect(bob).exchange(0, 1, 500n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool
+        .connect(alice)
+        .add_liquidity([4500n * USDC_PRECISION, 3n * ETH_PRECISION], 0n);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(244539028190137475954n);
+      expect(await pool.balances(0n)).to.be.equal(13000000000n);
+      expect(await pool.balances(1n)).to.be.equal(4567622127595462231n);
+      expect(await pool.last_prices()).to.be.equal(2786752167064038352149n);
+      expect(await pool.price_scale()).to.be.equal(1500000000000000000000n);
+      expect(await pool.price_oracle()).to.be.equal(1500345157438641016993n);
       expect(await pool.xcp_profit()).to.be.equal(1001168132261547627n);
       expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
       expect(await pool.virtual_price()).to.be.equal(1001168132261547627n);
