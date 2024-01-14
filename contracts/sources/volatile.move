@@ -732,7 +732,7 @@ module amm::interest_amm_volatile {
     (coin_a, coin_b, coin_c)
   }
 
-  public fun remove_one_coin_liquidity<CoinOut, LpCoin>(
+  public fun remove_liquidity_one_coin<CoinOut, LpCoin>(
     pool: &mut InterestPool<Volatile>,
     c: &Clock,
     lp_coin: Coin<LpCoin>,
