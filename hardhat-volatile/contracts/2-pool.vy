@@ -560,10 +560,7 @@ def _claim_admin_fees():
     # Gulp here
     _coins: address[2] = coins
     for i in range(2):
-        if i == 0:
-            self.balances[i] = self.balance
-        else:
-            self.balances[i] = ERC20(_coins[i]).balanceOf(self)
+        self.balances[i] = ERC20(_coins[i]).balanceOf(self)
 
     vprice: uint256 = self.virtual_price
 
