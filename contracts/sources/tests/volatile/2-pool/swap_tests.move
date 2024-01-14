@@ -125,10 +125,10 @@ module amm::volatile_2pool_swap_tests {
 
       while (5 > i) {
 
-        burn(interest_amm_volatile::swap<USDC, ETH, LP_COIN>(
+        burn(interest_amm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
           &c,
-          mint(1500, 6, ctx(test)),
+          mint(3, 9, ctx(test)),
           0,
           ctx(test)
           )
@@ -142,19 +142,19 @@ module amm::volatile_2pool_swap_tests {
       // Our balancs are stored with 1e18 instead of the real balances
       assert_eq(
         interest_amm_volatile::balances<LP_COIN>(&pool),
-        vector[12000 * POW_10_18, 1106310976911120041]
+        vector[731977559577057813005, 18000000000000000000]
       );
       assert_eq(
         interest_amm_volatile::coin_balance<LP_COIN, USDC>(&pool),
-        12000 * USDC_DECIMALS_SCALAR
+        731977562
       );
      assert_eq(
         interest_amm_volatile::coin_balance<LP_COIN, ETH>(&pool),
-        1106310979
+        18000000000
       );
      assert_eq(
         interest_amm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        9375490921061207367077
+        49396381960951867623
       );      
      assert_eq(
         interest_amm_volatile::coin_price<ETH, LP_COIN>(&pool),
@@ -162,11 +162,11 @@ module amm::volatile_2pool_swap_tests {
       );
      assert_eq(
         interest_amm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1500285873804165099191
+        1499878531304466355375
       );      
      assert_eq(
         interest_amm_volatile::xcp_profit<LP_COIN>(&pool),
-        1002112077667827315
+        1004566873717172552
       );  
      assert_eq(
         interest_amm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -174,11 +174,11 @@ module amm::volatile_2pool_swap_tests {
       );  
      assert_eq(
         interest_amm_volatile::virtual_price<LP_COIN>(&pool),
-        1002112077667827315
+        1004566873717172552
       );        
      assert_eq(
         interest_amm_volatile::invariant_<LP_COIN>(&pool),
-        9019008698993174159760
+        9041101863437238975828
       );   
 
       test::return_shared(pool);
