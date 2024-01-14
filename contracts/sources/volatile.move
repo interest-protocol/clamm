@@ -682,8 +682,8 @@ module amm::interest_amm_volatile {
     state.d = state.d - state.d * (lp_coin_amount as u256) / (total_supply as u256);
 
     let (coin_a, coin_b) = (
-      take_coin<CoinA, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 0), total_supply, ctx),
-      take_coin<CoinB, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 1), total_supply, ctx),
+      withdraw_coin<CoinA, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 0), total_supply, ctx),
+      withdraw_coin<CoinB, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 1), total_supply, ctx),
     );
 
     events::emit_remove_liquidity_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool_id, coin::value(&coin_a), coin::value(&coin_b), lp_coin_amount);
@@ -716,9 +716,9 @@ module amm::interest_amm_volatile {
     state.d = state.d - state.d * (lp_coin_amount as u256) / (total_supply as u256);
 
     let (coin_a, coin_b, coin_c) = (
-      take_coin<CoinA, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 0), total_supply, ctx),
-      take_coin<CoinB, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 1), total_supply, ctx),
-      take_coin<CoinC, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 2), total_supply, ctx),
+      withdraw_coin<CoinA, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 0), total_supply, ctx),
+      withdraw_coin<CoinB, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 1), total_supply, ctx),
+      withdraw_coin<CoinC, LpCoin>(state, lp_coin_amount, *vector::borrow(&min_amounts, 2), total_supply, ctx),
     );
 
     events::emit_remove_liquidity_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(
@@ -1027,7 +1027,7 @@ module amm::interest_amm_volatile {
     balance::join(borrow_mut_coin_balance(&mut state.id), coin::into_balance(coin_in));
   }
 
-  fun take_coin<CoinType, LpCoin>(
+  fun withdraw_coin<CoinType, LpCoin>(
     state: &mut State<LpCoin>, 
     burn_amount: u64,
     min_amount: u64,
