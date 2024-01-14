@@ -461,15 +461,17 @@ describe('Volatile 2 Pool', function () {
         await mine();
       }
 
+      await pool.connect(alice).claim_admin_fees();
+
       expect(await pool.balances(0n)).to.be.equal(32434938699n);
       expect(await pool.balances(1n)).to.be.equal(19580644208279945179n);
       // Eth price increased to 9k
       expect(await pool.last_prices()).to.be.equal(1343256481931132653860n);
       expect(await pool.price_scale()).to.be.equal(1493260119937500001823n);
       expect(await pool.price_oracle()).to.be.equal(1492043219287090942454n);
-      expect(await pool.xcp_profit()).to.be.equal(5287654044353020074n);
-      expect(await pool.xcp_profit_a()).to.be.equal(4816581610501924853n);
-      expect(await pool.virtual_price()).to.be.equal(6076544124100929389n);
+      expect(await pool.xcp_profit()).to.be.equal(5193439557582801030n);
+      expect(await pool.xcp_profit_a()).to.be.equal(5193439557582801030n);
+      expect(await pool.virtual_price()).to.be.equal(6029436880715819867n);
       expect(await pool.D()).to.be.equal(61649121328149065635406n);
     }).timeout(1000000);
   });

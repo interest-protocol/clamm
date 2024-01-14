@@ -1399,9 +1399,10 @@ module amm::interest_amm_volatile {
     if (xcp_profit > xcp_profit_a) {
       let fees = (xcp_profit - xcp_profit_a) * state.fees.admin_fee / 20000000000;
       if (fees != 0) {
-        let frac = (mul_up(div_up (vprice, (vprice - fees)) - PRECISION, ROLL) as u64);
-        balance::join(df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { }), balance::increase_supply(&mut state.lp_coin_supply, frac));
-        state.xcp_profit = xcp_profit - fees * 2
+        let frac = div_up (vprice, (vprice - fees)) - PRECISION;
+        let frac = mul_up(((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL), frac);
+        balance::join(df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { }), balance::increase_supply(&mut state.lp_coin_supply, ((frac / ROLL) as u64)));
+        state.xcp_profit = xcp_profit - (fees * 2)
       };
     };
 
