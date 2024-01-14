@@ -438,7 +438,7 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.D()).to.be.equal(9130567998908202789097n);
     });
 
-    it.skip('do 1000 swing swaps', async function () {
+    it.only('do 1001 swing swaps', async function () {
       const { pool, alice } = await loadFixture(deploy2PoolFixture);
 
       await pool
