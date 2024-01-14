@@ -280,7 +280,7 @@ describe('Volatile 2 Pool', function () {
     });
   });
 
-  describe.only('Swap', function () {
+  describe('Swap', function () {
     it('swaps correctly with extreme swaps', async function () {
       const { pool, alice } = await loadFixture(deploy2PoolFixture);
 

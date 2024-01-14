@@ -10,7 +10,7 @@ module amm::stable_ramp_tests {
   use amm::amm_admin::Admin;
   use amm::lp_coin::LP_COIN;
   use amm::interest_pool::InterestPool;
-  use amm::test_utils::{people, scenario};
+  use amm::amm_test_utils::{people, scenario};
   use amm::init_interest_amm_stable::setup_3pool;
 
   const MAX_A: u256 = 1000000; // 1 million
