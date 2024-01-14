@@ -601,6 +601,7 @@ def tweak_price(A_gamma: uint256[2],_xp: uint256[2], p_i: uint256, new_D: uint25
     if last_prices_timestamp < block.timestamp:
         # MA update required
         ma_half_time: uint256 = self.ma_half_time
+        print("time delay", block.timestamp - last_prices_timestamp, hardhat_compat=True)
         alpha: uint256 = self.halfpow((block.timestamp - last_prices_timestamp) * 10**18 / ma_half_time)
         price_oracle = (last_prices * (10**18 - alpha) + price_oracle * alpha) / 10**18
 

@@ -45,7 +45,6 @@ module amm::interest_amm_volatile {
   const MAX_A_CHANGE: u256 = 10;
   const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
   const MAX_ADMIN_FEE: u256 = 10000000000;
-  const TWENTY_SECONDS: u64 = 20000;
 
   // * Structs ---- START ----
 
@@ -1168,7 +1167,7 @@ module amm::interest_amm_volatile {
   ) {
     // Update Moving Average
     
-    if (timestamp > state.last_prices_timestamp + TWENTY_SECONDS) {  
+    if (timestamp > state.last_prices_timestamp) {  
       let alpha = volatile_math::half_pow(div_down((((timestamp - state.last_prices_timestamp) / 1000 )as u256), state.rebalancing_params.ma_half_time), 100000000000);
 
       // update prices (do not update the first one)
