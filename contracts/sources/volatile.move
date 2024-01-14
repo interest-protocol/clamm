@@ -552,8 +552,6 @@ module amm::interest_amm_volatile {
     let ref = vector::borrow_mut(&mut balances_in_price, coin_out_state.index);
     *ref = *ref - coin_out_amount;
 
-    coin_out_amount = coin_out_amount;
-
     // Convert from Price => Coin Balance
     coin_out_amount = if (coin_out_state.index != 0) div_down(coin_out_amount, coin_out_state.price) else coin_out_amount;
 
