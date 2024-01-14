@@ -1516,11 +1516,11 @@ module amm::interest_amm_volatile {
     assert!(MAX_GAMMA >= future_gamma, 0);
 
     let ratio = div_down(future_a, a);
-    assert!(1 + MAX_A_CHANGE * PRECISION > ratio, 0);
+    assert!(MAX_A_CHANGE * PRECISION >= ratio, 0);
     assert!(ratio >= PRECISION / MAX_A_CHANGE, 0);
 
     ratio = div_down(future_gamma, gamma);
-    assert!(1 + MAX_A_CHANGE * PRECISION > ratio, 0);
+    assert!(MAX_A_CHANGE * PRECISION >= ratio, 0);
     assert!(ratio >= PRECISION / MAX_A_CHANGE, 0);
 
     state.a_gamma.a = a;
@@ -1571,10 +1571,10 @@ module amm::interest_amm_volatile {
     let adjustment_step = *vector::borrow(&values, 5);
     let ma_half_time = *vector::borrow(&values, 6);
 
-    assert!(MAX_FEE + 1 > out_fee && out_fee > MIN_FEE, errors::value_out_of_range());
-    assert!(MAX_FEE + 1 > mid_fee && MIN_FEE > MIN_FEE, errors::value_out_of_range());
+    assert!(MAX_FEE >= out_fee && out_fee > MIN_FEE, errors::value_out_of_range());
+    assert!(MAX_FEE >= mid_fee && MIN_FEE > MIN_FEE, errors::value_out_of_range());
     assert!(MAX_ADMIN_FEE > admin_fee, errors::value_out_of_range());
-    assert!(gamma_fee > 0 && PRECISION >= gamma_fee, errors::value_out_of_range());
+    assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::value_out_of_range());
     assert!(PRECISION > allowed_extra_profit, errors::value_out_of_range());
     assert!(PRECISION > adjustment_step, errors::value_out_of_range());
     assert!(1000 >= ma_half_time && ONE_WEEK > ma_half_time, errors::value_out_of_range());
