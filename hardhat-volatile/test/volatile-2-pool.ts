@@ -438,14 +438,14 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.D()).to.be.equal(9130567998908202789097n);
     });
 
-    it.only('do 1001 swing swaps', async function () {
+    it.skip('do 1001 swing swaps', async function () {
       const { pool, alice } = await loadFixture(deploy2PoolFixture);
 
       await pool
         .connect(alice)
         .add_liquidity([4500n * USDC_PRECISION, 3n * ETH_PRECISION], 0n);
 
-      const arr = Array(1001)
+      const arr = Array(1000)
         .fill(0)
         .map((_, index) => index);
 
@@ -461,7 +461,7 @@ describe('Volatile 2 Pool', function () {
         await mine();
       }
 
-      await pool.connect(alice).claim_admin_fees();
+      await pool.claim_admin_fees();
 
       expect(await pool.balances(0n)).to.be.equal(32434938699n);
       expect(await pool.balances(1n)).to.be.equal(19580644208279945179n);

@@ -563,14 +563,14 @@ def _claim_admin_fees():
         self.balances[i] = ERC20(_coins[i]).balanceOf(self)
 
     vprice: uint256 = self.virtual_price
-
+    
     if xcp_profit > xcp_profit_a:
         fees: uint256 = (xcp_profit - xcp_profit_a) * self.admin_fee / (2 * 10**10)
         if fees > 0:
             receiver: address = self.admin_fee_receiver
             if receiver != ZERO_ADDRESS:
                 frac: uint256 = vprice * 10**18 / (vprice - fees) - 10**18
-                claimed: uint256 = CurveToken(token).mint_relative(receiver, frac)
+                claimed: uint256 = CurveToken(token).mint_relative(receiver, frac) 
                 xcp_profit -= fees*2
                 self.xcp_profit = xcp_profit
                 log ClaimAdminFee(receiver, claimed)
@@ -669,24 +669,20 @@ def tweak_price(A_gamma: uint256[2],_xp: uint256[2], p_i: uint256, new_D: uint25
             xp = [D / 2, D * PRECISION / (2 * p_new)]
             # We reuse old_virtual_price here but it's not old anymore
             old_virtual_price = 10**18 * self.geometric_mean(xp, True) / total_supply
-
             # Proceed if we've got enough profit
             # if (old_virtual_price > 10**18) and (2 * (old_virtual_price - 10**18) > xcp_profit - 10**18):
             if (old_virtual_price > 10**18) and (2 * old_virtual_price - 10**18 > xcp_profit):
                 self.price_scale = p_new
                 self.D = D
                 self.virtual_price = old_virtual_price
-
                 return
 
             else:
                 self.not_adjusted = False
-
                 # Can instead do another flag variable if we want to save bytespace
                 self.D = D_unadjusted
                 self.virtual_price = virtual_price
                 self._claim_admin_fees()
-
                 return
 
     # If we are here, the price_scale adjustment did not happen

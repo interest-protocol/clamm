@@ -505,6 +505,7 @@ module amm::interest_amm_volatile {
     mint_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
+
     assert!(get<CoinIn>() != get<CoinOut>(), errors::cannot_swap_same_coin());
     
     let coin_in_value = coin::value(&coin_in);
@@ -513,7 +514,7 @@ module amm::interest_amm_volatile {
     let pool_id = object::id(pool);
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
     let coin_in_index = borrow_coin_state<CoinIn>(&state.id).index;
-
+    
     let initial_coin_in_b = *vector::borrow(&state.balances, coin_in_index);
 
     deposit_coin<CoinIn, LpCoin>(state, coin_in);
@@ -555,7 +556,7 @@ module amm::interest_amm_volatile {
     // Convert from Price => Coin Balance
     coin_out_amount = if (coin_out_state.index != 0) div_down(coin_out_amount, coin_out_state.price) else coin_out_amount;
 
-    coin_out_amount = coin_out_amount - fee_impl(state, balances_in_price) * coin_out_amount / 10000000000;
+    coin_out_amount = coin_out_amount - (fee_impl(state, balances_in_price) * coin_out_amount / 10000000000);
 
     // Scale to the right decimal house
     let amount_out = (mul_down(coin_out_amount, (coin_out_state.decimals_scalar as u256)) as u64);
@@ -588,7 +589,6 @@ module amm::interest_amm_volatile {
 
     let lp_supply = (balance::supply_value(&state.lp_coin_supply) as u256);
 
-    
     tweak_price(
       state,
       coin_states,
@@ -1101,7 +1101,7 @@ module amm::interest_amm_volatile {
           mid_fee,
           out_fee,
           gamma_fee,
-          admin_fee: MAX_ADMIN_FEE
+          admin_fee: ADMIN_FEE
         },
         last_prices_timestamp: timestamp,
         min_a: volatile_math::min_a(n_coins),
@@ -1167,7 +1167,7 @@ module amm::interest_amm_volatile {
   ) {
     // Update Moving Average
     
-    if (timestamp > state.last_prices_timestamp) {  
+    if (timestamp > state.last_prices_timestamp ) {  
       let alpha = volatile_math::half_pow(div_down((((timestamp - state.last_prices_timestamp) / 1000 )as u256), state.rebalancing_params.ma_half_time), 100000000000);
 
       // update prices (do not update the first one)
@@ -1211,7 +1211,7 @@ module amm::interest_amm_volatile {
         coin_state.last_price = coin_state.price * dx_price / (*vector::borrow(&balances, i) - volatile_math::y(a, gamma, &xp, d_unadjusted, i));
         i = i + 1;
       };
-     };
+    };
 
     let old_xcp_profit = state.xcp_profit;
     let old_virtual_price = state.virtual_price;
@@ -1240,7 +1240,6 @@ module amm::interest_amm_volatile {
     state.xcp_profit = xcp_profit;
 
     let needs_adjustment = state.not_adjusted;
-
     if (!needs_adjustment && (virtual_price * 2 - PRECISION > xcp_profit + 2 * state.rebalancing_params.extra_profit)) {
       needs_adjustment = true;
       state.not_adjusted = true;
@@ -1263,7 +1262,7 @@ module amm::interest_amm_volatile {
       if (norm > math256::pow(adjustment_step, 2) && old_virtual_price != 0) {
         norm = volatile_math::sqrt(norm / PRECISION);
 
-        let p_new = empty_vector(state.n_coins);
+        let p_new = vector[0];
         let xp = balances;
 
         // We do not change the first coin
@@ -1271,11 +1270,12 @@ module amm::interest_amm_volatile {
         while ((state.n_coins as u64) > i) {
           let coin_state = vector::borrow(&coin_states, i);
 
-          let value = vector::borrow_mut(&mut p_new, i);
-          *value = (coin_state.price * (norm - adjustment_step) + adjustment_step * coin_state.price_oracle) / norm;
+          
+          let value = (coin_state.price * (norm - adjustment_step) + adjustment_step * coin_state.price_oracle) / norm;
+          vector::push_back(&mut p_new, value);
 
           let x = vector::borrow_mut(&mut xp, i);
-          *x = *x * *vector::borrow(&p_new, i) / coin_state.price;
+          *x = *x * value / coin_state.price;
 
           i = i + 1;
         };
@@ -1292,7 +1292,6 @@ module amm::interest_amm_volatile {
         };
 
         old_virtual_price = div_down(volatile_math::geometric_mean(xp, true), lp_supply);
-
         if (old_virtual_price > PRECISION && (2 * old_virtual_price - PRECISION > xcp_profit)) {
            let i = 1;
            while ((state.n_coins as u64) > i) {
@@ -1300,14 +1299,14 @@ module amm::interest_amm_volatile {
             coin_state.price = *vector::borrow(&p_new, i);
 
             i = i + 1;
-           };
-           update_coin_state_prices(state, coin_states);
+          };
+          update_coin_state_prices(state, coin_states);
           state.d = d;
           state.virtual_price = old_virtual_price;
           return
         } else {
           state.not_adjusted = false;
-        };
+        }
       };
     };
 
@@ -1323,7 +1322,7 @@ module amm::interest_amm_volatile {
 
     if (state.xcp_profit_a >= state.xcp_profit || 1000000000 > total_supply) return;
 
-    let fees = state.xcp_profit - state.xcp_profit_a * ADMIN_FEE / (2 * 100000000000);
+    let fees = state.xcp_profit - state.xcp_profit_a * state.fees.admin_fee / (2 * 100000000000);
 
     if (fees != 0) {
       let frac = div_down(state.virtual_price, state.virtual_price - fees) - PRECISION;
@@ -1391,7 +1390,7 @@ module amm::interest_amm_volatile {
     fee * s_diff / s + NOISE_FEE
   }
 
-  fun update_admin_fees<LpCoin>(state: &mut State<LpCoin>, coin_states: vector<CoinState>) {
+  fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, coin_states: vector<CoinState>) {
     let xcp_profit = state.xcp_profit;
     let xcp_profit_a = state.xcp_profit_a;
     let vprice = state.virtual_price;
@@ -1399,8 +1398,7 @@ module amm::interest_amm_volatile {
     if (xcp_profit > xcp_profit_a) {
       let fees = (xcp_profit - xcp_profit_a) * state.fees.admin_fee / 20000000000;
       if (fees != 0) {
-        let frac = div_up (vprice, (vprice - fees)) - PRECISION;
-        let frac = mul_up(((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL), frac);
+        let frac = mul_up(((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL), div_up (vprice, (vprice - fees)) - PRECISION);
         balance::join(df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { }), balance::increase_supply(&mut state.lp_coin_supply, ((frac / ROLL) as u64)));
         state.xcp_profit = xcp_profit - (fees * 2)
       };
@@ -1492,7 +1490,7 @@ module amm::interest_amm_volatile {
   public fun claim_admin_fees<LpCoin>(pool: &mut InterestPool<Volatile>, _: &Admin, ctx: &mut TxContext): Coin<LpCoin> {
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
 
-    update_admin_fees(state, coin_states);
+    claim_admin_fees_impl(state, coin_states);
 
     let admin_balance = df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { });
 
@@ -1573,7 +1571,7 @@ module amm::interest_amm_volatile {
     let pool_id = object::id(pool);
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
 
-    update_admin_fees(state, coin_states);
+    claim_admin_fees_impl(state, coin_states);
 
     let mid_fee = *vector::borrow(&values, 0);
     let out_fee = *vector::borrow(&values, 1);

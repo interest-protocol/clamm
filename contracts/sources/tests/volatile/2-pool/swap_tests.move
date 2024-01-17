@@ -291,7 +291,7 @@ module amm::volatile_2pool_swap_tests {
   } 
 
   #[test]
-  fun do_1001_swaps() {
+  fun do_1000_swaps() {
     let scenario = scenario();
     let (alice, _) = people();
 
@@ -331,7 +331,6 @@ module amm::volatile_2pool_swap_tests {
         );
 
         clock::increment_for_testing(&mut c, TWENTY_MILLISECONDS);
-
         i = i + 1;
       };  
 
@@ -367,7 +366,6 @@ module amm::volatile_2pool_swap_tests {
         );
 
         clock::increment_for_testing(&mut c, TWENTY_MILLISECONDS);
-
         i = i + 1;
       };        
 
@@ -401,7 +399,6 @@ module amm::volatile_2pool_swap_tests {
           ctx(test)
           )
         );
-
         clock::increment_for_testing(&mut c, TWENTY_MILLISECONDS);
 
         i = i + 1;
@@ -439,7 +436,6 @@ module amm::volatile_2pool_swap_tests {
         );
 
         clock::increment_for_testing(&mut c, TWENTY_MILLISECONDS);
-
         i = i + 1;
       };
 
@@ -452,7 +448,7 @@ module amm::volatile_2pool_swap_tests {
       let admin_cap = test::take_from_sender<amm_admin::Admin>(test);
       let i = 0;
 
-      while (201 > i) {
+      while (200 > i) {
 
         burn(interest_amm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
@@ -475,27 +471,27 @@ module amm::volatile_2pool_swap_tests {
         );
 
         clock::increment_for_testing(&mut c, TWENTY_MILLISECONDS);
-
         i = i + 1;
       };
 
       burn(interest_amm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, ctx(test)));
 
+
       assert_eq(
         interest_amm_volatile::balances<LP_COIN>(&pool),
-        vector[32434359904029177468051, 19580190702474626344]
+        vector[32418888758081696393064, 19568068883753941489]
       );
       assert_eq(
         interest_amm_volatile::coin_balance<LP_COIN, USDC>(&pool),
-        32434360415
+        32418889269
       );
      assert_eq(
         interest_amm_volatile::coin_balance<LP_COIN, ETH>(&pool),
-        19580191201
+        19568069382
       );
      assert_eq(
         interest_amm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        1343256542460616301902
+        1343258164074646161579
       );      
      assert_eq(
         interest_amm_volatile::coin_price<ETH, LP_COIN>(&pool),
@@ -503,23 +499,23 @@ module amm::volatile_2pool_swap_tests {
       );
      assert_eq(
         interest_amm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1492063603338634841068
+        1492071306578867767373
       );      
      assert_eq(
         interest_amm_volatile::xcp_profit<LP_COIN>(&pool),
-        6865388198603998702
+        5689309510204642587
       );  
      assert_eq(
         interest_amm_volatile::xcp_profit_a<LP_COIN>(&pool),
-        1000000000000000000
+        5689309510204642587
       );  
      assert_eq(
         interest_amm_volatile::virtual_price<LP_COIN>(&pool),
-        6865203259854879905
+        6275288361292987208
       );        
      assert_eq(
         interest_amm_volatile::invariant_<LP_COIN>(&pool),
-        61647861118241531729514
+        61614176163583333170910
       );   
 
       test::return_to_sender(test, admin_cap);
