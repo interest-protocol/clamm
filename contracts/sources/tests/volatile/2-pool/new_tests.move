@@ -27,7 +27,7 @@ module amm::volatile_2pool_new_tests {
   const MA_TIME: u256 = 600_000; // 10 minutes
   const PRECISION: u256 = 1_000_000_000_000_000_000;
   const INITIAL_ETH_PRICE: u256 = 1500 * 1_000_000_000_000_000_000;
-  const MAX_ADMIN_FEE: u256 = 10000000000;
+  const INITIAL_ADMIN_FEE: u256 = 2000000000;
 
   const ETH_DECIMALS_SCALAR: u64 = 1000000000;
   const USDC_DECIMALS_SCALAR: u64 = 1000000; 
@@ -68,7 +68,7 @@ module amm::volatile_2pool_new_tests {
       assert_eq(interest_amm_volatile::mid_fee<LP_COIN>(&pool), MID_FEE);
       assert_eq(interest_amm_volatile::out_fee<LP_COIN>(&pool), OUT_FEE);
       assert_eq(interest_amm_volatile::gamma_fee<LP_COIN>(&pool), FEE_GAMMA);
-      assert_eq(interest_amm_volatile::admin_fee<LP_COIN>(&pool), MAX_ADMIN_FEE);
+      assert_eq(interest_amm_volatile::admin_fee<LP_COIN>(&pool), INITIAL_ADMIN_FEE);
       assert_eq(interest_amm_volatile::last_prices_timestamp<LP_COIN>(&pool), 0);
       assert_eq(interest_amm_volatile::last_prices_timestamp<LP_COIN>(&pool), 0);
       assert_eq(interest_amm_volatile::coin_price<USDC, LP_COIN>(&pool), 0);

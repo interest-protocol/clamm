@@ -438,7 +438,7 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.D()).to.be.equal(9130567998908202789097n);
     });
 
-    it.skip('do 1001 swing swaps', async function () {
+    it.skip('do 1000 swing swaps', async function () {
       const { pool, alice } = await loadFixture(deploy2PoolFixture);
 
       await pool
@@ -463,16 +463,16 @@ describe('Volatile 2 Pool', function () {
 
       await pool.claim_admin_fees();
 
-      expect(await pool.balances(0n)).to.be.equal(32434938699n);
-      expect(await pool.balances(1n)).to.be.equal(19580644208279945179n);
+      expect(await pool.balances(0n)).to.be.equal(32419467873n);
+      expect(await pool.balances(1n)).to.be.equal(19568522614321764636n);
       // Eth price increased to 9k
-      expect(await pool.last_prices()).to.be.equal(1343256481931132653860n);
+      expect(await pool.last_prices()).to.be.equal(1343258103263101293926n);
       expect(await pool.price_scale()).to.be.equal(1493260119937500001823n);
-      expect(await pool.price_oracle()).to.be.equal(1492043219287090942454n);
-      expect(await pool.xcp_profit()).to.be.equal(5193439557582801030n);
-      expect(await pool.xcp_profit_a()).to.be.equal(5193439557582801030n);
-      expect(await pool.virtual_price()).to.be.equal(6029436880715819867n);
-      expect(await pool.D()).to.be.equal(61649121328149065635406n);
+      expect(await pool.price_oracle()).to.be.equal(1492050941790741671527n);
+      expect(await pool.xcp_profit()).to.be.equal(5191128272835932791n);
+      expect(await pool.xcp_profit_a()).to.be.equal(5191128272835932791n);
+      expect(await pool.virtual_price()).to.be.equal(6026405646016507131n);
+      expect(await pool.D()).to.be.equal(61615437043826476491932n);
     }).timeout(1000000);
   });
 });
