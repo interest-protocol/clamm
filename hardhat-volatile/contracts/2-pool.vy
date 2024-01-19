@@ -963,12 +963,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[2], use_eth: bool = 
         assert d_balance >= min_amounts[i]
         self.balances[i] = balances[i] - d_balance
         balances[i] = d_balance  # now it's the amounts going out
-        if use_eth and i == 0:
-            raw_call(msg.sender, b"", value=d_balance)
-        else:
-            if i == 0:
-                WETH(_coins[i]).deposit(value=d_balance)
-            assert ERC20(_coins[i]).transfer(msg.sender, d_balance)
+        assert ERC20(_coins[i]).transfer(msg.sender, d_balance)
 
     D: uint256 = self.D
     self.D = D - D * amount / total_supply
