@@ -1,6 +1,6 @@
 // * 4 InterestPool - DAI - USDC - USDT - FRAX
 #[test_only]
-module amm::stable_tuple_4pool_add_liquidity_tests {
+module clamm::stable_tuple_4pool_add_liquidity_tests {
   use std::vector;
 
   use sui::clock::Clock;
@@ -8,17 +8,17 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
   use sui::coin::burn_for_testing as burn;
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
-  use amm::dai::DAI;
-  use amm::frax::FRAX;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::stable_math;
-  use amm::curves::Stable;
-  use amm::interest_amm_stable;
-  use amm::lp_coin::LP_COIN;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_stable::setup_4pool;
-  use amm::amm_test_utils::{people, scenario, normalize_amount, mint};
+  use clamm::dai::DAI;
+  use clamm::frax::FRAX;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::stable_math;
+  use clamm::curves::Stable;
+  use clamm::interest_amm_stable;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_stable::setup_4pool;
+  use clamm::amm_test_utils::{people, scenario, normalize_amount, mint};
 
   const INITIAL_A: u256 = 360;
   const DAI_DECIMALS: u8 = 9;
@@ -95,7 +95,7 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::COINS_MUST_BE_IN_ORDER, location = amm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::COINS_MUST_BE_IN_ORDER, location = clamm::interest_amm_stable)]  
   fun add_liquidity_coins_wrong_order() {
    let scenario = scenario();
     let (alice, _) = people();
@@ -129,7 +129,7 @@ module amm::stable_tuple_4pool_add_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
   fun add_liquidity_coins_slippage() {
    let scenario = scenario();
     let (alice, _) = people();

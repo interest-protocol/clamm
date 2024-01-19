@@ -1,13 +1,13 @@
 #[test_only]
-module amm::stable_fees_tests {
+module clamm::stable_fees_tests {
   use std::option;
 
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx};
 
-  use amm::stable_fees;
+  use clamm::stable_fees;
   
-  use amm::amm_test_utils::{people, scenario};
+  use clamm::amm_test_utils::{people, scenario};
 
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
@@ -115,7 +115,7 @@ module amm::stable_fees_tests {
   }
 
 #[test]
-#[expected_failure(abort_code = 11, location = amm::stable_fees)]  
+#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
 fun aborts_max_fee_in() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -132,7 +132,7 @@ fun aborts_max_fee_in() {
   }
 
 #[test]
-#[expected_failure(abort_code = 11, location = amm::stable_fees)]  
+#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
 fun aborts_max_fee_out() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -149,7 +149,7 @@ fun aborts_max_fee_out() {
   }
 
 #[test]
-#[expected_failure(abort_code = 11, location = amm::stable_fees)]  
+#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
 fun aborts_max_admin_fee() {
     let scenario = scenario();
     let (alice, _) = people();

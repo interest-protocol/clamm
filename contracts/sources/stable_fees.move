@@ -1,9 +1,9 @@
-module amm::stable_fees {
+module clamm::stable_fees {
   use std::option::{Self, Option};
 
   use suitears::fixed_point_wad::mul_up;
 
-  use amm::errors;
+  use clamm::errors;
 
   const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%

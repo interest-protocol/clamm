@@ -1,5 +1,5 @@
 #[test_only]
-module amm::dai {
+module clamm::dai {
   use std::option;
 
   use sui::transfer;
@@ -31,7 +31,7 @@ module amm::dai {
 }
 
 #[test_only]
-module amm::usdc {
+module clamm::usdc {
   use std::option;
 
   use sui::transfer;
@@ -63,7 +63,7 @@ module amm::usdc {
 }
 
 #[test_only]
-module amm::usdt {
+module clamm::usdt {
   use std::option;
 
   use sui::transfer;
@@ -95,7 +95,7 @@ module amm::usdt {
 }
 
 #[test_only]
-module amm::true_usd {
+module clamm::true_usd {
   use std::option;
 
   use sui::transfer;
@@ -127,7 +127,7 @@ module amm::true_usd {
 }
 
 #[test_only]
-module amm::frax {
+module clamm::frax {
   use std::option;
 
   use sui::transfer;
@@ -159,7 +159,7 @@ module amm::frax {
 }
 
 #[test_only]
-module amm::btc {
+module clamm::btc {
   use std::option;
 
   use sui::transfer;
@@ -191,7 +191,7 @@ module amm::btc {
 }
 
 #[test_only]
-module amm::eth {
+module clamm::eth {
   use std::option;
 
   use sui::transfer;
@@ -223,7 +223,7 @@ module amm::eth {
 }
 
 #[test_only]
-module amm::lp_coin {
+module clamm::lp_coin {
   use std::option;
 
   use sui::transfer;
@@ -255,7 +255,7 @@ module amm::lp_coin {
 }
 
 #[test_only]
-module amm::lp_coin_2 {
+module clamm::lp_coin_2 {
   use std::option;
 
   use sui::transfer;

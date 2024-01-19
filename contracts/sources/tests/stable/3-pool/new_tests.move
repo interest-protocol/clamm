@@ -1,20 +1,20 @@
 // * 3 InterestPool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_tuple_3pool_new_tests {
+module clamm::stable_tuple_3pool_new_tests {
   use std::vector;
 
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx};
 
-  use amm::dai::DAI;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::curves::Stable;
-  use amm::interest_amm_stable;
-  use amm::lp_coin::LP_COIN;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_stable::setup_3pool;
-  use amm::amm_test_utils::{people, scenario, normalize_amount};
+  use clamm::dai::DAI;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::curves::Stable;
+  use clamm::interest_amm_stable;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_stable::setup_3pool;
+  use clamm::amm_test_utils::{people, scenario, normalize_amount};
 
   const INITIAL_A: u256 = 360;
   const DAI_DECIMALS_SCALAR: u64 = 1000000000;

@@ -3,14 +3,14 @@
 * @author @josemvcerqueira
 * @notice It contain utility functions to calculate the stable invariant and pool balance changes.
 */
-module amm::stable_math {
+module clamm::stable_math {
   // === Imports === 
   
   use std::vector;
 
   use sui::clock::{Self, Clock};  
 
-  use amm::errors;
+  use clamm::errors;
 
   use suitears::math256::{diff, sum};
 

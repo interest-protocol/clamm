@@ -1,20 +1,20 @@
 #[test_only]
-module amm::init_interest_amm_stable {
+module clamm::init_interest_amm_stable {
   use sui::clock::Clock;
   use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use amm::interest_amm_stable;
-  use amm::dai::DAI;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::frax::FRAX;
-  use amm::lp_coin::LP_COIN;
-  use amm::true_usd::TRUE_USD;
-  use amm::stable_simulation::{Self as sim, State as SimState};
-  use amm::amm_test_utils::{people, mint, normalize_amount, setup_dependencies};
+  use clamm::interest_amm_stable;
+  use clamm::dai::DAI;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::frax::FRAX;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::true_usd::TRUE_USD;
+  use clamm::stable_simulation::{Self as sim, State as SimState};
+  use clamm::amm_test_utils::{people, mint, normalize_amount, setup_dependencies};
 
   const DAI_DECIMALS: u8 = 9;
   const FRAX_DECIMALS: u8 = 9;

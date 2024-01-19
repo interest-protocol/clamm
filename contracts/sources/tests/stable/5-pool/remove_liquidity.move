@@ -1,22 +1,22 @@
 // * 5 InterestPool - DAI - USDC - USDT - FRAX - TRUE USD
 #[test_only]
-module amm::stable_tuple_5pool_remove_liquidity_tests { 
+module clamm::stable_tuple_5pool_remove_liquidity_tests { 
   use sui::clock;
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx};
   use sui::coin::{burn_for_testing as burn, mint_for_testing as mint};
 
-  use amm::dai::DAI;
-  use amm::frax::FRAX;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::curves::Stable;
-  use amm::interest_amm_stable;
-  use amm::lp_coin::LP_COIN;
-  use amm::true_usd::TRUE_USD;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_stable::setup_5pool;
-  use amm::amm_test_utils::{people, scenario, normalize_amount};
+  use clamm::dai::DAI;
+  use clamm::frax::FRAX;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::curves::Stable;
+  use clamm::interest_amm_stable;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::true_usd::TRUE_USD;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_stable::setup_5pool;
+  use clamm::amm_test_utils::{people, scenario, normalize_amount};
 
   const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
   const USDC_DECIMALS_SCALAR: u256 = 1000000; 
@@ -83,7 +83,7 @@ module amm::stable_tuple_5pool_remove_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
   fun remove_liquidity_slippage() {
     let scenario = scenario();
     let (alice, _) = people();

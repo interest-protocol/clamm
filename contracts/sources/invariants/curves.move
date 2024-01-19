@@ -3,12 +3,12 @@
 * @author @josemvcerqueira
 * @notice It defines the two invariants supported by the AMM and provides utility functions to check the curve types.
 */
-module amm::curves {
+module clamm::curves {
   // === Imports ===  
   
   use std::type_name;
 
-  use amm::errors;
+  use clamm::errors;
 
   // === Structs ===  
 

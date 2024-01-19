@@ -1,5 +1,5 @@
 [package]
-name = "AMM"
+name = "CLAMM"
 version = "0.0.1"
 
 [dependencies]
@@ -8,6 +8,6 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "testnet" }
 
 [addresses]
-amm = "0x0"
+clamm = "0x0"
 std = "0x1"
 sui = "0x2"

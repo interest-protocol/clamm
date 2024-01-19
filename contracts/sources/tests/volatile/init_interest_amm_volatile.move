@@ -1,17 +1,17 @@
 #[test_only]
-module amm::init_interest_amm_volatile {
+module clamm::init_interest_amm_volatile {
   use sui::clock::Clock;
   use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use amm::btc::BTC;
-  use amm::eth::ETH;
-  use amm::usdc::USDC;
-  use amm::lp_coin::LP_COIN;
-  use amm::interest_amm_volatile;
-  use amm::amm_test_utils::{people, mint, setup_dependencies};
+  use clamm::btc::BTC;
+  use clamm::eth::ETH;
+  use clamm::usdc::USDC;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_amm_volatile;
+  use clamm::amm_test_utils::{people, mint, setup_dependencies};
 
   const A: u256  = 36450000;
   const GAMMA: u256 = 70000000000000;

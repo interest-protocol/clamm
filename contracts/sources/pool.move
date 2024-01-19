@@ -1,14 +1,14 @@
-module amm::interest_pool {
+module clamm::interest_pool {
   use std::type_name::TypeName;
 
   use sui::object::{Self, UID};
   use sui::tx_context::TxContext;
   use sui::vec_set::{Self, VecSet};
 
-  use amm::curves;
+  use clamm::curves;
 
-  friend amm::interest_amm_stable;
-  friend amm::interest_amm_volatile;
+  friend clamm::interest_amm_stable;
+  friend clamm::interest_amm_volatile;
 
   struct InterestPool<phantom Curve> has key, store {
     id: UID,

@@ -1,6 +1,6 @@
 // * 4 InterestPool - DAI - USDC - USDT - FRAX
 #[test_only]
-module amm::stable_tuple_4pool_curve_tests {
+module clamm::stable_tuple_4pool_curve_tests {
   use std::vector;
 
   use sui::clock::Clock;
@@ -11,17 +11,17 @@ module amm::stable_tuple_4pool_curve_tests {
   use suitears::math64::diff;
   use suitears::math256::diff as u256_diff;
 
-  use amm::dai::DAI;
-  use amm::frax::FRAX;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::interest_amm_stable;
-  use amm::lp_coin::LP_COIN;
-  use amm::curves::Stable;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_stable::setup_4pool;
-  use amm::stable_simulation::{Self as sim, State as SimState};
-  use amm::amm_test_utils::{people, scenario, mint, normalize_amount, add_decimals};
+  use clamm::dai::DAI;
+  use clamm::frax::FRAX;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::interest_amm_stable;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::curves::Stable;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_stable::setup_4pool;
+  use clamm::stable_simulation::{Self as sim, State as SimState};
+  use clamm::amm_test_utils::{people, scenario, mint, normalize_amount, add_decimals};
 
   const DAI_DECIMALS: u8 = 9;
   const USDC_DECIMALS: u8 = 6; 

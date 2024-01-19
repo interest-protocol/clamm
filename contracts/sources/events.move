@@ -1,11 +1,11 @@
-module amm::pool_events {
+module clamm::pool_events {
   use sui::object::ID;
   use sui::event::emit;
 
-  use amm::curves::Volatile;
+  use clamm::curves::Volatile;
 
-  friend amm::interest_amm_stable;
-  friend amm::interest_amm_volatile;
+  friend clamm::interest_amm_stable;
+  friend clamm::interest_amm_volatile;
   
   struct New2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has drop, copy {
     pool_id: ID

@@ -1,4 +1,4 @@
-module amm::errors {
+module clamm::errors {
 
   const INVALID_CURVE: u64 = 0;
   const SAME_COIN_INDEX: u64 = 1;

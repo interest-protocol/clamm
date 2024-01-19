@@ -1,21 +1,21 @@
 // * 2 Pool - USDC - ETH
 // All values tested agaisnt Curve pool
 #[test_only]
-module amm::volatile_2pool_add_liquidity_tests {
+module clamm::volatile_2pool_add_liquidity_tests {
   use sui::clock;
   use sui::coin::{Self, burn_for_testing as burn};
 
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx}; 
 
-  use amm::interest_amm_volatile;
-  use amm::eth::ETH;
-  use amm::usdc::USDC;
-  use amm::lp_coin::LP_COIN;
-  use amm::curves::Volatile;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_volatile::setup_2pool;
-  use amm::amm_test_utils ::{people, scenario, mint};
+  use clamm::interest_amm_volatile;
+  use clamm::eth::ETH;
+  use clamm::usdc::USDC;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::curves::Volatile;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_volatile::setup_2pool;
+  use clamm::amm_test_utils ::{people, scenario, mint};
 
   const ETH_DECIMALS_SCALAR: u64 = 1000000000;
   const USDC_DECIMALS_SCALAR: u64 = 1000000; 

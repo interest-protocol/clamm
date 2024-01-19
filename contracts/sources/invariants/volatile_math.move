@@ -3,7 +3,7 @@
 * @author @josemvcerqueira
 * @notice It contain utility functions to calculate the volatile invariant and pool balance changes.
 */
-module amm::volatile_math {
+module clamm::volatile_math {
   // === Imports ===
   
   use std::vector;
@@ -13,7 +13,7 @@ module amm::volatile_math {
   use suitears::math256::{diff, sum, max};
   use suitears::vectors::descending_insertion_sort;
 
-  use amm::errors;
+  use clamm::errors;
 
   // === Constants ===
 

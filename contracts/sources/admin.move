@@ -1,4 +1,4 @@
-module amm::amm_admin {
+module clamm::amm_admin {
 
   use sui::transfer::transfer;
   use sui::object::{Self, UID};

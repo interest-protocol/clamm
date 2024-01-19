@@ -1,7 +1,7 @@
 // CurveV2 in Move - All logic from Curve
 // It is best to for the first coin to be a stable coin as all Coins r quoted from it
 // https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
-module amm::interest_amm_volatile {
+module clamm::interest_amm_volatile {
   use std::vector;
   use std::type_name::{get, TypeName};
 
@@ -18,13 +18,13 @@ module amm::interest_amm_volatile {
   use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
   use suitears::fixed_point_wad::{mul_down, div_down, div_up, mul_up};
 
-  use amm::errors;
-  use amm::volatile_math;
-  use amm::amm_admin::Admin;
-  use amm::curves::Volatile;
-  use amm::pool_events as events;
-  use amm::interest_pool::{Self, InterestPool, new};
-  use amm::utils::{
+  use clamm::errors;
+  use clamm::volatile_math;
+  use clamm::amm_admin::Admin;
+  use clamm::curves::Volatile;
+  use clamm::pool_events as events;
+  use clamm::interest_pool::{Self, InterestPool, new};
+  use clamm::utils::{
     empty_vector,
     vector_2_to_tuple,
     vector_3_to_tuple,

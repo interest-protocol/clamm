@@ -1,19 +1,19 @@
 #[test_only]
-module amm::utils_tests {
+module clamm::utils_tests {
   // use std::type_name::get;
 
   // use sui::vec_set;
   // use sui::test_utils::assert_eq;
   // use sui::test_scenario::{Self as test, next_tx};
 
-  // use amm::utils;
-  // use amm::dai::DAI;
-  // use amm::usdc::USDC;
-  // use amm::usdt::USDT;
-  // use amm::curves::StableTuple;
-  // use amm::interest_pool::Pool;
-  // use amm::init_stable_tuple::setup_3pool;
-  // use amm::test_utils::{people, scenario};
+  // use clamm::utils;
+  // use clamm::dai::DAI;
+  // use clamm::usdc::USDC;
+  // use clamm::usdt::USDT;
+  // use clamm::curves::StableTuple;
+  // use clamm::interest_pool::Pool;
+  // use clamm::init_stable_tuple::setup_3pool;
+  // use clamm::test_utils::{people, scenario};
 
   // #[test]
   // fun correct_coins_order() {

@@ -1,4 +1,4 @@
-module amm::interest_amm_stable {
+module clamm::interest_amm_stable {
   // === Imports ===
   
   use std::vector;
@@ -17,14 +17,14 @@ module amm::interest_amm_stable {
   use suitears::math256::min;
   use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
 
-  use amm::errors;
-  use amm::curves::Stable;
-  use amm::amm_admin::Admin;
-  use amm::pool_events as events;
-  use amm::stable_fees::{Self, StableFees};
-  use amm::interest_pool::{Self, InterestPool};
-  use amm::stable_math::{y, y_lp, a as get_a, invariant_};
-  use amm::utils::{empty_vector, are_coins_ordered, make_coins_from_vector};
+  use clamm::errors;
+  use clamm::curves::Stable;
+  use clamm::amm_admin::Admin;
+  use clamm::pool_events as events;
+  use clamm::stable_fees::{Self, StableFees};
+  use clamm::interest_pool::{Self, InterestPool};
+  use clamm::stable_math::{y, y_lp, a as get_a, invariant_};
+  use clamm::utils::{empty_vector, are_coins_ordered, make_coins_from_vector};
 
   // === Consntants ===  
 

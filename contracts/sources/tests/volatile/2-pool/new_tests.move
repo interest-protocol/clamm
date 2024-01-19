@@ -1,6 +1,6 @@
 // * 2 Pool - USDC - ETH
 #[test_only]
-module amm::volatile_2pool_new_tests {
+module clamm::volatile_2pool_new_tests {
   use std::type_name;
   
   use sui::clock;
@@ -8,14 +8,14 @@ module amm::volatile_2pool_new_tests {
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx}; 
 
-  use amm::interest_amm_volatile;
-  use amm::eth::ETH;
-  use amm::usdc::USDC;
-  use amm::lp_coin::LP_COIN;
-  use amm::curves::Volatile;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_volatile::setup_2pool;
-  use amm::amm_test_utils ::{people, scenario, normalize_amount};
+  use clamm::interest_amm_volatile;
+  use clamm::eth::ETH;
+  use clamm::usdc::USDC;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::curves::Volatile;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_volatile::setup_2pool;
+  use clamm::amm_test_utils ::{people, scenario, normalize_amount};
 
   const A: u256  = 36450000;
   const GAMMA: u256 = 70000000000000;

@@ -1,5 +1,5 @@
 #[test_only]
-module amm::amm_test_utils {
+module clamm::amm_test_utils {
 
   use sui::math;
   use sui::clock;
@@ -10,15 +10,15 @@ module amm::amm_test_utils {
 
   use suitears::coin_decimals::{Self, CoinDecimals};
   
-  use amm::btc::{Self, BTC};
-  use amm::eth::{Self, ETH};
-  use amm::dai::{Self, DAI};
-  use amm::amm_admin as admin;
-  use amm::usdt::{Self, USDT};
-  use amm::usdc::{Self, USDC};
-  use amm::frax::{Self, FRAX};
-  use amm::lp_coin::{Self, LP_COIN};
-  use amm::true_usd::{Self, TRUE_USD};
+  use clamm::btc::{Self, BTC};
+  use clamm::eth::{Self, ETH};
+  use clamm::dai::{Self, DAI};
+  use clamm::amm_admin as admin;
+  use clamm::usdt::{Self, USDT};
+  use clamm::usdc::{Self, USDC};
+  use clamm::frax::{Self, FRAX};
+  use clamm::lp_coin::{Self, LP_COIN};
+  use clamm::true_usd::{Self, TRUE_USD};
 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 

@@ -1,4 +1,4 @@
-module amm::utils {
+module clamm::utils {
   use std::vector;
   use std::type_name::TypeName;
 
@@ -6,7 +6,7 @@ module amm::utils {
 
   use suitears::comparator::{compare, eq};
 
-  use amm::interest_pool::{Self, InterestPool};
+  use clamm::interest_pool::{Self, InterestPool};
 
   public fun are_coins_ordered<Curve>(pool: &InterestPool<Curve>, coins: vector<TypeName>): bool {
     eq(&compare(&interest_pool::coins(pool), &coins))

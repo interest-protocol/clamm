@@ -1,6 +1,6 @@
 // * 3 InterestPool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_swap_tests {
+module clamm::stable_swap_tests {
  use std::option;
 
   use sui::clock::Clock;
@@ -10,19 +10,19 @@ module amm::stable_swap_tests {
 
   use suitears::comparator::{Self, eq};
 
-  use amm::dai::DAI;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::stable_fees;
-  use amm::stable_math;
-  use amm::curves::Stable;
-  use amm::interest_amm_stable;
-  use amm::amm_admin::Admin;
-  use amm::lp_coin::LP_COIN;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_stable::setup_3pool;
-  use amm::stable_simulation::{Self as sim, State as SimState};
-  use amm::amm_test_utils::{people, scenario, normalize_amount, mint};
+  use clamm::dai::DAI;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::stable_fees;
+  use clamm::stable_math;
+  use clamm::curves::Stable;
+  use clamm::interest_amm_stable;
+  use clamm::amm_admin::Admin;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_stable::setup_3pool;
+  use clamm::stable_simulation::{Self as sim, State as SimState};
+  use clamm::amm_test_utils::{people, scenario, normalize_amount, mint};
 
   const DAI_DECIMALS: u8 = 9;
   const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
@@ -160,7 +160,7 @@ module amm::stable_swap_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::SLIPPAGE, location = amm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
   fun swap_slippage() {
    let scenario = scenario();
     let (alice, _) = people();

@@ -1,6 +1,6 @@
 // * 3 InterestPool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_swap_fees_tests {
+module clamm::stable_swap_fees_tests {
   use std::option;
 
   use sui::clock::Clock;
@@ -8,17 +8,17 @@ module amm::stable_swap_fees_tests {
   use sui::coin::burn_for_testing as burn;
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
-  use amm::dai::DAI;
-  use amm::usdt::USDT;
-  use amm::usdc::USDC;
-  use amm::stable_fees;
-  use amm::curves::Stable;
-  use amm::interest_amm_stable;
-  use amm::amm_admin::Admin;
-  use amm::lp_coin::LP_COIN;
-  use amm::interest_pool::InterestPool;
-  use amm::init_interest_amm_stable::setup_3pool;
-  use amm::amm_test_utils::{people, scenario, mint};
+  use clamm::dai::DAI;
+  use clamm::usdt::USDT;
+  use clamm::usdc::USDC;
+  use clamm::stable_fees;
+  use clamm::curves::Stable;
+  use clamm::interest_amm_stable;
+  use clamm::amm_admin::Admin;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_stable::setup_3pool;
+  use clamm::amm_test_utils::{people, scenario, mint};
 
   const DAI_DECIMALS: u8 = 9;
   const USDC_DECIMALS: u8 = 6; 

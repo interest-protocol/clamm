@@ -1,17 +1,17 @@
 // * 3 InterestPool - DAI - USDC - USDT
 #[test_only]
-module amm::stable_ramp_tests {
+module clamm::stable_ramp_tests {
   use sui::clock::{Self, Clock};
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx};
 
-  use amm::curves::Stable;
-  use amm::interest_amm_stable;
-  use amm::amm_admin::Admin;
-  use amm::lp_coin::LP_COIN;
-  use amm::interest_pool::InterestPool;
-  use amm::amm_test_utils::{people, scenario};
-  use amm::init_interest_amm_stable::setup_3pool;
+  use clamm::curves::Stable;
+  use clamm::interest_amm_stable;
+  use clamm::amm_admin::Admin;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_pool::InterestPool;
+  use clamm::amm_test_utils::{people, scenario};
+  use clamm::init_interest_amm_stable::setup_3pool;
 
   const MAX_A: u256 = 1000000; // 1 million
   const MAX_A_CHANGE: u256 = 10;
@@ -154,7 +154,7 @@ module amm::stable_ramp_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::WAIT_ONE_DAY, location = amm::interest_amm_stable)]
+  #[expected_failure(abort_code = clamm::errors::WAIT_ONE_DAY, location = clamm::interest_amm_stable)]
   fun ramp_abort_too_early() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -186,7 +186,7 @@ module amm::stable_ramp_tests {
 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::FUTURE_TAMP_TIME_IS_TOO_SHORT, location = amm::interest_amm_stable)]
+  #[expected_failure(abort_code = clamm::errors::FUTURE_TAMP_TIME_IS_TOO_SHORT, location = clamm::interest_amm_stable)]
   fun ramp_future_time_too_short() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -215,7 +215,7 @@ module amm::stable_ramp_tests {
   } 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::interest_amm_stable)]
+  #[expected_failure(abort_code = clamm::errors::INVALID_AMPLIFIER, location = clamm::interest_amm_stable)]
   fun ramp_abort_zero_a() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -244,7 +244,7 @@ module amm::stable_ramp_tests {
   } 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::interest_amm_stable)]
+  #[expected_failure(abort_code = clamm::errors::INVALID_AMPLIFIER, location = clamm::interest_amm_stable)]
   fun ramp_abort_a_too_high() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -273,7 +273,7 @@ module amm::stable_ramp_tests {
   } 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::interest_amm_stable)]
+  #[expected_failure(abort_code = clamm::errors::INVALID_AMPLIFIER, location = clamm::interest_amm_stable)]
   fun ramp_up_too_high() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -302,7 +302,7 @@ module amm::stable_ramp_tests {
   } 
 
   #[test]
-  #[expected_failure(abort_code = amm::errors::INVALID_AMPLIFIER, location = amm::interest_amm_stable)]
+  #[expected_failure(abort_code = clamm::errors::INVALID_AMPLIFIER, location = clamm::interest_amm_stable)]
   fun ramp_down_too_low() {
     let scenario = scenario();
     let (alice, _) = people();

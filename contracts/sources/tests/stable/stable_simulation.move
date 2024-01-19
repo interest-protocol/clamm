@@ -1,5 +1,5 @@
 #[test_only]
-module amm::stable_simulation {
+module clamm::stable_simulation {
   use std::vector;
   
   use suitears::fixed_point_wad::mul_down as fmul;
@@ -8,7 +8,7 @@ module amm::stable_simulation {
   use sui::tx_context::TxContext;
   use sui::transfer::share_object;
 
-  use amm::stable_math::{
+  use clamm::stable_math::{
     y as get_y,
     y_d as get_y_d,
     invariant_

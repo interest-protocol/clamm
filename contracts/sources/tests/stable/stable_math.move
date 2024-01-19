@@ -1,11 +1,11 @@
 #[test_only]
-module amm::stable_math_tests {
+module clamm::stable_math_tests {
 
   use sui::clock;
   use sui::tx_context;
   use sui::test_utils::assert_eq; 
 
-  use amm::stable_math::{a, y, invariant_, y_lp, y_d};
+  use clamm::stable_math::{a, y, invariant_, y_lp, y_d};
 
   #[test]
   fun test_a() {
@@ -273,7 +273,7 @@ fun test_y_d() {
 }
 
  #[test]
- #[expected_failure(abort_code = amm::errors::SAME_COIN_INDEX, location = amm::stable_math)] 
+ #[expected_failure(abort_code = clamm::errors::SAME_COIN_INDEX, location = clamm::stable_math)] 
  fun test_y_same_coin() {
       y(
         0,
