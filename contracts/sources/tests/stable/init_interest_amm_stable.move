@@ -6,7 +6,7 @@ module clamm::init_interest_amm_stable {
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use clamm::interest_amm_stable;
+  use clamm::interest_clamm_stable;
   use clamm::dai::DAI;
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
@@ -41,7 +41,7 @@ module clamm::init_interest_amm_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_amm_stable::new_3_pool(
+      burn(interest_clamm_stable::new_3_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -91,7 +91,7 @@ module clamm::init_interest_amm_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_amm_stable::new_4_pool(
+      burn(interest_clamm_stable::new_4_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -148,7 +148,7 @@ module clamm::init_interest_amm_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_amm_stable::new_5_pool(
+      burn(interest_clamm_stable::new_5_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),

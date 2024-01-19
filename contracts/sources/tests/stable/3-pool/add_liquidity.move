@@ -13,7 +13,7 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
   use clamm::usdc::USDC;
   use clamm::stable_math;
   use clamm::curves::Stable;
-  use clamm::interest_amm_stable;
+  use clamm::interest_clamm_stable;
   use clamm::lp_coin::LP_COIN;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_3pool;
@@ -38,12 +38,12 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
-      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let k0 = stable_math::invariant_(INITIAL_A, balances);
 
-      let lp_coin = interest_amm_stable::add_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+      let lp_coin = interest_clamm_stable::add_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(100, DAI_DECIMALS, ctx(test)),
@@ -53,9 +53,9 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
         ctx(test)
       );
 
-      let new_balances = interest_amm_stable::balances<LP_COIN>(&pool);
-      let new_supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
-      let n_coins = interest_amm_stable::n_coins<LP_COIN>(&pool);
+      let new_balances = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let new_supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let n_coins = interest_clamm_stable::n_coins<LP_COIN>(&pool);
 
       let k1 = stable_math::invariant_(INITIAL_A, new_balances);
 
@@ -91,7 +91,7 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
 
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::COINS_MUST_BE_IN_ORDER, location = clamm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::COINS_MUST_BE_IN_ORDER, location = clamm::interest_clamm_stable)]  
   fun add_liquidity_coins_wrong_order() {
    let scenario = scenario();
     let (alice, _) = people();
@@ -106,7 +106,7 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
       let c = test::take_shared<Clock>(test);
     
 
-      burn(interest_amm_stable::add_liquidity_3_pool<USDC, DAI, USDT, LP_COIN>(
+      burn(interest_clamm_stable::add_liquidity_3_pool<USDC, DAI, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<USDC>(110, USDC_DECIMALS, ctx(test)),
@@ -123,7 +123,7 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_clamm_stable)]  
   fun add_liquidity_coins_slippage() {
    let scenario = scenario();
     let (alice, _) = people();
@@ -137,8 +137,8 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
-      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let k0 = stable_math::invariant_(INITIAL_A, balances);
 
@@ -152,7 +152,7 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
 
       let mint_amount = (((supply as u256) * (k1 - k0) / k0) as u64);
 
-      burn(interest_amm_stable::add_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+      burn(interest_clamm_stable::add_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(100, DAI_DECIMALS, ctx(test)),

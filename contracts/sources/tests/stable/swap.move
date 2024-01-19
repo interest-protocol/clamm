@@ -16,7 +16,7 @@ module clamm::stable_swap_tests {
   use clamm::stable_fees;
   use clamm::stable_math;
   use clamm::curves::Stable;
-  use clamm::interest_amm_stable;
+  use clamm::interest_clamm_stable;
   use clamm::amm_admin::Admin;
   use clamm::lp_coin::LP_COIN;
   use clamm::interest_pool::InterestPool;
@@ -46,7 +46,7 @@ module clamm::stable_swap_tests {
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test); 
 
-      let coin_usdc = interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+      let coin_usdc = interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(344, DAI_DECIMALS, ctx(test)),
@@ -54,7 +54,7 @@ module clamm::stable_swap_tests {
         ctx(test)
       );
 
-      let balances_2 = interest_amm_stable::balances<LP_COIN>(&pool);
+      let balances_2 = interest_clamm_stable::balances<LP_COIN>(&pool);
 
       let expected_amount = sim::swap(&mut sim_state, 0, 1, normalize_amount(344));
 
@@ -70,9 +70,9 @@ module clamm::stable_swap_tests {
 
       assert_eq(eq(&comparator::compare(&balances_2, &expected_balances)), true);
 
-      let dai_balance = interest_amm_stable::coin_balance<DAI, LP_COIN>(&pool);
-      let usdc_balance = interest_amm_stable::coin_balance<USDC, LP_COIN>(&pool);
-      let usdt_balance = interest_amm_stable::coin_balance<USDT, LP_COIN>(&pool);
+      let dai_balance = interest_clamm_stable::coin_balance<DAI, LP_COIN>(&pool);
+      let usdc_balance = interest_clamm_stable::coin_balance<USDC, LP_COIN>(&pool);
+      let usdt_balance = interest_clamm_stable::coin_balance<USDT, LP_COIN>(&pool);
 
       let coin_balances = vector[dai_balance, usdc_balance, usdt_balance];
       let expected_balances = vector[
@@ -82,8 +82,8 @@ module clamm::stable_swap_tests {
       ];
 
       assert_eq(eq(&comparator::compare(&expected_balances, &coin_balances)), true);
-      assert_eq(interest_amm_stable::admin_balance<DAI, LP_COIN>(&pool), 0);
-      assert_eq(interest_amm_stable::admin_balance<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_clamm_stable::admin_balance<DAI, LP_COIN>(&pool), 0);
+      assert_eq(interest_clamm_stable::admin_balance<USDC, LP_COIN>(&pool), 0);
 
       test::return_shared(sim_state);
       test::return_shared(c);
@@ -108,7 +108,7 @@ module clamm::stable_swap_tests {
       let sim_state = test::take_shared<SimState>(test); 
       let admin_cap = test::take_from_sender<Admin>(test);
 
-      interest_amm_stable::update_fee<LP_COIN>(
+      interest_clamm_stable::update_fee<LP_COIN>(
            &mut pool,
         &admin_cap,
         option::none(),
@@ -116,7 +116,7 @@ module clamm::stable_swap_tests {
         option::some(MAX_ADMIN_FEE)
       );
 
-      let coin_usdc = interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+      let coin_usdc = interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(344, DAI_DECIMALS, ctx(test)),
@@ -126,9 +126,9 @@ module clamm::stable_swap_tests {
 
       burn(coin_usdc);
 
-      let fees = interest_amm_stable::fees<LP_COIN>(&pool);
+      let fees = interest_clamm_stable::fees<LP_COIN>(&pool);
 
-      let amp = interest_amm_stable::a<LP_COIN>(&pool, &c);
+      let amp = interest_clamm_stable::a<LP_COIN>(&pool, &c);
 
       let fee_in = stable_fees::calculate_fee_in_amount(&fees, ((344 * DAI_DECIMALS_SCALAR) as u64));
       let admin_fee_in = stable_fees::calculate_admin_amount(&fees, fee_in);
@@ -148,8 +148,8 @@ module clamm::stable_swap_tests {
       let fee_out = stable_fees::calculate_fee_out_amount(&fees, dy);
       let admin_fee_out = stable_fees::calculate_admin_amount(&fees, fee_out);
 
-      assert_eq(interest_amm_stable::admin_balance<DAI, LP_COIN>(&pool), (admin_fee_in as u64));
-      assert_eq(interest_amm_stable::admin_balance<USDC, LP_COIN>(&pool), admin_fee_out);
+      assert_eq(interest_clamm_stable::admin_balance<DAI, LP_COIN>(&pool), (admin_fee_in as u64));
+      assert_eq(interest_clamm_stable::admin_balance<USDC, LP_COIN>(&pool), admin_fee_out);
 
       test::return_to_sender(test, admin_cap);
       test::return_shared(sim_state);
@@ -160,7 +160,7 @@ module clamm::stable_swap_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_clamm_stable)]  
   fun swap_slippage() {
    let scenario = scenario();
     let (alice, _) = people();
@@ -176,9 +176,9 @@ module clamm::stable_swap_tests {
       let sim_state = test::take_shared<SimState>(test); 
 
 
-      let fees = interest_amm_stable::fees<LP_COIN>(&pool);
+      let fees = interest_clamm_stable::fees<LP_COIN>(&pool);
 
-      let amp = interest_amm_stable::a<LP_COIN>(&pool, &c);
+      let amp = interest_clamm_stable::a<LP_COIN>(&pool, &c);
 
       let fee_in = stable_fees::calculate_fee_in_amount(&fees, ((344 * DAI_DECIMALS_SCALAR) as u64));
       let admin_fee_in = stable_fees::calculate_admin_amount(&fees, fee_in);
@@ -196,7 +196,7 @@ module clamm::stable_swap_tests {
       let dy = ((dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
 
 
-      burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(344, DAI_DECIMALS, ctx(test)),

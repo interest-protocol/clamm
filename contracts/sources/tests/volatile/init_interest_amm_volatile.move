@@ -10,7 +10,7 @@ module clamm::init_interest_amm_volatile {
   use clamm::eth::ETH;
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
-  use clamm::interest_amm_volatile;
+  use clamm::interest_clamm_volatile;
   use clamm::amm_test_utils::{people, mint, setup_dependencies};
 
   const A: u256  = 36450000;
@@ -40,7 +40,7 @@ module clamm::init_interest_amm_volatile {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
 
       burn(
-        interest_amm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
+        interest_clamm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
           &c,
           mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
           mint<ETH>(eth_amount, ETH_DECIMALS, ctx(test)),
@@ -71,7 +71,7 @@ module clamm::init_interest_amm_volatile {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
 
       burn(
-        interest_amm_volatile::new_3_pool<USDC, BTC, ETH, LP_COIN>(
+        interest_clamm_volatile::new_3_pool<USDC, BTC, ETH, LP_COIN>(
           &c,
           mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
           mint<BTC>(btc_amount, BTC_DECIMALS, ctx(test)),

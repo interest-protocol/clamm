@@ -1,7 +1,7 @@
 // CurveV2 in Move - All logic from Curve
 // It is best to for the first coin to be a stable coin as all Coins r quoted from it
 // https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
-module clamm::interest_amm_volatile {
+module clamm::interest_clamm_volatile {
   use std::vector;
   use std::type_name::{get, TypeName};
 

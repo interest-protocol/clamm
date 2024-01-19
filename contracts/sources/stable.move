@@ -1,4 +1,4 @@
-module clamm::interest_amm_stable {
+module clamm::interest_clamm_stable {
   // === Imports ===
   
   use std::vector;

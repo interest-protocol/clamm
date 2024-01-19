@@ -4,8 +4,8 @@ module clamm::pool_events {
 
   use clamm::curves::Volatile;
 
-  friend clamm::interest_amm_stable;
-  friend clamm::interest_amm_volatile;
+  friend clamm::interest_clamm_stable;
+  friend clamm::interest_clamm_volatile;
   
   struct New2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has drop, copy {
     pool_id: ID

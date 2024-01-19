@@ -7,8 +7,8 @@ module clamm::interest_pool {
 
   use clamm::curves;
 
-  friend clamm::interest_amm_stable;
-  friend clamm::interest_amm_volatile;
+  friend clamm::interest_clamm_stable;
+  friend clamm::interest_clamm_volatile;
 
   struct InterestPool<phantom Curve> has key, store {
     id: UID,

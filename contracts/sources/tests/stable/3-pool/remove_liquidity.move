@@ -10,7 +10,7 @@ module clamm::stable_tuple_3pool_remove_liquidity_tests {
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
   use clamm::curves::Stable;
-  use clamm::interest_amm_stable;
+  use clamm::interest_clamm_stable;
   use clamm::lp_coin::LP_COIN;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_3pool;
@@ -34,11 +34,11 @@ module clamm::stable_tuple_3pool_remove_liquidity_tests {
     {
       let pool = test::take_shared<InterestPool<Stable>>(test);
 
-      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
       
       let c = clock::create_for_testing(ctx(test));
 
-      let(coin_dai, coin_usdc, coin_usdt) = interest_amm_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+      let(coin_dai, coin_usdc, coin_usdt) = interest_clamm_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
         &mut pool,
         mint<LP_COIN>(supply / 10, ctx(test)),
         &c,
@@ -46,8 +46,8 @@ module clamm::stable_tuple_3pool_remove_liquidity_tests {
         ctx(test)
       );
 
-      let balances_2 = interest_amm_stable::balances<LP_COIN>(&pool);
-      let supply_2 = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances_2 = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let supply_2 = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let expected_dai_amount = (800 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
       let expected_usdc_amount = (900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256);
@@ -73,7 +73,7 @@ module clamm::stable_tuple_3pool_remove_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_clamm_stable)]  
   fun remove_liquidity_slippage() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -86,7 +86,7 @@ module clamm::stable_tuple_3pool_remove_liquidity_tests {
     {
       let pool = test::take_shared<InterestPool<Stable>>(test);
 
-      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let expected_dai_amount = ((800 * DAI_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
       let expected_usdc_amount = ((900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
@@ -94,7 +94,7 @@ module clamm::stable_tuple_3pool_remove_liquidity_tests {
 
       let c = clock::create_for_testing(ctx(test));
 
-      let(coin_dai, coin_usdc, coin_usdt) = interest_amm_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
+      let(coin_dai, coin_usdc, coin_usdt) = interest_clamm_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
         &mut pool,
         mint<LP_COIN>(supply / 10, ctx(test)),
         &c,

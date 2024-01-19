@@ -7,7 +7,7 @@ module clamm::stable_remove_one_coin_liquidity_tests {
   use sui::coin::{burn_for_testing as burn, mint_for_testing as mint};
   
   use clamm::dai::DAI;
-  use clamm::interest_amm_stable;
+  use clamm::interest_clamm_stable;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Stable;
   use clamm::interest_pool::InterestPool;
@@ -33,14 +33,14 @@ module clamm::stable_remove_one_coin_liquidity_tests {
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test); 
 
-      let amp = interest_amm_stable::a<LP_COIN>(&pool, &c);
+      let amp = interest_clamm_stable::a<LP_COIN>(&pool, &c);
 
-      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
-      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       sim::set_state(&mut sim_state, amp, 3, balances, (supply as u256) * PRECISION / LP_COIN_DECIMALS_SCALAR);
 
-      let coin_dai = interest_amm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
+      let coin_dai = interest_clamm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<LP_COIN>(supply / 10, ctx(test)),
@@ -48,8 +48,8 @@ module clamm::stable_remove_one_coin_liquidity_tests {
         ctx(test)
       );
 
-      let balances_2 = interest_amm_stable::balances<LP_COIN>(&pool);
-      let supply_2 = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances_2 = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let supply_2 = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       let expected_amount = sim::calc_withdraw_one_coin(&sim_state, normalize_amount(((supply / 10) as u256) / LP_COIN_DECIMALS_SCALAR ), 0);
 
@@ -73,7 +73,7 @@ module clamm::stable_remove_one_coin_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_amm_stable)]  
+  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_clamm_stable)]  
   fun remove_one_coin_liquidity_slippage() {
     let scenario = scenario();
     let (alice, _) = people();
@@ -88,16 +88,16 @@ module clamm::stable_remove_one_coin_liquidity_tests {
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test); 
 
-      let amp = interest_amm_stable::a<LP_COIN>(&pool, &c);
+      let amp = interest_clamm_stable::a<LP_COIN>(&pool, &c);
 
-      let balances = interest_amm_stable::balances<LP_COIN>(&pool);
-      let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+      let balances = interest_clamm_stable::balances<LP_COIN>(&pool);
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
       sim::set_state(&mut sim_state, amp, 3, balances, (supply as u256) * PRECISION / LP_COIN_DECIMALS_SCALAR);
 
       let expected_amount = sim::calc_withdraw_one_coin(&sim_state, normalize_amount(((supply / 10) as u256) / LP_COIN_DECIMALS_SCALAR ), 0);
 
-      burn(interest_amm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
+      burn(interest_clamm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<LP_COIN>(supply / 10, ctx(test)),

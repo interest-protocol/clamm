@@ -16,7 +16,7 @@ module clamm::stable_tuple_5pool_curve_tests {
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
   use clamm::curves::Stable;
-  use clamm::interest_amm_stable;
+  use clamm::interest_clamm_stable;
   use clamm::lp_coin::LP_COIN;
   use clamm::true_usd::TRUE_USD;
   use clamm::interest_pool::InterestPool;
@@ -48,13 +48,13 @@ module clamm::stable_tuple_5pool_curve_tests {
       let pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let virtual_price = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
 
       {
         let i = 0;
         while (N_COINS > i) {
           
-          burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+          burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
             &mut pool,
             &c,
             mint<DAI>(300, DAI_DECIMALS, ctx(test)),
@@ -65,14 +65,14 @@ module clamm::stable_tuple_5pool_curve_tests {
         }
       };
 
-      let virtual_price_2 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_2 = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_2 > virtual_price, true);
 
       {
         let i = 0;
         while (N_COINS > i) {
           
-          burn(interest_amm_stable::add_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+          burn(interest_clamm_stable::add_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
             &mut pool,
             &c,
             mint<DAI>(200, DAI_DECIMALS, ctx(test)),
@@ -87,17 +87,17 @@ module clamm::stable_tuple_5pool_curve_tests {
         }        
       };
 
-      let virtual_price_3 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_3 = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_3 > virtual_price_2, true);
 
       {
         let i = 0;
 
-        let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+        let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
 
         while (N_COINS > i) {
           
-          let (a, b, c, d, e) = interest_amm_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+          let (a, b, c, d, e) = interest_clamm_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
             &mut pool,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
             &c,
@@ -113,16 +113,16 @@ module clamm::stable_tuple_5pool_curve_tests {
         }        
       }; 
 
-      let virtual_price_4 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_4 = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_4 > virtual_price_3, true);     
 
         {
         let i = 0;
         while (N_COINS > i) {
 
-          let supply = interest_amm_stable::lp_coin_supply<LP_COIN>(&pool);
+          let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&pool);
           
-          burn(interest_amm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
+          burn(interest_clamm_stable::remove_one_coin_liquidity<DAI, LP_COIN>(
             &mut pool,
             &c,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
@@ -133,7 +133,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         }        
       }; 
 
-      let virtual_price_5 = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price_5 = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
       assert_eq(virtual_price_5 >= virtual_price_4, true); 
 
       test::return_shared(c);
@@ -158,10 +158,10 @@ module clamm::stable_tuple_5pool_curve_tests {
       let c = test::take_shared<Clock>(test); 
       let sim_state = test::take_shared<SimState>(test);  
 
-      let virtual_price = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let virtual_price = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
 
 
-      burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(300, DAI_DECIMALS, ctx(test)),
@@ -169,7 +169,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<USDC, USDT, LP_COIN>(
+      burn(interest_clamm_stable::swap<USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<USDC>(450, USDC_DECIMALS, ctx(test)),
@@ -177,7 +177,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<USDT, FRAX, LP_COIN>(
+      burn(interest_clamm_stable::swap<USDT, FRAX, LP_COIN>(
         &mut pool,
         &c,
         mint<USDT>(754, USDT_DECIMALS, ctx(test)),
@@ -185,7 +185,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<FRAX, TRUE_USD, LP_COIN>(
+      burn(interest_clamm_stable::swap<FRAX, TRUE_USD, LP_COIN>(
         &mut pool,
         &c,
         mint<FRAX>(666, FRAX_DECIMALS, ctx(test)),
@@ -193,7 +193,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<TRUE_USD, DAI, LP_COIN>(
+      burn(interest_clamm_stable::swap<TRUE_USD, DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<TRUE_USD>(758, FRAX_DECIMALS, ctx(test)),
@@ -207,9 +207,9 @@ module clamm::stable_tuple_5pool_curve_tests {
       sim::swap(&mut sim_state, 3, 4, normalize_amount(666));
       sim::swap(&mut sim_state, 4, 0, normalize_amount(758));
 
-      let new_virtual_price = interest_amm_stable::virtual_price<LP_COIN>(&pool, &c);
+      let new_virtual_price = interest_clamm_stable::virtual_price<LP_COIN>(&pool, &c);
 
-      let pool_balances = interest_amm_stable::balances<LP_COIN>(&pool);
+      let pool_balances = interest_clamm_stable::balances<LP_COIN>(&pool);
       let (sim_balances, _, n_coins, _, _) = sim::view_state(&sim_state);
 
       {
@@ -256,7 +256,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         let i = 0;
         while (N_COINS > i) {
           assert_eq(
-              burn(interest_amm_stable::swap<FRAX, DAI, LP_COIN>(
+              burn(interest_clamm_stable::swap<FRAX, DAI, LP_COIN>(
                 &mut pool,
                 &c,
                 mint<FRAX>(30, USDT_DECIMALS, ctx(test)),
@@ -272,7 +272,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         let i = 0;
         while (N_COINS > i) {
           assert_eq(
-            burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+            burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
               &mut pool,
                &c,
                mint<DAI>(25, DAI_DECIMALS, ctx(test)),
@@ -306,7 +306,7 @@ module clamm::stable_tuple_5pool_curve_tests {
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_amm_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
         &c,
         mint<DAI>(25, DAI_DECIMALS, ctx(test)),
@@ -314,7 +314,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<USDC, USDT, LP_COIN>(
+      burn(interest_clamm_stable::swap<USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<USDC>(30, USDC_DECIMALS, ctx(test)),
@@ -322,7 +322,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<USDT, FRAX, LP_COIN>(
+      burn(interest_clamm_stable::swap<USDT, FRAX, LP_COIN>(
         &mut pool,
         &c,
         mint<USDT>(30, USDT_DECIMALS, ctx(test)),
@@ -330,7 +330,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<FRAX, TRUE_USD, LP_COIN>(
+      burn(interest_clamm_stable::swap<FRAX, TRUE_USD, LP_COIN>(
         &mut pool,
         &c,
         mint<FRAX>(35, USDT_DECIMALS, ctx(test)),
@@ -338,7 +338,7 @@ module clamm::stable_tuple_5pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_amm_stable::swap<TRUE_USD, DAI, LP_COIN>(
+      burn(interest_clamm_stable::swap<TRUE_USD, DAI, LP_COIN>(
         &mut pool,
         &c,
         mint<TRUE_USD>(40, USDT_DECIMALS, ctx(test)),
@@ -352,7 +352,7 @@ module clamm::stable_tuple_5pool_curve_tests {
       sim::swap(&mut sim_state, 3, 4, normalize_amount(35));
       sim::swap(&mut sim_state, 4, 0, normalize_amount(35));
 
-      let (pool_dy, _, _) = interest_amm_stable::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
+      let (pool_dy, _, _) = interest_clamm_stable::quote_swap<DAI, USDC, LP_COIN>(&pool, &c, add_decimals(10, DAI_DECIMALS));
 
       let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
       let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
