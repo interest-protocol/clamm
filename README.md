@@ -7,6 +7,7 @@
 - remove liquidity
 - remove one coin
 - admin functions
+- quote functions
 
 ### 3 Pool
 
@@ -16,3 +17,4 @@
 - remove liquidity
 - remove one coin
 - admin functions
+- quote functions
