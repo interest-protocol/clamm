@@ -477,7 +477,7 @@ describe('Volatile 2 Pool', function () {
   });
 
   describe('Remove liquidity', function () {
-    it.only('removes the right amount of coins', async function () {
+    it('removes the right amount of coins', async function () {
       const { pool, alice, bob, lpCoin, poolAddress } = await loadFixture(
         deploy2PoolFixture
       );
