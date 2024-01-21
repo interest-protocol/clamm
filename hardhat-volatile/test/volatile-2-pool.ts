@@ -640,5 +640,61 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.virtual_price()).to.be.equal(1002087792910863353n);
       expect(await pool.D()).to.be.equal(19517805142124889443616n);
     });
+
+    it.only('removes the right amount of coins after extreme usdc swaps', async function () {
+      const { pool, alice, bob, lpCoin, poolAddress } = await loadFixture(
+        deploy2PoolFixture
+      );
+
+      await pool
+        .connect(alice)
+        .add_liquidity([4500n * USDC_PRECISION, 3n * ETH_PRECISION], 0n);
+
+      await pool
+        .connect(bob)
+        .add_liquidity([6000n * USDC_PRECISION, 5n * ETH_PRECISION], 0n);
+
+      const aliceLpCoinBalance = await lpCoin
+        .connect(alice)
+        .balanceOf(alice.address);
+
+      await lpCoin.connect(alice).approve(poolAddress, MAX_U256);
+      await lpCoin.connect(bob).approve(poolAddress, MAX_U256);
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 6700n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 6700n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 6700n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 6700n * USDC_PRECISION, 0);
+      await time.increase(20);
+      await mine();
+
+      await pool
+        .connect(alice)
+        .remove_liquidity(aliceLpCoinBalance / 3n, [0, 0]);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(251448807861405855986n);
+      expect(await pool.balances(0n)).to.be.equal(32321608822n);
+      expect(await pool.balances(1n)).to.be.equal(1920807053502369717n);
+      expect(await pool.last_prices()).to.be.equal(13639228872865109220922n);
+      expect(await pool.price_scale()).to.be.equal(1500000000000000000000n);
+      expect(await pool.price_oracle()).to.be.equal(1500284502818585993555n);
+      expect(await pool.xcp_profit()).to.be.equal(1003051490484483489n);
+      expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
+      expect(await pool.virtual_price()).to.be.equal(1003051490484483489n);
+      expect(await pool.D()).to.be.equal(19536575215556498909714n);
+    });
   });
 });
