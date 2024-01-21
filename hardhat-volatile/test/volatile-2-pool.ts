@@ -585,7 +585,7 @@ describe('Volatile 2 Pool', function () {
       expect(await pool.D()).to.be.equal(6001335347821611226223n);
     });
 
-    it.only('removes the right amount of coins after extreme eth swaps', async function () {
+    it('removes the right amount of coins after extreme eth swaps', async function () {
       const { pool, alice, bob, lpCoin, poolAddress } = await loadFixture(
         deploy2PoolFixture
       );
@@ -624,8 +624,6 @@ describe('Volatile 2 Pool', function () {
       await pool.connect(alice).exchange(1, 0, 3n * ETH_PRECISION, 0);
       await time.increase(20);
       await mine();
-
-      console.log(aliceLpCoinBalance.toString());
 
       await pool
         .connect(alice)
