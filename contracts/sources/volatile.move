@@ -393,7 +393,7 @@ module clamm::interest_clamm_volatile {
     register_coin<CoinA>(
       &mut state.id, 
       coin_decimals,
-      0, // * First coin does not have a price. The other coins are priced in this coin. So we put Zero.
+      PRECISION, // * First coin price is always 1. The other coins are priced in this coin. So we put Zero.
       0
     );
 
@@ -463,7 +463,7 @@ module clamm::interest_clamm_volatile {
     register_coin<CoinA>(
       interest_pool::borrow_mut_uid(&mut pool), 
       coin_decimals,
-      0, // * First coin does not have a price. The other coins are priced in this coin. So we put Zero.
+      PRECISION, // * First coin does not have a price. The other coins are priced in this coin. So we put Zero.
       0
     );
 

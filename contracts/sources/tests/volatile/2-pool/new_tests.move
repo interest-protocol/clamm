@@ -71,14 +71,14 @@ module clamm::volatile_2pool_new_tests {
       assert_eq(interest_clamm_volatile::admin_fee<LP_COIN>(&pool), INITIAL_ADMIN_FEE);
       assert_eq(interest_clamm_volatile::last_prices_timestamp<LP_COIN>(&pool), 0);
       assert_eq(interest_clamm_volatile::last_prices_timestamp<LP_COIN>(&pool), 0);
-      assert_eq(interest_clamm_volatile::coin_price<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_clamm_volatile::coin_price<USDC, LP_COIN>(&pool), PRECISION);
       assert_eq(interest_clamm_volatile::coin_price<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);
       assert_eq(interest_clamm_volatile::coin_index<USDC, LP_COIN>(&pool), 0);
       assert_eq(interest_clamm_volatile::coin_index<ETH, LP_COIN>(&pool), 1);
-      assert_eq(interest_clamm_volatile::coin_price_oracle<USDC, LP_COIN>(&pool), 0);
+      assert_eq(interest_clamm_volatile::coin_price_oracle<USDC, LP_COIN>(&pool), PRECISION);
       assert_eq(interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);      
-      assert_eq(interest_clamm_volatile::coin_price_oracle<USDC, LP_COIN>(&pool), 0);
-      assert_eq(interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);     
+      assert_eq(interest_clamm_volatile::coin_last_price<USDC, LP_COIN>(&pool), PRECISION);
+      assert_eq(interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool), INITIAL_ETH_PRICE);     
       assert_eq(interest_clamm_volatile::coin_decimals_scalar<USDC, LP_COIN>(&pool), (USDC_DECIMALS_SCALAR as u256));
       assert_eq(interest_clamm_volatile::coin_decimals_scalar<ETH, LP_COIN>(&pool), (ETH_DECIMALS_SCALAR as u256)); 
       assert_eq(interest_clamm_volatile::coin_type<USDC, LP_COIN>(&pool), type_name::get<USDC>());
