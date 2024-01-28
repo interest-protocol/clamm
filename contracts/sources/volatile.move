@@ -971,7 +971,7 @@ module clamm::interest_clamm_volatile {
     let d = d0;
 
     let fee = fee_impl(state, xp);
-    let d_b = (lp_coin_amount as u256) * d / ((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL);
+    let d_b = lp_coin_amount * d / ((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL);
     let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
     let y = volatile_math::y(a, gamma, &xp, d, index_out);
     let dy = div_down((*vector::borrow(&xp, index_out) - y), price_scale_i);  
