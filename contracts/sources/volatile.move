@@ -263,7 +263,7 @@ module clamm::interest_clamm_volatile {
       a,
       gamma,
       coin_states,
-      lp_amount,
+      (lp_amount as u256) * ROLL,
       true,
       false
     );
@@ -747,7 +747,7 @@ module clamm::interest_clamm_volatile {
       a,
       gamma,
       coin_states,
-      lp_coin_amount,
+      (lp_coin_amount as u256) * ROLL,
       a_gamma_future_time != 0,
       true
     );
@@ -939,28 +939,27 @@ module clamm::interest_clamm_volatile {
     a: u256,
     gamma: u256,
     coin_states: vector<CoinState>,
-    lp_coin_amount: u64,
+    lp_coin_amount: u256,
     update_d: bool,
     calc_price: bool
   ): (u256, u256, u256, vector<u256>, u64) {
     
     let xp = state.balances;
 
-    let index = 0;
-    let price_scale_i = 0;
-    let index_out: u64 = 300; // SENTINEL VALUE
+    let index = 1;
+    let price_scale_i = PRECISION;
+    let index_out: u64 = 0;
     while ((state.n_coins as u64) > index) {
       let coin_state = vector::borrow(&coin_states, index);
       let v = vector::borrow_mut(&mut xp, index);
 
       if (coin_state.type == get<CoinOut>()) {
-        price_scale_i = if (index == 0) *v else coin_state.price;
+        price_scale_i = coin_state.price;
         index_out = coin_state.index;
       };
 
       // we do not update the first coin price
-      if (index != 0) 
-        *v = mul_down(*v, coin_state.price);
+      *v = mul_down(*v, coin_state.price);
       
       index = index + 1;
     };
@@ -972,15 +971,15 @@ module clamm::interest_clamm_volatile {
     let d = d0;
 
     let fee = fee_impl(state, xp);
-    let d_b = (lp_coin_amount as u256) * d / (balance::supply_value(&state.lp_coin_supply) as u256);
+    let d_b = (lp_coin_amount as u256) * d / ((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL);
     let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
-    let y = volatile_math::y(a, gamma, &xp, d, index);
+    let y = volatile_math::y(a, gamma, &xp, d, index_out);
     let dy = div_down((*vector::borrow(&xp, index_out) - y), price_scale_i);  
     let i_xp = vector::borrow_mut(&mut xp, index_out);
     *i_xp = y;
 
     let p = 0;
-    if (calc_price && dy > 1000 && lp_coin_amount > 1000) {
+    if (calc_price && dy > 100000 && lp_coin_amount > 100000) {
       let s = 0;
 
       let index = 0;
@@ -996,7 +995,7 @@ module clamm::interest_clamm_volatile {
       };
 
       s = s * d_b / d0;
-      p = div_down(s, dy - d_b * *vector::borrow(&state.balances, index_out) / d0);
+      p = div_down(s, dy - (d_b * *vector::borrow(&state.balances, index_out) / d0));
     };
 
     (dy, p, d, xp, index_out)
