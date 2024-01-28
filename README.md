@@ -4,7 +4,6 @@
 
 ### 2 Pool
 
-- remove liquidity
 - remove one coin
 - admin functions
 - quote functions

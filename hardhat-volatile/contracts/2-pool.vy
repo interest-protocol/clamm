@@ -1070,12 +1070,7 @@ def remove_liquidity_one_coin(token_amount: uint256, i: uint256, min_amount: uin
     CurveToken(token).burnFrom(msg.sender, token_amount)
 
     _coins: address[2] = coins
-    if use_eth and i == 0:
-        raw_call(msg.sender, b"", value=dy)
-    else:
-        if i == 0:
-            WETH(_coins[i]).deposit(value=dy)
-        assert ERC20(_coins[i]).transfer(msg.sender, dy)
+    assert ERC20(_coins[i]).transfer(msg.sender, dy)
 
     self.tweak_price(A_gamma, xp, p, D)
 
