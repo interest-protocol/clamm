@@ -3,6 +3,7 @@
 // https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
 module clamm::interest_clamm_volatile {
   use std::vector;
+  use std::option::{Self, Option};
   use std::type_name::{get, TypeName};
 
   use sui::coin::{Self, Coin};
@@ -1537,20 +1538,20 @@ module clamm::interest_clamm_volatile {
   public fun update_parameters<LpCoin>(
     pool: &mut InterestPool<Volatile>,
     _: &Admin, 
-    values: vector<u256>
+    values: vector<Option<u256>>
   ) {
     let pool_id = object::id(pool);
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
 
     claim_admin_fees_impl(state, coin_states);
 
-    let mid_fee = *vector::borrow(&values, 0);
-    let out_fee = *vector::borrow(&values, 1);
-    let admin_fee = *vector::borrow(&values, 2);
-    let gamma_fee = *vector::borrow(&values, 3);
-    let allowed_extra_profit = *vector::borrow(&values, 4);
-    let adjustment_step = *vector::borrow(&values, 5);
-    let ma_half_time = *vector::borrow(&values, 6);
+    let mid_fee = option::destroy_with_default( *vector::borrow(&values, 0), state.fees.mid_fee);
+    let out_fee = option::destroy_with_default( *vector::borrow(&values, 1), state.fees.out_fee);
+    let admin_fee = option::destroy_with_default( *vector::borrow(&values, 2), state.fees.admin_fee); 
+    let gamma_fee = option::destroy_with_default( *vector::borrow(&values, 3), state.fees.gamma_fee);  
+    let allowed_extra_profit = option::destroy_with_default( *vector::borrow(&values, 4), state.rebalancing_params.extra_profit);
+    let adjustment_step = option::destroy_with_default( *vector::borrow(&values, 5), state.rebalancing_params.adjustment_step);
+    let ma_half_time = option::destroy_with_default( *vector::borrow(&values, 6), state.rebalancing_params.ma_half_time); 
 
     assert!(MAX_FEE >= out_fee && out_fee > MIN_FEE, errors::value_out_of_range());
     assert!(MAX_FEE >= mid_fee && MIN_FEE > MIN_FEE, errors::value_out_of_range());
