@@ -121,11 +121,35 @@ module clamm::interest_clamm_volatile {
     a
   }
 
+  public fun future_a<LpCoin>(pool: &InterestPool<Volatile>): u256 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).a_gamma.future_a
+  }  
+
+  public fun max_a<LpCoin>(pool: &InterestPool<Volatile>): u256 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).max_a
+  }  
+
+  public fun min_a<LpCoin>(pool: &InterestPool<Volatile>): u256 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).min_a
+  }    
+
+  public fun initial_time<LpCoin>(pool: &InterestPool<Volatile>): u64 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).a_gamma.initial_time
+  }  
+
+  public fun future_time<LpCoin>(pool: &InterestPool<Volatile>): u64 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).a_gamma.future_time
+  }    
+
   public fun gamma<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock): u256 {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
     let (_, gamma) = get_a_gamma(state, c);
     gamma
   }  
+
+  public fun future_gamma<LpCoin>(pool: &InterestPool<Volatile>): u256 {
+    borrow_state<LpCoin>(interest_pool::borrow_uid(pool)).a_gamma.future_gamma
+  }    
 
   public fun lp_coin_supply<LpCoin>(pool: &InterestPool<Volatile>): u64 {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));  

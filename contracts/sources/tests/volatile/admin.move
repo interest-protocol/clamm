@@ -4,16 +4,10 @@
 module clamm::volatile_admin_tests {
   use std::option;
 
-  use sui::clock::Clock;
+  use sui::clock::{Self, Clock};
   use sui::test_utils::assert_eq;
-  use sui::coin::{Self, burn_for_testing as burn, TreasuryCap};
-  use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
+  use sui::test_scenario::{Self as test, next_tx, ctx};
 
-  use suitears::coin_decimals::CoinDecimals;
-
-  use clamm::btc::BTC;
-  use clamm::eth::ETH;
-  use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
   use clamm::amm_admin::Admin;
@@ -23,12 +17,10 @@ module clamm::volatile_admin_tests {
   use clamm::amm_test_utils ::{people, scenario};
 
   const MIN_FEE: u256 = 5 * 100_000;
-  const MAX_FEE: u256 = 10 * 1_000_000_000;
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
   const ONE_WEEK: u256 = 7 * 86400000; // 1 week in milliseconds
 
   #[test]
-  fun test_ramp() {
+  fun test_update_parameters() {
     let scenario = scenario();
     let (alice, _) = people();
 
@@ -98,5 +90,90 @@ module clamm::volatile_admin_tests {
       test::return_shared(pool);
     };
     test::end(scenario);
+  }
+
+  #[test]
+  fun test_ramp() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 15000, 10);
+
+    let c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Volatile>>(test);
+      let cap = test::take_from_sender<Admin>(test);
+
+      let current_a = interest_clamm_volatile::a<LP_COIN>(&pool, &c);
+      let current_gamma = interest_clamm_volatile::gamma<LP_COIN>(&pool, &c);
+
+      interest_clamm_volatile::ramp<LP_COIN>(
+        &mut pool,
+        &cap,
+        &c,
+        current_a * 2,
+            current_gamma * 2,
+            ((ONE_WEEK * 2) as u64)
+      );
+
+      assert_eq(interest_clamm_volatile::a<LP_COIN>(&pool, &c), current_a);
+      assert_eq(interest_clamm_volatile::gamma<LP_COIN>(&pool, &c), current_gamma);
+      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), 0);
+      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), current_a * 2);
+      assert_eq(interest_clamm_volatile::future_gamma<LP_COIN>(&pool), current_gamma * 2);
+      assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), ((ONE_WEEK * 2) as u64));
+
+      clock::increment_for_testing(&mut c, (ONE_WEEK as u64));
+
+      let (expected_a, expected_gamma) = calculate_a_gamma(&c, current_a, current_a * 2, current_gamma, current_gamma * 2, 0, (ONE_WEEK * 2));
+
+      assert_eq(interest_clamm_volatile::a<LP_COIN>(&pool, &c), expected_a);
+      assert_eq(interest_clamm_volatile::gamma<LP_COIN>(&pool, &c), expected_gamma);
+      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), 0);
+      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), current_a * 2);
+      assert_eq(interest_clamm_volatile::future_gamma<LP_COIN>(&pool), current_gamma * 2);
+      assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), ((ONE_WEEK * 2) as u64));
+
+      interest_clamm_volatile::stop_ramp<LP_COIN>(
+        &mut pool,
+        &cap,
+        &c
+      );      
+
+      assert_eq(interest_clamm_volatile::a<LP_COIN>(&pool, &c), expected_a);
+      assert_eq(interest_clamm_volatile::gamma<LP_COIN>(&pool, &c), expected_gamma);
+      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), (ONE_WEEK as u64));
+      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), expected_a);
+      assert_eq(interest_clamm_volatile::future_gamma<LP_COIN>(&pool), expected_gamma);
+      assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), (ONE_WEEK as u64));      
+
+      test::return_to_sender(test, cap);
+      test::return_shared(pool);            
+    };    
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }
+
+  fun calculate_a_gamma(c: &Clock, a: u256, future_a: u256, gamma: u256, future_gamma: u256, t0: u256, t1: u256): (u256, u256) {
+    let current_time = (clock::timestamp_ms(c) as u256);
+
+    let gamma1 = future_gamma;
+    let a1 = future_a;
+
+    if (t1 > current_time) {
+      t1 = t1 - t0;
+      t0 = current_time - t0;
+      let t2 = t1 - t0;
+
+      a1 = a * t2 + a1 * t0 / t1;
+      gamma1 = gamma * t2 + gamma1 * t0 / t1;
+    };
+
+    (a1, gamma1)
   }
 }
