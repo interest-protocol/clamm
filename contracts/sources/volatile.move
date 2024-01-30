@@ -353,20 +353,25 @@ module clamm::interest_clamm_volatile {
         bal = if (index == coin_in_state.index) bal + div_down((amount as u256), coin_in_state.decimals_scalar) else bal;
 
 
-        vector::push_back(&mut balances_price,if (index == 0) bal else mul_down(bal, coin_state.price));
+        vector::push_back(&mut balances_price, if (index == 0) bal else mul_down(bal, coin_state.price));
 
         index = index + 1;
       };
    };
 
-   let y = volatile_math::y(a, gamma, &balances_price, state.d, coin_out_state.index);
-   let dy = *vector::borrow(&balances_price, coin_out_state.index) - y - 1;
-   
-   if (coin_out_state.index != 0) dy = div_down(dy, coin_out_state.price);
+   let y = volatile_math::y(a, gamma, &balances_price, state.d, coin_out_state.index) + 1;
+   let current_out_balance = *vector::borrow(&balances_price, coin_out_state.index);
 
-   dy = dy - fee_impl(state, balances_price) * dy / 10000000000;
+    let coin_out_amount = current_out_balance - min(current_out_balance, y);
 
-   (mul_down(dy, coin_out_state.decimals_scalar) as u64)
+   let out_balance_price_mut = vector::borrow_mut(&mut balances_price, coin_out_state.index);
+   *out_balance_price_mut = *out_balance_price_mut - coin_out_amount;
+
+   if (coin_out_state.index != 0) coin_out_amount = div_down(coin_out_amount, coin_out_state.price);
+
+   coin_out_amount = coin_out_amount - fee_impl(state, balances_price) * coin_out_amount / 10000000000;
+
+   (mul_down(coin_out_amount, coin_out_state.decimals_scalar) as u64)
   } 
 
   // * View Functions  ---- END ----
@@ -581,7 +586,7 @@ module clamm::interest_clamm_volatile {
     // Convert from Price => Coin Balance
     coin_out_amount = if (coin_out_state.index != 0) div_down(coin_out_amount, coin_out_state.price) else coin_out_amount;
 
-    coin_out_amount = coin_out_amount - (fee_impl(state, balances_in_price) * coin_out_amount / 10000000000);
+    coin_out_amount = coin_out_amount - fee_impl(state, balances_in_price) * coin_out_amount / 10000000000;
 
     // Scale to the right decimal house
     let amount_out = (mul_down(coin_out_amount, (coin_out_state.decimals_scalar as u256)) as u64);

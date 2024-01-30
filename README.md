@@ -4,8 +4,9 @@
 
 ### 2 Pool
 
-- admin functions
-- quote functions
+- quote_add_liquidity
+- quote_remove_liquidity
+- quote_remove_liquidity_one_coin
 
 ### 3 Pool
 
@@ -14,5 +15,8 @@
 - add liquidity
 - remove liquidity
 - remove one coin
-- admin functions
-- quote functions
+- quote_swap
+- quote_add_liquidity
+- quote_remove_liquidity
+- quote_remove_liquidity_one_coin
+- claim fees admin
