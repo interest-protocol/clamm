@@ -1553,13 +1553,13 @@ module clamm::interest_clamm_volatile {
     let adjustment_step = option::destroy_with_default( *vector::borrow(&values, 5), state.rebalancing_params.adjustment_step);
     let ma_half_time = option::destroy_with_default( *vector::borrow(&values, 6), state.rebalancing_params.ma_half_time); 
 
-    assert!(MAX_FEE >= out_fee && out_fee > MIN_FEE, errors::value_out_of_range());
-    assert!(MAX_FEE >= mid_fee && MIN_FEE > MIN_FEE, errors::value_out_of_range());
+    assert!(MAX_FEE >= out_fee && out_fee >= MIN_FEE, errors::value_out_of_range());
+    assert!(MAX_FEE >= mid_fee && MIN_FEE >= MIN_FEE, errors::value_out_of_range());
     assert!(MAX_ADMIN_FEE > admin_fee, errors::value_out_of_range());
     assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::value_out_of_range());
     assert!(PRECISION > allowed_extra_profit, errors::value_out_of_range());
     assert!(PRECISION > adjustment_step, errors::value_out_of_range());
-    assert!(1000 >= ma_half_time && ONE_WEEK > ma_half_time, errors::value_out_of_range());
+    assert!(1000 >= ma_half_time && ONE_WEEK >= ma_half_time, errors::value_out_of_range());
 
     state.fees.admin_fee = admin_fee;
     state.fees.out_fee = out_fee;
