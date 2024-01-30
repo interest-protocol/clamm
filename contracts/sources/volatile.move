@@ -1583,7 +1583,7 @@ module clamm::interest_clamm_volatile {
     assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::gamma_fee_out_of_range());
     assert!(PRECISION > allowed_extra_profit, errors::extra_profit_is_too_big());
     assert!(PRECISION > adjustment_step, errors::adjustment_step_is_too_big());
-    assert!(1000 >= ma_half_time && ONE_WEEK >= ma_half_time, errors::ma_half_time_out_of_range());
+    assert!(ma_half_time >= 1000 && ONE_WEEK >= ma_half_time, errors::ma_half_time_out_of_range());
 
     state.fees.admin_fee = admin_fee;
     state.fees.out_fee = out_fee;

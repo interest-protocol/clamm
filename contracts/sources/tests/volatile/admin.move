@@ -18,6 +18,7 @@ module clamm::volatile_admin_tests {
 
   const MIN_FEE: u256 = 5 * 100_000;
   const ONE_WEEK: u256 = 7 * 86400000; // 1 week in milliseconds
+  const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
 
   #[test]
   fun test_update_parameters() {
@@ -111,30 +112,40 @@ module clamm::volatile_admin_tests {
       let current_a = interest_clamm_volatile::a<LP_COIN>(&pool, &c);
       let current_gamma = interest_clamm_volatile::gamma<LP_COIN>(&pool, &c);
 
+      clock::increment_for_testing(&mut c, MIN_RAMP_TIME);
+
       interest_clamm_volatile::ramp<LP_COIN>(
         &mut pool,
         &cap,
         &c,
-        current_a * 2,
+        current_a + 300,
             current_gamma * 2,
             ((ONE_WEEK * 2) as u64)
       );
 
       assert_eq(interest_clamm_volatile::a<LP_COIN>(&pool, &c), current_a);
       assert_eq(interest_clamm_volatile::gamma<LP_COIN>(&pool, &c), current_gamma);
-      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), 0);
-      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), current_a * 2);
+      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), MIN_RAMP_TIME);
+      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), current_a + 300);
       assert_eq(interest_clamm_volatile::future_gamma<LP_COIN>(&pool), current_gamma * 2);
       assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), ((ONE_WEEK * 2) as u64));
 
       clock::increment_for_testing(&mut c, (ONE_WEEK as u64));
 
-      let (expected_a, expected_gamma) = calculate_a_gamma(&c, current_a, current_a * 2, current_gamma, current_gamma * 2, 0, (ONE_WEEK * 2));
+      let (expected_a, expected_gamma) = calculate_a_gamma(
+        &c, 
+        current_a, 
+        current_a + 300, 
+        current_gamma, 
+        current_gamma * 2, 
+        86400000, 
+        (ONE_WEEK * 2)
+      );
 
       assert_eq(interest_clamm_volatile::a<LP_COIN>(&pool, &c), expected_a);
       assert_eq(interest_clamm_volatile::gamma<LP_COIN>(&pool, &c), expected_gamma);
-      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), 0);
-      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), current_a * 2);
+      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), MIN_RAMP_TIME);
+      assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), current_a + 300);
       assert_eq(interest_clamm_volatile::future_gamma<LP_COIN>(&pool), current_gamma * 2);
       assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), ((ONE_WEEK * 2) as u64));
 
@@ -146,10 +157,10 @@ module clamm::volatile_admin_tests {
 
       assert_eq(interest_clamm_volatile::a<LP_COIN>(&pool, &c), expected_a);
       assert_eq(interest_clamm_volatile::gamma<LP_COIN>(&pool, &c), expected_gamma);
-      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), (ONE_WEEK as u64));
+      assert_eq(interest_clamm_volatile::initial_time<LP_COIN>(&pool), (ONE_WEEK as u64) + 86400000);
       assert_eq(interest_clamm_volatile::future_a<LP_COIN>(&pool), expected_a);
       assert_eq(interest_clamm_volatile::future_gamma<LP_COIN>(&pool), expected_gamma);
-      assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), (ONE_WEEK as u64));      
+      assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&pool), (ONE_WEEK as u64) + 86400000);      
 
       test::return_to_sender(test, cap);
       test::return_shared(pool);            
@@ -166,12 +177,13 @@ module clamm::volatile_admin_tests {
     let a1 = future_a;
 
     if (t1 > current_time) {
+
       t1 = t1 - t0;
       t0 = current_time - t0;
       let t2 = t1 - t0;
 
-      a1 = a * t2 + a1 * t0 / t1;
-      gamma1 = gamma * t2 + gamma1 * t0 / t1;
+      a1 = (a * t2 + a1 * t0) / t1;
+      gamma1 = (gamma * t2 + gamma1 * t0) / t1;
     };
 
     (a1, gamma1)
