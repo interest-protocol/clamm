@@ -42,7 +42,7 @@ module clamm::interest_clamm_volatile {
   const ADMIN_FEE: u256 = 2 * 1_000_000_000; // 20%
   const NOISE_FEE: u256 = 100_000;
   const MIN_GAMMA: u256 = 10_000_000_000;
-  const MAX_GAMMA: u256 = 5 * 10_000_000_000_000_000;
+  const MAX_GAMMA: u256 = 10_000_000_000_000_000;
   const MAX_A_CHANGE: u256 = 10;
   const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
   const MAX_ADMIN_FEE: u256 = 10000000000;
@@ -1490,18 +1490,18 @@ module clamm::interest_clamm_volatile {
 
     let (a, gamma) = get_a_gamma(state, c);
 
-    assert!(future_a != 0, 0);
-    assert!(state.max_a >= future_a, 0);
-    assert!(future_gamma >= MIN_GAMMA, 0);
-    assert!(MAX_GAMMA >= future_gamma, 0);
+    assert!(future_a >= state.min_a, errors::future_a_is_too_small());
+    assert!(state.max_a >= future_a, errors::future_gamma_is_too_big());
+    assert!(future_gamma >= MIN_GAMMA, errors::future_gamma_is_too_small());
+    assert!(MAX_GAMMA >= future_gamma, errors::future_gamma_is_too_big());
 
     let ratio = div_down(future_a, a);
-    assert!(MAX_A_CHANGE * PRECISION >= ratio, 0);
-    assert!(ratio >= PRECISION / MAX_A_CHANGE, 0);
+    assert!(MAX_A_CHANGE * PRECISION >= ratio, errors::future_a_change_is_too_big());
+    assert!(ratio >= PRECISION / MAX_A_CHANGE, errors::future_a_change_is_too_small());
 
     ratio = div_down(future_gamma, gamma);
-    assert!(MAX_A_CHANGE * PRECISION >= ratio, 0);
-    assert!(ratio >= PRECISION / MAX_A_CHANGE, 0);
+    assert!(MAX_A_CHANGE * PRECISION >= ratio, errors::future_gamma_change_is_too_big());
+    assert!(ratio >= PRECISION / MAX_A_CHANGE, errors::future_gamma_change_is_too_small());
 
     state.a_gamma.a = a;
     state.a_gamma.gamma = gamma;
@@ -1553,13 +1553,13 @@ module clamm::interest_clamm_volatile {
     let adjustment_step = option::destroy_with_default( *vector::borrow(&values, 5), state.rebalancing_params.adjustment_step);
     let ma_half_time = option::destroy_with_default( *vector::borrow(&values, 6), state.rebalancing_params.ma_half_time); 
 
-    assert!(MAX_FEE >= out_fee && out_fee >= MIN_FEE, errors::value_out_of_range());
-    assert!(MAX_FEE >= mid_fee && MIN_FEE >= MIN_FEE, errors::value_out_of_range());
-    assert!(MAX_ADMIN_FEE > admin_fee, errors::value_out_of_range());
-    assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::value_out_of_range());
-    assert!(PRECISION > allowed_extra_profit, errors::value_out_of_range());
-    assert!(PRECISION > adjustment_step, errors::value_out_of_range());
-    assert!(1000 >= ma_half_time && ONE_WEEK >= ma_half_time, errors::value_out_of_range());
+    assert!(MAX_FEE >= out_fee && out_fee >= MIN_FEE, errors::out_fee_out_of_range());
+    assert!(MAX_FEE >= mid_fee && MIN_FEE >= MIN_FEE, errors::mid_fee_out_of_range());
+    assert!(MAX_ADMIN_FEE > admin_fee, errors::admin_fee_is_too_big());
+    assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::gamma_fee_out_of_range());
+    assert!(PRECISION > allowed_extra_profit, errors::extra_profit_is_too_big());
+    assert!(PRECISION > adjustment_step, errors::adjustment_step_is_too_big());
+    assert!(1000 >= ma_half_time && ONE_WEEK >= ma_half_time, errors::ma_half_time_out_of_range());
 
     state.fees.admin_fee = admin_fee;
     state.fees.out_fee = out_fee;

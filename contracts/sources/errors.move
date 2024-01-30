@@ -31,6 +31,21 @@ module clamm::errors {
   const MUST_SUPPLY_ONE_COIN: u64 = 28;
   const CANNOT_SWAP_SAME_COIN: u64 = 29;
   const FUTURE_TAMP_TIME_IS_TOO_SHORT: u64 = 30;
+  const FUTURE_A_IS_TOO_SMALL: u64 = 31;
+  const FUTURE_A_IS_TOO_BIG: u64 = 32;
+  const FUTURE_GAMMA_IS_TOO_SMALL: u64 = 33;
+  const FUTURE_GAMMA_IS_TOO_BIG: u64 = 34;
+  const FUTURE_A_CHANGE_IS_TOO_SMALL: u64 = 35;
+  const FUTURE_A_CHANGE_IS_TOO_BIG: u64 = 36;
+  const FUTURE_GAMMA_CHANGE_IS_TOO_SMALL: u64 = 37;
+  const FUTURE_GAMMA_CHANGE_IS_TOO_BIG: u64 = 38;
+  const OUT_FEE_OUT_OF_RANGE: u64 = 39;
+  const MID_FEE_OUT_OF_RANGE: u64 = 40;
+  const ADMIN_FEE_IS_TOO_BIG: u64 = 41;
+  const GAMMA_FEE_OUT_OF_RANGE: u64 = 42;
+  const EXTRA_PROFIT_IS_TOO_BIG: u64 = 43;
+  const ADJUSTMENT_STEP_IS_TOO_BIG: u64 = 44;
+  const MA_HALF_TIME_OUT_OF_RANGE: u64 = 45;
   
   public fun invalid_curve(): u64 {
     INVALID_CURVE
@@ -154,5 +169,65 @@ module clamm::errors {
 
   public fun future_ramp_time_is_too_short(): u64 {
     FUTURE_TAMP_TIME_IS_TOO_SHORT
+  }
+
+  public fun future_a_is_too_small(): u64 {
+    FUTURE_A_IS_TOO_SMALL
+  }
+
+  public fun future_a_is_too_big(): u64 {
+    FUTURE_A_IS_TOO_BIG
+  }
+
+  public fun future_gamma_is_too_small(): u64 {
+    FUTURE_GAMMA_IS_TOO_SMALL
+  }
+
+  public fun future_gamma_is_too_big(): u64 {
+    FUTURE_GAMMA_IS_TOO_BIG
+  }  
+
+  public fun future_a_change_is_too_small(): u64 {
+    FUTURE_A_CHANGE_IS_TOO_SMALL
+  }
+
+  public fun future_a_change_is_too_big(): u64 {
+    FUTURE_A_CHANGE_IS_TOO_BIG
+  }  
+
+  public fun future_gamma_change_is_too_small(): u64 {
+    FUTURE_GAMMA_CHANGE_IS_TOO_SMALL
+  }
+
+  public fun future_gamma_change_is_too_big(): u64 {
+    FUTURE_GAMMA_CHANGE_IS_TOO_BIG
+  }    
+
+  public fun out_fee_out_of_range(): u64 {
+    OUT_FEE_OUT_OF_RANGE
+  }
+
+  public fun mid_fee_out_of_range(): u64 {
+    MID_FEE_OUT_OF_RANGE
+  }
+
+  public fun admin_fee_is_too_big(): u64 {
+    ADMIN_FEE_IS_TOO_BIG
+  }
+
+  public fun gamma_fee_out_of_range(): u64 {
+    GAMMA_FEE_OUT_OF_RANGE
+  }
+
+  public fun extra_profit_is_too_big(): u64 {
+    EXTRA_PROFIT_IS_TOO_BIG
+  }
+
+  public fun adjustment_step_is_too_big(): u64 {
+    ADJUSTMENT_STEP_IS_TOO_BIG
+  }
+
+  public fun ma_half_time_out_of_range(): u64 {
+    MA_HALF_TIME_OUT_OF_RANGE
   }
 }
