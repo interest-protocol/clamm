@@ -280,10 +280,10 @@ module clamm::interest_clamm_volatile {
     ROLL * xcp_impl(state, coin_states, state.d) / (supply as u256)
   }
 
-  public fun quote_withdraw_one_coin<CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c:&Clock, lp_amount: u64): u64 {
+  public fun quote_remove_liquidity_one_coin<CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c:&Clock, lp_amount: u64): u64 {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
     let (a, gamma) = get_a_gamma(state, c);
-    let (amount_out, _, _, _, index_out) = calculate_withdraw_one_coin_impl<CoinOut, LpCoin>(
+    let (amount_out, _, _, _, index_out) = calculate_remove_one_coin_impl<CoinOut, LpCoin>(
       state,
       a,
       gamma,
@@ -772,7 +772,7 @@ module clamm::interest_clamm_volatile {
     let timestamp = clock::timestamp_ms(c);
     let a_gamma_future_time = state.a_gamma.future_time;
 
-    let (amount_out, p, d, balances_in_price, index_out) = calculate_withdraw_one_coin_impl<CoinOut, LpCoin>(
+    let (amount_out, p, d, balances_in_price, index_out) = calculate_remove_one_coin_impl<CoinOut, LpCoin>(
       state,
       a,
       gamma,
@@ -964,7 +964,7 @@ module clamm::interest_clamm_volatile {
     )
   }
 
-  fun calculate_withdraw_one_coin_impl<CoinOut, LpCoin>(
+  fun calculate_remove_one_coin_impl<CoinOut, LpCoin>(
     state: &State<LpCoin>,
     a: u256,
     gamma: u256,
