@@ -4,7 +4,6 @@
 
 ### 2 Pool
 
-- quote_add_liquidity
 - quote_remove_liquidity
 - quote_remove_liquidity_one_coin
 
