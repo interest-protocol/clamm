@@ -857,7 +857,7 @@ module clamm::interest_clamm_volatile {
     state: &mut State<LpCoin>,
     c: &Clock,
     coin_states: vector<CoinState>,
-    old_balances: vector<u256>,
+    old_balances_price: vector<u256>,
     lp_coin_min_amount: u64,
     ctx: &mut TxContext
   ): Coin<LpCoin> {
@@ -866,16 +866,16 @@ module clamm::interest_clamm_volatile {
     let timestamp = clock::timestamp_ms(c);
     let ix = INF_COINS;
     let n_coins_u64 = (state.n_coins as u64);
-    let new_balances = state.balances;
-    let xx = new_balances;
+    let new_balances_price = state.balances;
+    let xx = state.balances;
     let (a, gamma) = get_a_gamma(state, c);
 
     // Block Scope
     {
       let i: u64 = 0;
       while (n_coins_u64 > i) {
-        let old_bal = vector::borrow_mut(&mut old_balances, i);
-        let new_bal = vector::borrow_mut(&mut new_balances, i);
+        let old_bal = vector::borrow_mut(&mut old_balances_price, i);
+        let new_bal = vector::borrow_mut(&mut new_balances_price, i);
         vector::push_back(&mut amounts, *new_bal - *old_bal);
 
         let p = *new_bal - *old_bal;
@@ -892,8 +892,8 @@ module clamm::interest_clamm_volatile {
     {
       let i: u64 = 1;
       while (n_coins_u64 > i) {
-        let old_bal = vector::borrow_mut(&mut old_balances, i);
-        let new_bal = vector::borrow_mut(&mut new_balances, i);
+        let old_bal = vector::borrow_mut(&mut old_balances_price, i);
+        let new_bal = vector::borrow_mut(&mut new_balances_price, i);
         let coin_state = vector::borrow(&coin_states, i);
 
         // Divide first to prevent overflow - these values r already scaled to 1e18
@@ -907,8 +907,8 @@ module clamm::interest_clamm_volatile {
     {
       let i: u64 = 0;
       while (n_coins_u64 > i) {
-        let old_bal = vector::borrow_mut(&mut old_balances, i);
-        let new_bal = vector::borrow_mut(&mut new_balances, i);
+        let old_bal = vector::borrow_mut(&mut old_balances_price, i);
+        let new_bal = vector::borrow_mut(&mut new_balances_price, i);
 
         let p = *new_bal - *old_bal;
 
@@ -927,10 +927,10 @@ module clamm::interest_clamm_volatile {
     // Calculate the previous and new invariant with current prices
     let old_d = if (state.a_gamma.future_time != 0) {
       if (timestamp >= state.a_gamma.future_time) state.a_gamma.future_time = 1;
-      volatile_math::invariant_(a, gamma, old_balances)
+      volatile_math::invariant_(a, gamma, old_balances_price)
     } else  state.d;
 
-    let new_d = volatile_math::invariant_(a, gamma, new_balances);
+    let new_d = volatile_math::invariant_(a, gamma, new_balances_price);
 
     let lp_coin_supply = (balance::supply_value(&state.lp_coin_supply) as u256) * ROLL;
 
@@ -946,7 +946,7 @@ module clamm::interest_clamm_volatile {
     // Take fee
     if (old_d != 0) {
       // Remove fee
-      d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, new_balances), d_token, 10000000000);
+      d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, new_balances_price), d_token, 10000000000);
 
        // local update
       let lp_supply = lp_coin_supply + d_token;
@@ -977,7 +977,7 @@ module clamm::interest_clamm_volatile {
         timestamp,
         a,
         gamma,
-        new_balances,
+        new_balances_price,
         ix,
         p,
         new_d,
