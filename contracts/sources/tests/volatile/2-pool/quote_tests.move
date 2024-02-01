@@ -118,7 +118,6 @@ module clamm::volatile_2pool_quote_tests {
     let test = &mut scenario;
 
     setup_2pool(test, 4500, 3);
-    let c = clock::create_for_testing(ctx(test));
 
     next_tx(test, alice);
     {
@@ -142,7 +141,66 @@ module clamm::volatile_2pool_quote_tests {
       test::return_shared(pool);
     };    
 
-    clock::destroy_for_testing(c);
     test::end(scenario);     
+  }
+
+  #[test]
+  fun test_remove_liquidity_one_coin() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 4500, 3);
+    let c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Volatile>>(test);
+
+      let expected_eth_amount = interest_clamm_volatile::quote_remove_liquidity_one_coin<ETH, LP_COIN>(
+        &pool,
+        &c,
+          add_decimals(123, 8)
+      );
+
+      let coin_eth = interest_clamm_volatile::remove_liquidity_one_coin<ETH, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<LP_COIN>(123, 8, ctx(test)),
+        expected_eth_amount,
+        ctx(test)
+      );
+
+      assert_eq(burn(coin_eth), expected_eth_amount);
+
+      test::return_shared(pool);
+    };
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Volatile>>(test);
+
+      let expected_usdc_amount = interest_clamm_volatile::quote_remove_liquidity_one_coin<USDC, LP_COIN>(
+        &pool,
+        &c,
+          add_decimals(123, 8)
+      );
+
+      let coin_usdc = interest_clamm_volatile::remove_liquidity_one_coin<USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<LP_COIN>(123, 8, ctx(test)),
+        expected_usdc_amount,
+        ctx(test)
+      );
+
+      assert_eq(burn(coin_usdc), expected_usdc_amount);
+
+      test::return_shared(pool);
+    };    
+
+    clock::destroy_for_testing(c);
+    test::end(scenario); 
   }
 }

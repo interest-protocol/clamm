@@ -2,10 +2,6 @@
 
 ## Test clamm::interest_clamm_volatile
 
-### 2 Pool
-
-- quote_remove_liquidity_one_coin
-
 ### 3 Pool
 
 - new pool
@@ -18,3 +14,5 @@
 - quote_remove_liquidity
 - quote_remove_liquidity_one_coin
 - claim fees admin
+
+- rename the variables on add_liquidity
