@@ -348,6 +348,28 @@ module clamm::interest_clamm_volatile {
     ((d_token / ROLL) as u64)
   }
 
+  public fun quote_remove_liquidity<LpCoin>(
+    pool: &InterestPool<Volatile>,
+    lp_coin_amount: u64,
+    ctx: &mut TxContext    
+  ): vector<u64> {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+
+    let supply = (balance::supply_value(&state.lp_coin_supply) as u256);
+
+    let n_coins = (state.n_coins as u64);
+    let index = 0;
+
+    let amounts = vector[];
+
+    while(n_coins > index) {
+      let d_balance = (lp_coin_amount as u256) * *vector::borrow(&state.balances, index) / supply;
+      vector::push_back(&mut amounts, (d_balance as u64));
+    };
+
+    amounts
+  }
+
   public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amount: u64): u64 {
     if (amount == 0) return 0;
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
