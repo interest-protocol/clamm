@@ -296,12 +296,22 @@ module clamm::interest_clamm_volatile {
     (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64)
   }
 
-  public fun quote_liquidity<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>, is_add: bool): u64 {
+  public fun quote_add_liquidity<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>): u64 {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
 
-    let supply = (balance::supply_value(&state.lp_coin_supply) as u256);
+    let supply = (balance::supply_value(&state.lp_coin_supply) as u256) * ROLL;
 
     let balances = state.balances;
+    let (a, gamma) = get_a_gamma(state, c);
+    let amounts_p = empty_vector(state.n_coins);
+
+    let old_balances_price = balances_in_price_impl(state, coin_states);
+
+    let old_d = if (state.a_gamma.future_time != 0) {
+      volatile_math::invariant_(a, gamma, old_balances_price)
+    } else  state.d;
+
+
     let balances_price = vector<u256>[];
     {
       let index = 0;
@@ -311,13 +321,19 @@ module clamm::interest_clamm_volatile {
         let coin_state = vector::borrow(&coin_states, index);
         let amount = div_down((*vector::borrow(&amounts, index) as u256), coin_state.decimals_scalar);
         
-        if (is_add) {
-          *ref = *ref + amount;
-        } else {
-          *ref = *ref - amount;
-        };
+        *ref = *ref + amount;
 
-        vector::push_back(&mut balances_price,if (index == 0) *ref else mul_down(*ref, coin_state.price));
+        let b_price = if (index == 0) *ref else mul_down(*ref, coin_state.price);
+
+        vector::push_back(&mut balances_price, b_price);
+
+        let b_price_old = *vector::borrow(&old_balances_price, index);
+
+        let diff = b_price - b_price_old;
+        if (diff != 0) {
+          let ref = vector::borrow_mut(&mut amounts_p, index);
+          *ref = diff;
+        };
 
         index = index + 1;
       };
@@ -325,12 +341,11 @@ module clamm::interest_clamm_volatile {
 
     let (a, gamma) = get_a_gamma(state, c);
     let d = volatile_math::invariant_(a, gamma, balances_price);
-    let d_token = supply * d / state.d;
+    let d_token = supply * d / old_d - supply;
     
-    d_token = if (is_add) d_token - supply else supply - d_token;
-    d_token = d_token - mul_div_up(calculate_fee(state, balances_price, balances), d_token, 10000000000);
+    d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, balances_price), d_token, 10000000000);
 
-    (mul_down(d_token, ROLL) as u64)
+    ((d_token / ROLL) as u64)
   }
 
   public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amount: u64): u64 {
@@ -908,6 +923,7 @@ module clamm::interest_clamm_volatile {
     if (old_d != 0) {
       // Remove fee
       d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, new_balances), d_token, 10000000000);
+
        // local update
       let lp_supply = lp_coin_supply + d_token;
       let p = 0;

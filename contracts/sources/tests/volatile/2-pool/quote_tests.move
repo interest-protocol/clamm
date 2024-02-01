@@ -68,5 +68,43 @@ module clamm::volatile_2pool_quote_tests {
 
     clock::destroy_for_testing(c);
     test::end(scenario);    
-  }  
+  }
+
+  #[test]
+  fun test_quote_add_liquidity() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 4500, 3);
+    let c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Volatile>>(test);
+
+      let expected_amount = interest_clamm_volatile::quote_add_liquidity<LP_COIN>(
+        &pool,
+        &c,
+        vector[add_decimals(6000, 6), add_decimals(5, 9)]
+      );
+
+      let amount = burn(interest_clamm_volatile::add_liquidity_2_pool<USDC, ETH, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDC>(6000, 6, ctx(test)),
+        mint<ETH>(5, 9, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      assert_eq(expected_amount, amount);
+
+      test::return_shared(pool);
+    };
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);      
+  }
 }
