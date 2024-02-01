@@ -2,6 +2,8 @@
 // All values tested agaisnt Curve pool
 #[test_only]
 module clamm::volatile_2pool_quote_tests {
+  use std::vector;
+
   use sui::clock;
   use sui::coin::burn_for_testing as burn;
 
@@ -106,5 +108,41 @@ module clamm::volatile_2pool_quote_tests {
 
     clock::destroy_for_testing(c);
     test::end(scenario);      
+  }
+
+  #[test] 
+  fun test_quote_remove_liquidity() {
+    let scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 4500, 3);
+    let c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let pool = test::take_shared<InterestPool<Volatile>>(test);
+
+      let expected_amounts = interest_clamm_volatile::quote_remove_liquidity<LP_COIN>(
+        &pool,
+          add_decimals(123, 8)
+      );
+
+      let (coin_usdc, coin_eth) = interest_clamm_volatile::remove_liquidity_2_pool<USDC, ETH, LP_COIN>(
+        &mut pool,
+        mint<LP_COIN>(123, 8, ctx(test)),
+        vector[0, 0],
+        ctx(test)  
+      );
+
+      assert_eq(burn(coin_usdc), * vector::borrow(&expected_amounts, 0));
+      assert_eq(burn(coin_eth), * vector::borrow(&expected_amounts, 1));
+
+      test::return_shared(pool);
+    };    
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);     
   }
 }
