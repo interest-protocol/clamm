@@ -280,21 +280,46 @@ module clamm::interest_clamm_volatile {
     ROLL * xcp_impl(state, coin_states, state.d) / (supply as u256)
   }
 
-  public fun quote_remove_liquidity_one_coin<CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c:&Clock, lp_amount: u64): u64 {
+  public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amount: u64): u64 {
+    if (amount == 0) return 0;
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
+    let coin_in_state = borrow_coin_state<CoinIn>(&state.id);
+    let coin_out_state = borrow_coin_state<CoinOut>(&state.id);
     let (a, gamma) = get_a_gamma(state, c);
-    let (amount_out, _, _, _, index_out) = calculate_remove_one_coin_impl<CoinOut, LpCoin>(
-      state,
-      a,
-      gamma,
-      coin_states,
-      (lp_amount as u256) * ROLL,
-      true,
-      false
-    );
 
-    (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64)
-  }
+    let balances_price = vector<u256>[];
+
+    {
+      let index = 0;
+    
+      while((state.n_coins as u64) > index) {
+        let bal = *vector::borrow(&state.balances, index);
+        let coin_state = vector::borrow(&coin_states, index);
+
+        
+        bal = if (index == coin_in_state.index) bal + div_down((amount as u256), coin_in_state.decimals_scalar) else bal;
+
+
+        vector::push_back(&mut balances_price, if (index == 0) bal else mul_down(bal, coin_state.price));
+
+        index = index + 1;
+      };
+   };
+
+   let y = volatile_math::y(a, gamma, &balances_price, state.d, coin_out_state.index) + 1;
+   let current_out_balance = *vector::borrow(&balances_price, coin_out_state.index);
+
+    let coin_out_amount = current_out_balance - min(current_out_balance, y);
+
+   let out_balance_price_mut = vector::borrow_mut(&mut balances_price, coin_out_state.index);
+   *out_balance_price_mut = *out_balance_price_mut - coin_out_amount;
+
+   if (coin_out_state.index != 0) coin_out_amount = div_down(coin_out_amount, coin_out_state.price);
+
+   coin_out_amount = coin_out_amount - fee_impl(state, balances_price) * coin_out_amount / 10000000000;
+
+   (mul_down(coin_out_amount, coin_out_state.decimals_scalar) as u64)
+  }   
 
   public fun quote_add_liquidity<LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amounts: vector<u64>): u64 {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
@@ -372,46 +397,21 @@ module clamm::interest_clamm_volatile {
     amounts
   }
 
-  public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c: &Clock, amount: u64): u64 {
-    if (amount == 0) return 0;
+  public fun quote_remove_liquidity_one_coin<CoinOut, LpCoin>(pool: &InterestPool<Volatile>, c:&Clock, lp_amount: u64): u64 {
     let (state, coin_states) = borrow_state_and_coin_states<LpCoin>(pool);
-    let coin_in_state = borrow_coin_state<CoinIn>(&state.id);
-    let coin_out_state = borrow_coin_state<CoinOut>(&state.id);
     let (a, gamma) = get_a_gamma(state, c);
+    let (amount_out, _, _, _, index_out) = calculate_remove_one_coin_impl<CoinOut, LpCoin>(
+      state,
+      a,
+      gamma,
+      coin_states,
+      (lp_amount as u256) * ROLL,
+      true,
+      false
+    );
 
-    let balances_price = vector<u256>[];
-
-    {
-      let index = 0;
-    
-      while((state.n_coins as u64) > index) {
-        let bal = *vector::borrow(&state.balances, index);
-        let coin_state = vector::borrow(&coin_states, index);
-
-        
-        bal = if (index == coin_in_state.index) bal + div_down((amount as u256), coin_in_state.decimals_scalar) else bal;
-
-
-        vector::push_back(&mut balances_price, if (index == 0) bal else mul_down(bal, coin_state.price));
-
-        index = index + 1;
-      };
-   };
-
-   let y = volatile_math::y(a, gamma, &balances_price, state.d, coin_out_state.index) + 1;
-   let current_out_balance = *vector::borrow(&balances_price, coin_out_state.index);
-
-    let coin_out_amount = current_out_balance - min(current_out_balance, y);
-
-   let out_balance_price_mut = vector::borrow_mut(&mut balances_price, coin_out_state.index);
-   *out_balance_price_mut = *out_balance_price_mut - coin_out_amount;
-
-   if (coin_out_state.index != 0) coin_out_amount = div_down(coin_out_amount, coin_out_state.price);
-
-   coin_out_amount = coin_out_amount - fee_impl(state, balances_price) * coin_out_amount / 10000000000;
-
-   (mul_down(coin_out_amount, coin_out_state.decimals_scalar) as u64)
-  } 
+    (mul_down(amount_out, vector::borrow(&coin_states, index_out).decimals_scalar) as u64)
+  }  
 
   // * View Functions  ---- END ----
 
