@@ -4,7 +4,6 @@
 
 ### 3 Pool
 
-- new pool
 - swaps
 - add liquidity
 - remove liquidity
