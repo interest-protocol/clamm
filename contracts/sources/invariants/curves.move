@@ -40,7 +40,7 @@ module clamm::curves {
   * @return bool 
   */
   public fun is_volatile<Type>(): bool {
-    are_types_equal<Type, Volatile>() 
+    are_equal<Type, Volatile>() 
   }
 
   /*
@@ -48,7 +48,7 @@ module clamm::curves {
   * @return bool 
   */
   public fun is_stable<Type>(): bool {
-    are_types_equal<Type, Stable>() 
+    are_equal<Type, Stable>() 
   }
 
   /*
@@ -67,7 +67,7 @@ module clamm::curves {
   * aborts-if 
   *   - The `Type` is not `Volatile` nor `Stable`
   */
-  public fun assert_is_curve<Type>() {
+  public fun assert_curve<Type>() {
     assert!(is_curve<Type>(), errors::invalid_curve());
   }
 
@@ -77,7 +77,7 @@ module clamm::curves {
   * @notice Checks if `A` is equal to `B`
   * @return bool 
   */
-  fun are_types_equal<A, B>(): bool {
+  fun are_equal<A, B>(): bool {
     type_name::get<A>() == type_name::get<B>()
   }
 }

@@ -28,7 +28,7 @@ module clamm::interest_pool {
   }
 
   public(friend) fun new<Curve>(coins: VecSet<TypeName>, ctx: &mut TxContext): InterestPool<Curve>  {
-    curves::assert_is_curve<Curve>();
+    curves::assert_curve<Curve>();
     InterestPool{
       id: object::new(ctx),
       coins,

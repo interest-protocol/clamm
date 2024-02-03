@@ -14,5 +14,3 @@
 - quote_remove_liquidity
 - quote_remove_liquidity_one_coin
 - claim fees admin
-
-- rename the variables on add_liquidity
