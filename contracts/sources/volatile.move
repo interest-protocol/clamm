@@ -527,24 +527,26 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
+    let state = borrow_mut_state<LpCoin>(interest_pool::borrow_mut_uid(&mut pool));
+
     // @dev This is the quote coin in the pool 
     // So we do not need to pass a price
     register_coin<CoinA>(
-      interest_pool::borrow_mut_uid(&mut pool), 
+      &mut state.id, 
       coin_decimals,
       PRECISION, // * First coin does not have a price. The other coins are priced in this coin. So we put Zero.
       0
     );
 
     register_coin<CoinB>(
-      interest_pool::borrow_mut_uid(&mut pool), 
+      &mut state.id, 
       coin_decimals,
       *vector::borrow(&price, 0),
       1
     );
 
     register_coin<CoinC>(
-      interest_pool::borrow_mut_uid(&mut pool), 
+      &mut state.id, 
       coin_decimals,
       *vector::borrow(&price, 1),
       2
