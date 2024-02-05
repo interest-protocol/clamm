@@ -698,7 +698,7 @@ describe('Volatile 2 Pool', function () {
     });
   });
 
-  it.only('removes one coin correctly', async function () {
+  it('removes one coin correctly', async function () {
     const { pool, alice, bob, lpCoin, poolAddress } = await loadFixture(
       deploy2PoolFixture
     );
