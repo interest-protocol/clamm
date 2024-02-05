@@ -152,6 +152,7 @@ describe('Volatile 3 Pool', function () {
           0n
         );
 
+      expect(await lpCoin.totalSupply()).to.be.equal(480377433110497362876n);
       expect(await pool.balances(0n)).to.be.equal(210000000000n);
       expect(await pool.balances(1n)).to.be.equal(5000000000000000000n);
       expect(await pool.balances(2n)).to.be.equal(105000000000000000000n);
