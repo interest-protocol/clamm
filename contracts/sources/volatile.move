@@ -710,7 +710,7 @@ module clamm::interest_clamm_volatile {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext      
   ): Coin<LpCoin> {
-    assert!(coin::value(&coin_a) != 0 || coin::value(&coin_b) != 0 || coin::value(&coin_b) != 0, errors::must_supply_one_coin());
+    assert!(coin::value(&coin_a) != 0 || coin::value(&coin_b) != 0 || coin::value(&coin_c) != 0, errors::must_supply_one_coin());
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[get<CoinA>(), get<CoinB>(), get<CoinC>()]), errors::coins_must_be_in_order());
 
