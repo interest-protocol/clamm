@@ -302,7 +302,7 @@ describe('Volatile 3 Pool', function () {
       expect(await pool.D()).to.be.equal(864230636705116526806970n);
     });
 
-    it.only('mints the correct lp coin amount after swaps with a time delay', async function () {
+    it('mints the correct lp coin amount after swaps with a time delay', async function () {
       const { pool, alice, bob, lpCoin } = await loadFixture(
         deploy3PoolFixture
       );
