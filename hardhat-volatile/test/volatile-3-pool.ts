@@ -634,8 +634,6 @@ describe('Volatile 3 Pool', function () {
         .connect(alice)
         .balanceOf(alice.address);
 
-      console.log(aliceLpCoinBalance.toString());
-
       await pool
         .connect(alice)
         .remove_liquidity(aliceLpCoinBalance / 3n, [0, 0, 0]);
