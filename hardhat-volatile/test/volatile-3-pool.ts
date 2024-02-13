@@ -588,9 +588,9 @@ describe('Volatile 3 Pool', function () {
 
       expect(await lpCoin.totalSupply()).to.be.equal(385241469606775583374n);
 
-      expect(await pool.balances(0n)).to.be.equal(150000000000n);
-      expect(await pool.balances(1n)).to.be.equal(3000000000000000000n);
-      expect(await pool.balances(2n)).to.be.equal(75100000000000000000000n);
+      expect(await pool.balances(0n)).to.be.equal(557682685070);
+      expect(await pool.balances(1n)).to.be.equal(17854974961964962878n);
+      expect(await pool.balances(2n)).to.be.equal(344591887196516447936n);
 
       expect(await pool.last_prices(0)).to.be.equal(28680336310352529203817n);
       expect(await pool.last_prices(1)).to.be.equal(1339192935926189875722n);
@@ -603,8 +603,8 @@ describe('Volatile 3 Pool', function () {
 
       expect(await pool.xcp_profit()).to.be.equal(3599777285496751557n);
       expect(await pool.xcp_profit_a()).to.be.equal(3599777285496751557n);
-      expect(await pool.virtual_price()).to.be.equal(8615714491009094114n);
-      expect(await pool.D()).to.be.equal(4110313539653823619161751n);
-    }).timeout(1000000);
+      expect(await pool.virtual_price()).to.be.equal(3924628681188495647n);
+      expect(await pool.D()).to.be.equal(1872329268017961764651208n);
+    }).timeout(10000000);
   });
 });

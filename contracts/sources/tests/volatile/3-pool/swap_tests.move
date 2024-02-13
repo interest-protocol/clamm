@@ -12,6 +12,7 @@ module clamm::volatile_3pool_swap_tests {
   use clamm::btc::BTC;
   use clamm::eth::ETH;
   use clamm::usdc::USDC;
+  use clamm::amm_admin::Admin;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
   use clamm::interest_pool::InterestPool;
@@ -329,21 +330,19 @@ module clamm::volatile_3pool_swap_tests {
 
     let test = &mut scenario;
     
-    setup_3pool(test, 150000, 3, 100);
+    setup_3pool(test, 150_000, 3, 100);
+    
     let c = clock::create_for_testing(ctx(test));
+
+    clock::increment_for_testing(&mut c, 14_000);
 
     next_tx(test, alice);
     {
       let pool = test::take_shared<InterestPool<Volatile>>(test);  
 
-      clock::increment_for_testing(&mut c, 14_000);
-
       let i = 0;
 
       while (200 > i) {
-
-        clock::increment_for_testing(&mut c, 1_000);
-
         burn(interest_clamm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
           &c,
@@ -358,7 +357,7 @@ module clamm::volatile_3pool_swap_tests {
         burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
           &mut pool,
           &c,
-          mint(1, 9, ctx(test)),
+          mint(2, 9, ctx(test)),
           0,
           ctx(test)
           )
@@ -374,6 +373,17 @@ module clamm::volatile_3pool_swap_tests {
           ctx(test)
           )
         );
+
+        clock::increment_for_testing(&mut c, 1_000);
+
+        burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
+          &mut pool,
+          &c,
+          mint(15, 8, ctx(test)),
+          0,
+          ctx(test)
+          )
+        );        
 
         clock::increment_for_testing(&mut c, 22_000);
         i = i + 1;
@@ -386,13 +396,9 @@ module clamm::volatile_3pool_swap_tests {
     {
       let pool = test::take_shared<InterestPool<Volatile>>(test);  
 
-      clock::increment_for_testing(&mut c, 14_000);
-
       let i = 0;
 
       while (200 > i) {
-
-        clock::increment_for_testing(&mut c, 1_000);
 
         burn(interest_clamm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
@@ -408,7 +414,7 @@ module clamm::volatile_3pool_swap_tests {
         burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
           &mut pool,
           &c,
-          mint(1, 9, ctx(test)),
+          mint(2, 9, ctx(test)),
           0,
           ctx(test)
           )
@@ -424,6 +430,17 @@ module clamm::volatile_3pool_swap_tests {
           ctx(test)
           )
         );
+
+        clock::increment_for_testing(&mut c, 1_000);
+
+        burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
+          &mut pool,
+          &c,
+          mint(15, 8, ctx(test)),
+          0,
+          ctx(test)
+          )
+        );        
 
         clock::increment_for_testing(&mut c, 22_000);
         i = i + 1;
@@ -436,13 +453,9 @@ module clamm::volatile_3pool_swap_tests {
     {
       let pool = test::take_shared<InterestPool<Volatile>>(test);  
 
-      clock::increment_for_testing(&mut c, 14_000);
-
       let i = 0;
 
       while (200 > i) {
-
-        clock::increment_for_testing(&mut c, 1_000);
 
         burn(interest_clamm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
@@ -458,7 +471,7 @@ module clamm::volatile_3pool_swap_tests {
         burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
           &mut pool,
           &c,
-          mint(1, 9, ctx(test)),
+          mint(2, 9, ctx(test)),
           0,
           ctx(test)
           )
@@ -474,6 +487,17 @@ module clamm::volatile_3pool_swap_tests {
           ctx(test)
           )
         );
+
+        clock::increment_for_testing(&mut c, 1_000);
+
+        burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
+          &mut pool,
+          &c,
+          mint(15, 8, ctx(test)),
+          0,
+          ctx(test)
+          )
+        );        
 
         clock::increment_for_testing(&mut c, 22_000);
         i = i + 1;
@@ -486,13 +510,9 @@ module clamm::volatile_3pool_swap_tests {
     {
       let pool = test::take_shared<InterestPool<Volatile>>(test);  
 
-      clock::increment_for_testing(&mut c, 14_000);
-
       let i = 0;
 
       while (200 > i) {
-
-        clock::increment_for_testing(&mut c, 1_000);
 
         burn(interest_clamm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
@@ -508,7 +528,7 @@ module clamm::volatile_3pool_swap_tests {
         burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
           &mut pool,
           &c,
-          mint(1, 9, ctx(test)),
+          mint(2, 9, ctx(test)),
           0,
           ctx(test)
           )
@@ -524,6 +544,17 @@ module clamm::volatile_3pool_swap_tests {
           ctx(test)
           )
         );
+
+        clock::increment_for_testing(&mut c, 1_000);
+
+        burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
+          &mut pool,
+          &c,
+          mint(15, 8, ctx(test)),
+          0,
+          ctx(test)
+          )
+        );        
 
         clock::increment_for_testing(&mut c, 22_000);
         i = i + 1;
@@ -535,14 +566,11 @@ module clamm::volatile_3pool_swap_tests {
     next_tx(test, alice);
     {
       let pool = test::take_shared<InterestPool<Volatile>>(test);  
-
-      clock::increment_for_testing(&mut c, 14_000);
+      let admin_cap = test::take_from_sender<Admin>(test);
 
       let i = 0;
 
       while (200 > i) {
-
-        clock::increment_for_testing(&mut c, 1_000);
 
         burn(interest_clamm_volatile::swap<ETH, USDC, LP_COIN>(
           &mut pool,
@@ -558,7 +586,7 @@ module clamm::volatile_3pool_swap_tests {
         burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
           &mut pool,
           &c,
-          mint(1, 9, ctx(test)),
+          mint(2, 9, ctx(test)),
           0,
           ctx(test)
           )
@@ -575,71 +603,87 @@ module clamm::volatile_3pool_swap_tests {
           )
         );
 
+        clock::increment_for_testing(&mut c, 1_000);
+
+        burn(interest_clamm_volatile::swap<BTC, ETH, LP_COIN>(
+          &mut pool,
+          &c,
+          mint(15, 8, ctx(test)),
+          0,
+          ctx(test)
+          )
+        );        
+
         clock::increment_for_testing(&mut c, 22_000);
         i = i + 1;
-      };  
+      };        
+
+      burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, ctx(test)));
+
+      assert_eq(interest_clamm_volatile::lp_coin_supply<LP_COIN>(&pool), 385241628682);
 
       assert_eq(
         interest_clamm_volatile::balances<LP_COIN>(&pool),
-        vector[49285237353557890973886, 3 * POW_10_18, 300 * POW_10_18]
+        vector[557690821264878123169534, 17855265185273342756, 344598011972109837899]
       );
       assert_eq(
         interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&pool),
-        49285237357
+        557690821751
       );
      assert_eq(
         interest_clamm_volatile::coin_balance<LP_COIN, BTC>(&pool),
-        3 * ETH_DECIMALS_SCALAR
+        17855265663
       );
      assert_eq(
         interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&pool),
-        300 * BTC_DECIMALS_SCALAR
+        344598012985
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        47500000000000000000000
+        28680336260820009908819
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        191456323292332621417
+        1339192994448396219756
       );  
      assert_eq(
         interest_clamm_volatile::coin_price<BTC, LP_COIN>(&pool),
-        47500000000000000000000
+        47020672055619274419444
       );
      assert_eq(
         interest_clamm_volatile::coin_price<ETH, LP_COIN>(&pool),
-        1500000000000000000000
+        1495888553368300031600
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47500000000000000000000
+        46968933027013209578933
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1499902676449293924913
+        1495446645537320450974
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1001616388232902130
+        3599832380376058944
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
-        POW_10_18
+        3599832380376058944
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1001616388232902130
+        3924690660129083994
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
-        443201373469832832623384
+        1872359565668071710915126
       );             
 
+      test::return_to_sender(test, admin_cap);
       test::return_shared(pool);
     };        
 
     clock::destroy_for_testing(c);
     test::end(scenario);      
-  }  
+  } 
 }
