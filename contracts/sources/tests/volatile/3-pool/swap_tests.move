@@ -56,8 +56,6 @@ module clamm::volatile_3pool_swap_tests {
           )
         );
 
-
-
         i = i + 1;
       };
 

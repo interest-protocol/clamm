@@ -609,7 +609,7 @@ describe('Volatile 3 Pool', function () {
   });
 
   describe('Remove liquidity', function () {
-    it.only('removes the right amount of coins', async function () {
+    it('removes the right amount of coins', async function () {
       const { pool, alice, lpCoin, bob, poolAddress } = await loadFixture(
         deploy3PoolFixture
       );
@@ -685,6 +685,81 @@ describe('Volatile 3 Pool', function () {
       expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
       expect(await pool.virtual_price()).to.be.equal(1000927192597256661n);
       expect(await pool.D()).to.be.equal(503133658852597302225821n);
+    });
+
+    it('removes the right amount of coins after extreme usdc swaps', async function () {
+      const { pool, alice, lpCoin, poolAddress } = await loadFixture(
+        deploy3PoolFixture
+      );
+
+      await pool
+        .connect(alice)
+        .add_liquidity(
+          [150_000n * USDC_PRECISION, 3n * BTC_PRECISION, 100n * ETH_PRECISION],
+          0n
+        );
+
+      await pool
+        .connect(alice)
+        .add_liquidity(
+          [270_000n * USDC_PRECISION, 0n, 75n * ETH_PRECISION],
+          0n
+        );
+
+      await lpCoin.connect(alice).approve(poolAddress, MAX_U256);
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 100_000n * USDC_PRECISION, 0);
+      await time.increase(21);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 100_000n * USDC_PRECISION, 0);
+      await time.increase(21);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 100_000n * USDC_PRECISION, 0);
+      await time.increase(21);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 100_000n * USDC_PRECISION, 0);
+      await time.increase(21);
+      await mine();
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 100_000n * USDC_PRECISION, 0);
+      await time.increase(21);
+      await mine();
+
+      const aliceLpCoinBalance = await lpCoin
+        .connect(alice)
+        .balanceOf(alice.address);
+
+      await pool
+        .connect(alice)
+        .remove_liquidity(aliceLpCoinBalance / 3n, [0, 0, 0]);
+
+      expect(await lpCoin.totalSupply()).to.be.equal(404170557037304369292n);
+
+      expect(await pool.balances(0n)).to.be.equal(613333333334n);
+      expect(await pool.balances(1n)).to.be.equal(906254713332618907n);
+      expect(await pool.balances(2n)).to.be.equal(116666666666666666668n);
+
+      expect(await pool.last_prices(0)).to.be.equal(597530835708084332217372n);
+      expect(await pool.last_prices(1)).to.be.equal(2379240621198716758801n);
+
+      expect(await pool.price_scale(0)).to.be.equal(47500000000000000000000n);
+      expect(await pool.price_scale(1)).to.be.equal(1500000000000000000000n);
+
+      expect(await pool.price_oracle(0)).to.be.equal(47528251166089217367977n);
+      expect(await pool.price_oracle(1)).to.be.equal(1500095444119394355095n);
+
+      expect(await pool.xcp_profit()).to.be.equal(1001579802184740424n);
+      expect(await pool.xcp_profit_a()).to.be.equal(1000000000000000000n);
+      expect(await pool.virtual_price()).to.be.equal(1001579802184740424n);
+      expect(await pool.D()).to.be.equal(503461704540616798823141n);
     });
   });
 });
