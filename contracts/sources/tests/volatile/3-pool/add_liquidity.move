@@ -1,4 +1,4 @@
-// * 2 Pool - USDC - BTC - ETH
+// * 3 Pool - USDC - BTC - ETH
 // All values tested agaisnt Curve pool
 #[test_only]
 module clamm::volatile_3pool_add_liquidity_tests {

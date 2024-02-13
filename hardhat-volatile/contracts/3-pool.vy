@@ -450,6 +450,9 @@ def tweak_price(A_gamma: uint256[2],
         last_prices[k] = bitwise_and(packed_prices, PRICE_MASK)   # * PRICE_PRECISION_MUL
         packed_prices = shift(packed_prices, -PRICE_SIZE)
 
+    r: uint256 = block.timestamp - last_prices_timestamp
+    print("time lag", r, hardhat_compat=True)
+
     if last_prices_timestamp < block.timestamp:
         # MA update required
         ma_half_time: uint256 = self.ma_half_time

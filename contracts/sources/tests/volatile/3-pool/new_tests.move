@@ -1,4 +1,4 @@
-// * 2 Pool - USDC - ETH - btc
+// * 3 Pool - USDC - ETH - btc
 #[test_only]
 module clamm::volatile_3pool_new_tests {
   use std::type_name;
