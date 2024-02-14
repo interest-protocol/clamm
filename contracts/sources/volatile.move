@@ -616,7 +616,7 @@ module clamm::interest_clamm_volatile {
       }; 
     };
 
-    let new_out_balance = volatile_math::y(a, gamma, &balances_in_price, state.d, coin_out_state.index) + 1;
+    let new_out_balance = volatile_math::y(a, gamma, &balances_in_price, state.d, coin_out_state.index) + 1; // give a small edge to the protocol
     let current_out_balance = *vector::borrow(&balances_in_price, coin_out_state.index);
 
     let coin_out_amount = current_out_balance - min(current_out_balance, new_out_balance);
@@ -822,6 +822,9 @@ module clamm::interest_clamm_volatile {
       a_gamma_future_time != 0,
       true
     );
+
+    // give a small edge to the protocol
+    amount_out = amount_out - 1;
 
     if (timestamp >= a_gamma_future_time) state.a_gamma.future_time = 1;
 
@@ -1100,7 +1103,8 @@ module clamm::interest_clamm_volatile {
       let coin_state = borrow_mut_coin_state<CoinType>(&mut state.id);
       let current_balance = vector::borrow_mut(&mut state.balances, coin_state.index);
       
-      let coin_amount = *current_balance * (burn_amount as u256) / (supply as u256);
+      // give a small edge to the protocol
+      let coin_amount = *current_balance * ((burn_amount - 1) as u256) / (supply as u256);
 
       *current_balance = *current_balance - coin_amount;
 
@@ -1233,7 +1237,7 @@ module clamm::interest_clamm_volatile {
     // Update Moving Average
     
     if (timestamp > state.last_prices_timestamp ) {  
-      let alpha = volatile_math::half_pow(div_down((((timestamp - state.last_prices_timestamp) / 1000 )as u256), state.rebalancing_params.ma_half_time), 100000000000);
+      let alpha = volatile_math::half_pow(div_down((((timestamp - state.last_prices_timestamp) / 1000 )as u256), state.rebalancing_params.ma_half_time), 10000000000);
 
       // update prices (do not update the first one)
       let index = 1;
