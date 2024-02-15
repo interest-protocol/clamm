@@ -47,6 +47,8 @@ module clamm::errors {
   const ADJUSTMENT_STEP_IS_TOO_BIG: u64 = 44;
   const MA_HALF_TIME_OUT_OF_RANGE: u64 = 45;
   const MISSING_COIN_BALANCE: u64 = 46;
+  const VERSION_WAS_UPDATED: u64 = 47;
+  const WRONG_POOL_ID: u64 = 48;
   
   public fun invalid_curve(): u64 {
     INVALID_CURVE
@@ -234,5 +236,13 @@ module clamm::errors {
 
   public fun missing_coin_balance(): u64 {
     MISSING_COIN_BALANCE
+  }
+
+  public fun version_was_updated(): u64 {
+    VERSION_WAS_UPDATED
+  }
+
+  public fun wrong_pool_id(): u64 {
+    WRONG_POOL_ID
   }
 }

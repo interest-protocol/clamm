@@ -7,11 +7,11 @@ module clamm::interest_clamm_volatile {
   use std::type_name::{get, TypeName};
 
   use sui::coin::{Self, Coin};
-  use sui::object::{Self, UID};
   use sui::dynamic_field as df;
   use sui::clock::{Self, Clock};
   use sui::tx_context::TxContext;
   use sui::vec_map::{Self, VecMap};
+  use sui::object::{Self, UID, ID};
   use sui::dynamic_object_field as dof;
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
@@ -47,6 +47,7 @@ module clamm::interest_clamm_volatile {
   const MAX_A_CHANGE: u256 = 10;
   const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
   const MAX_ADMIN_FEE: u256 = 10000000000;
+  const MAX_U256: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
   // * Structs ---- START ----
 
@@ -104,11 +105,14 @@ module clamm::interest_clamm_volatile {
     last_prices_timestamp: u64,
     min_a: u256,
     max_a: u256,
-    not_adjusted: bool
+    not_adjusted: bool,
+    version: u256
   }
 
-  struct UpdateBalancesRequest {
+  struct BalancesRequest {
     coins: VecMap<TypeName, u256>,
+    state_id: ID,
+    version: u256
   }
 
   // * Structs ---- END ----
@@ -680,6 +684,8 @@ module clamm::interest_clamm_volatile {
 
     events::emit_swap<Volatile, CoinIn, CoinOut, LpCoin>(pool_id, coin_in_value, amount_out);
 
+    increment_version(state);
+
     coin::take(borrow_mut_coin_balance(&mut state.id), amount_out, ctx)
   }
 
@@ -759,6 +765,8 @@ module clamm::interest_clamm_volatile {
 
     events::emit_remove_liquidity_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool_id, coin::value(&coin_a), coin::value(&coin_b), lp_coin_amount);
 
+    increment_version(state);
+
     (coin_a, coin_b)
   }
 
@@ -796,6 +804,8 @@ module clamm::interest_clamm_volatile {
       coin::value(&coin_c),
       lp_coin_amount
     );
+
+    increment_version(state);
 
     (coin_a, coin_b, coin_c)
   }
@@ -855,17 +865,28 @@ module clamm::interest_clamm_volatile {
 
     events::emit_remove_liquidity<Volatile, CoinOut, LpCoin>(pool_id, remove_amount, lp_coin_amount);
 
+    increment_version(state);
+
     coin::take(borrow_mut_coin_balance(&mut state.id), remove_amount, ctx)
   }
 
-  public fun update_balance_request(): UpdateBalancesRequest {
-    UpdateBalancesRequest {
-      coins: vec_map::empty()
+  public fun balance_request<LpCoin>(pool: &InterestPool<Volatile>): BalancesRequest {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
+    let state_id = object::id(state);
+    BalancesRequest {
+      state_id,
+      coins: vec_map::empty(),
+      version: state.version
     }
   }
 
-  public fun update_balance<LpCoin, CoinType>(pool: &InterestPool<Volatile>, request: &mut UpdateBalancesRequest) {
+  public fun read_balance<LpCoin, CoinType>(pool: &InterestPool<Volatile>, request: &mut BalancesRequest) {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool)); 
+    let state_id = object::id(state);
+
+    assert!(state_id == request.state_id, errors::wrong_pool_id());
+    assert!(state.version == request.version, errors::version_was_updated());
+
     let coin_balance = borrow_coin_balance<CoinType>(&state.id);  
     let balance_val = balance::value(coin_balance);
     let coin_state = *borrow_coin_state<CoinType>(&state.id);
@@ -1018,6 +1039,8 @@ module clamm::interest_clamm_volatile {
     let d_token_scale_down = ((d_token / ROLL) as u64);
 
     assert!(d_token_scale_down >= lp_coin_min_amount, errors::slippage());
+
+    increment_version(state);
 
     coin::from_balance(
       balance::increase_supply(
@@ -1194,7 +1217,8 @@ module clamm::interest_clamm_volatile {
         last_prices_timestamp: timestamp,
         min_a: volatile_math::min_a(n_coins),
         max_a: volatile_math::max_a(n_coins),
-        not_adjusted: false
+        not_adjusted: false,
+        version: 0
       }
     );
   }
@@ -1456,15 +1480,18 @@ module clamm::interest_clamm_volatile {
     fee * s_diff / s + NOISE_FEE
   }
 
-  fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, c: &Clock, request: UpdateBalancesRequest, coin_states: vector<CoinState>) {
+  fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, c: &Clock, request: BalancesRequest, coin_states: vector<CoinState>) {
     let (a, gamma) = get_a_gamma(state, c);
+    let request_state_id = object::id(state);
 
     let xcp_profit = state.xcp_profit;
     let xcp_profit_a = state.xcp_profit_a;
     let vprice = state.virtual_price;
 
-    let UpdateBalancesRequest { coins } = request;
-
+    let BalancesRequest { coins, version, state_id } = request;
+    
+    assert!(state_id == request_state_id, errors::wrong_pool_id());
+    assert!(state.version == version, errors::version_was_updated());
     assert!((state.n_coins as u64) == vec_map::size(&coins), errors::missing_coin_balance());
 
     let i = 0;
@@ -1535,6 +1562,10 @@ module clamm::interest_clamm_volatile {
     data
   }
 
+  fun increment_version<LpCoin>(state: &mut State<LpCoin>) {
+    state.version = if (state.version == MAX_U256) 0 else state.version + 1;
+  }
+
   fun borrow_coin_state<CoinType>(id: &UID): &CoinState {
     borrow_coin_state_with_key(id, get<CoinType>())
   }
@@ -1573,12 +1604,14 @@ module clamm::interest_clamm_volatile {
     pool: &mut InterestPool<Volatile>, 
     _: &Admin, 
     c: &Clock,
-    request: UpdateBalancesRequest,
+    request: BalancesRequest,
     ctx: &mut TxContext
   ): Coin<LpCoin> {
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
 
     claim_admin_fees_impl(state, c, request, coin_states);
+    
+    increment_version(state);
 
     let admin_balance = df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { });
 
@@ -1627,6 +1660,8 @@ module clamm::interest_clamm_volatile {
     state.a_gamma.future_gamma = future_gamma;
     state.a_gamma.future_time = future_time;
 
+    increment_version(state);
+
     events::emit_ramp_a_gamma<LpCoin>(pool_id, a, gamma, timestamp, future_a, future_gamma, future_time);
   }
 
@@ -1648,6 +1683,8 @@ module clamm::interest_clamm_volatile {
     state.a_gamma.initial_time = timestamp;
     state.a_gamma.future_time = timestamp;
 
+    increment_version(state);
+
     events::emit_stop_ramp_a_gamma<LpCoin>(pool_id, a, gamma, timestamp);
   }
 
@@ -1655,7 +1692,7 @@ module clamm::interest_clamm_volatile {
     pool: &mut InterestPool<Volatile>,
     _: &Admin, 
     c: &Clock,
-    request: UpdateBalancesRequest,
+    request: BalancesRequest,
     values: vector<Option<u256>>
   ) {
     let pool_id = object::id(pool);
@@ -1686,6 +1723,8 @@ module clamm::interest_clamm_volatile {
     state.rebalancing_params.extra_profit = allowed_extra_profit;
     state.rebalancing_params.adjustment_step = adjustment_step;
     state.rebalancing_params.ma_half_time = ma_half_time;
+
+    increment_version(state);
 
     events::emit_update_parameters<LpCoin>(pool_id, admin_fee, out_fee, mid_fee, gamma_fee, allowed_extra_profit, adjustment_step, ma_half_time);
   }

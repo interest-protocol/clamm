@@ -474,10 +474,10 @@ module clamm::volatile_2pool_swap_tests {
         i = i + 1;
       };
 
-      let request = interest_clamm_volatile::update_balance_request();
+      let request = interest_clamm_volatile::balance_request<LP_COIN>(&pool);
 
-      interest_clamm_volatile::update_balance<LP_COIN, USDC>(&pool, &mut request);
-      interest_clamm_volatile::update_balance<LP_COIN, ETH>(&pool, &mut request);
+      interest_clamm_volatile::read_balance<LP_COIN, USDC>(&pool, &mut request);
+      interest_clamm_volatile::read_balance<LP_COIN, ETH>(&pool, &mut request);
 
       burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, &c, request, ctx(test)));
 
