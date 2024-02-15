@@ -912,7 +912,7 @@ describe('Volatile 3 Pool', function () {
       expect(await pool.D()).to.be.equal(566236698187556361598998n);
     });
 
-    it.only('removes one coin correctly', async function () {
+    it('removes one coin correctly', async function () {
       const { pool, alice, bob, lpCoin, poolAddress } = await loadFixture(
         deploy3PoolFixture
       );

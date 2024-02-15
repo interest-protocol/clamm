@@ -823,9 +823,6 @@ module clamm::interest_clamm_volatile {
       true
     );
 
-    // give a small edge to the protocol
-    amount_out = amount_out - 1;
-
     if (timestamp >= a_gamma_future_time) state.a_gamma.future_time = 1;
 
     balance::decrease_supply(&mut state.lp_coin_supply, coin::into_balance(lp_coin));
@@ -945,6 +942,9 @@ module clamm::interest_clamm_volatile {
     else 
       xcp_impl(state, coin_states, new_d);
 
+    // Remove decimals, otherwise, the first initial supply will be inconsistent.
+    d_token = (d_token / ROLL) * ROLL; 
+
     // Insanity check - something is wrong if this occurs as we check that the user deposited coins
     assert!(d_token != 0, errors::expected_a_non_zero_value());
 
@@ -1047,7 +1047,7 @@ module clamm::interest_clamm_volatile {
 
     let fee = fee_impl(state, xp);
     let d_b = lp_coin_amount * d / ((balance::supply_value(&state.lp_coin_supply) as u256) * ROLL);
-    let d = d - (d_b - mul_div_up(fee, d_b, 100000000000));
+    let d = d - (d_b - mul_div_up(fee, d_b, 20000000000));
     let y = volatile_math::y(a, gamma, &xp, d, index_out);
     let dy = div_down((*vector::borrow(&xp, index_out) - y), price_scale_i);  
     let i_xp = vector::borrow_mut(&mut xp, index_out);

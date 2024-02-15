@@ -161,7 +161,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1000187682386485354
+        1000187682388072132
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -169,7 +169,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1000187682386485354
+        1000187682388072132
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -213,11 +213,11 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        66264310361669318885821
+        66264310361808798928720
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        3090962745524135133470
+        3090962745530641314761
       );  
      assert_eq(
         interest_clamm_volatile::coin_price<BTC, LP_COIN>(&pool),
@@ -229,15 +229,15 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47499994219062696077230
+        47499994006794493076617
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1500000525545967389219
+        1500000544843304867041
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1000691985364773893
+        1000691985365185009
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -245,7 +245,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1000691985364773893
+        1000691985365185009
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -289,11 +289,11 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        75742558259879650800736
+        75742558258239927005947
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        3090962745524135133470
+        3090962745530641314761
       );  
      assert_eq(
         interest_clamm_volatile::coin_price<BTC, LP_COIN>(&pool),
@@ -305,15 +305,15 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47500015068293081433114
+        47500015621580678404452
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1500002293280938737567
+        1500002377487092478625
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1000806764619665642
+        1000806764620574247
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -321,7 +321,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1000806764619665642
+        1000806764620574247
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -365,11 +365,11 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        75742558259879650800736
+        75742558258239927005947
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        4041883988661701933959
+        4041883988588709601393
       );  
      assert_eq(
         interest_clamm_volatile::coin_price<BTC, LP_COIN>(&pool),
@@ -381,15 +381,15 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47500046448881917960534
+        47500048154421676806457
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1500004061013945936867
+        1500004210128769051209
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1000947482732941810
+        1000947482733339946
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -397,7 +397,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1000947482732941810
+        1000947482733339946
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -457,7 +457,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
         ctx(test)
       ));            
 
-      assert_eq(interest_clamm_volatile::lp_coin_supply<LP_COIN>(&pool), 586029756385);
+      assert_eq(interest_clamm_volatile::lp_coin_supply<LP_COIN>(&pool), 586029756384);
 
       assert_eq(
         interest_clamm_volatile::balances<LP_COIN>(&pool),
@@ -493,7 +493,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47500347665271974107230
+        47500360431049558268970
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
@@ -501,7 +501,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1001226700521221920
+        1001226700522592789
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -509,7 +509,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1001226700521221920
+        1001226700522592789
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -528,7 +528,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
         ctx(test)
       )); 
 
-      assert_eq(interest_clamm_volatile::lp_coin_supply<LP_COIN>(&pool), 693824797656);
+      assert_eq(interest_clamm_volatile::lp_coin_supply<LP_COIN>(&pool), 693824797654);
 
       assert_eq(
         interest_clamm_volatile::balances<LP_COIN>(&pool),
@@ -548,7 +548,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        74162751883303132419229
+        74162751883116321756555
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
@@ -564,15 +564,15 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47500401405782787677210
+        47500416144824576282281
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
-        1500003147016835169602
+        1500003262571039149783
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1001529230814705813
+        1001529230816697783
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -580,7 +580,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1001529230814705813
+        1001529230816697783
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -659,7 +659,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        81184196198821233431624
+        81184196198274029942090
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
@@ -675,7 +675,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47507929111881960808561
+        47507950004918896540470
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
@@ -683,7 +683,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1001400556021648058
+        1001400556023233209
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -691,7 +691,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1001400556021648058
+        1001400556023233209
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
@@ -728,11 +728,11 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_last_price<BTC, LP_COIN>(&pool),
-        81184196198821233431624
+        81184196198274029942090
       );  
      assert_eq(
         interest_clamm_volatile::coin_last_price<ETH, LP_COIN>(&pool),
-        2598919271289429636599
+        2598919271237524520504
       );  
      assert_eq(
         interest_clamm_volatile::coin_price<BTC, LP_COIN>(&pool),
@@ -744,7 +744,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<BTC, LP_COIN>(&pool),
-        47508782525665348834291
+        47508805666980580612474
       ); 
      assert_eq(
         interest_clamm_volatile::coin_price_oracle<ETH, LP_COIN>(&pool),
@@ -752,7 +752,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       ); 
      assert_eq(
         interest_clamm_volatile::xcp_profit<LP_COIN>(&pool),
-        1001600639443661691
+        1001600639447195803
       );  
      assert_eq(
         interest_clamm_volatile::xcp_profit_a<LP_COIN>(&pool),
@@ -760,7 +760,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        1001600639443661691
+        1001600639447195803
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
