@@ -912,7 +912,7 @@ describe('Volatile 3 Pool', function () {
       expect(await pool.D()).to.be.equal(566236698187556361598998n);
     });
 
-    it.only('removes one coin correctly', async function () {
+    it('removes one coin correctly', async function () {
       const { pool, alice, bob, lpCoin, poolAddress } = await loadFixture(
         deploy3PoolFixture
       );
@@ -1020,4 +1020,43 @@ describe('Volatile 3 Pool', function () {
       expect(await pool.D()).to.be.equal(505087389297269090737334n);
     });
   });
+
+  it.only('', async () => {
+    const { pool, alice, owner, lpCoin } = await loadFixture(
+      deploy3PoolFixture
+    );
+
+    await pool
+      .connect(alice)
+      .add_liquidity(
+        [150_000n * USDC_PRECISION, 3n * BTC_PRECISION, 100n * ETH_PRECISION],
+        0n
+      );
+
+    const arr = Array(200)
+      .fill(0)
+      .map((_, index) => index);
+
+    for await (const _ of arr) {
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(2, 0, 75n * ETH_PRECISION, 0);
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(1, 2, 2n * BTC_PRECISION, 0);
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(0, 1, 100_000n * USDC_PRECISION, 0);
+
+      // Nuke the pool in one direction
+      await pool.connect(alice).exchange(1, 2, 15n * (BTC_PRECISION / 10n), 0);
+      await time.increase(20);
+      await mine();
+    }
+
+    await pool.claim_admin_fees();
+
+    expect(await lpCoin.balanceOf(owner.address)).to.be.equal(
+      15278599410718410111n
+    );
+  }).timeout(10000000);
 });
