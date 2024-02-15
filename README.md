@@ -4,8 +4,6 @@
 
 ### 3 Pool
 
-- remove liquidity
-- remove one coin
 - quote_swap
 - quote_add_liquidity
 - quote_remove_liquidity
