@@ -375,7 +375,14 @@ module clamm::interest_clamm_volatile {
 
     let (a, gamma) = get_a_gamma(state, c);
     let d = volatile_math::invariant_(a, gamma, balances_price);
-    let d_token = supply * d / old_d - supply;
+
+    let d_token = if (old_d != 0)
+      supply * d / old_d - supply
+    else 
+      xcp_impl(state, coin_states, d);
+
+    // Remove decimals, otherwise, the first initial supply will be inconsistent.
+    d_token = (d_token / ROLL) * ROLL; 
     
     d_token = d_token - mul_div_up(calculate_fee(state, amounts_p, balances_price), d_token, 10000000000);
 
@@ -396,7 +403,7 @@ module clamm::interest_clamm_volatile {
     let amounts = vector[];
 
     while(n_coins > index) {
-      let d_balance = (lp_coin_amount as u256) * *vector::borrow(&state.balances, index) / supply;
+      let d_balance = ((lp_coin_amount - 1) as u256) * *vector::borrow(&state.balances, index) / supply;
       let coin_state = *vector::borrow(&coin_states, index);
       vector::push_back(&mut amounts, (mul_down(d_balance, coin_state.decimals_scalar) as u64));
 

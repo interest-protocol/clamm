@@ -1021,7 +1021,7 @@ describe('Volatile 3 Pool', function () {
     });
   });
 
-  it.only('', async () => {
+  it.skip('claim fees', async () => {
     const { pool, alice, owner, lpCoin } = await loadFixture(
       deploy3PoolFixture
     );
