@@ -11,6 +11,7 @@ module clamm::interest_clamm_volatile {
   use sui::dynamic_field as df;
   use sui::clock::{Self, Clock};
   use sui::tx_context::TxContext;
+  use sui::vec_map::{Self, VecMap};
   use sui::dynamic_object_field as dof;
   use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
@@ -104,6 +105,10 @@ module clamm::interest_clamm_volatile {
     min_a: u256,
     max_a: u256,
     not_adjusted: bool
+  }
+
+  struct UpdateBalancesRequest {
+    coins: VecMap<TypeName, u256>,
   }
 
   // * Structs ---- END ----
@@ -853,6 +858,20 @@ module clamm::interest_clamm_volatile {
     coin::take(borrow_mut_coin_balance(&mut state.id), remove_amount, ctx)
   }
 
+  public fun update_balance_request(): UpdateBalancesRequest {
+    UpdateBalancesRequest {
+      coins: vec_map::empty()
+    }
+  }
+
+  public fun update_balance<LpCoin, CoinType>(pool: &InterestPool<Volatile>, request: &mut UpdateBalancesRequest) {
+    let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool)); 
+    let coin_balance = borrow_coin_balance<CoinType>(&state.id);  
+    let balance_val = balance::value(coin_balance);
+    let coin_state = *borrow_coin_state<CoinType>(&state.id);
+    vec_map::insert(&mut request.coins, coin_state.type, div_down((balance_val as u256), coin_state.decimals_scalar));
+  }
+
   // * Private functions
 
   fun add_liquidity<LpCoin>(
@@ -1437,10 +1456,26 @@ module clamm::interest_clamm_volatile {
     fee * s_diff / s + NOISE_FEE
   }
 
-  fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, coin_states: vector<CoinState>) {
+  fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, c: &Clock, request: UpdateBalancesRequest, coin_states: vector<CoinState>) {
+    let (a, gamma) = get_a_gamma(state, c);
+
     let xcp_profit = state.xcp_profit;
     let xcp_profit_a = state.xcp_profit_a;
     let vprice = state.virtual_price;
+
+    let UpdateBalancesRequest { coins } = request;
+
+    assert!((state.n_coins as u64) == vec_map::size(&coins), errors::missing_coin_balance());
+
+    let i = 0;
+    while ((state.n_coins as u64) > i) {
+      let ref_mut = vector::borrow_mut(&mut state.balances, i);
+      let coin_state = vector::borrow(&coin_states, i);
+      let bal = *vec_map::get(&coins, &coin_state.type);
+      *ref_mut = bal;
+
+      i = i + 1;
+    };
 
     if (xcp_profit > xcp_profit_a) {
       let fees = (xcp_profit - xcp_profit_a) * state.fees.admin_fee / 20000000000;
@@ -1450,8 +1485,8 @@ module clamm::interest_clamm_volatile {
         state.xcp_profit = xcp_profit - (fees * 2)
       };
     };
-
-    let d = state.d;
+    
+    let d = volatile_math::invariant_(a, gamma, balances_in_price_impl(state, coin_states));
 
     state.virtual_price = div_down(
       xcp_impl(state, coin_states, d),
@@ -1534,10 +1569,16 @@ module clamm::interest_clamm_volatile {
 
   // * Admin functions
 
-  public fun claim_admin_fees<LpCoin>(pool: &mut InterestPool<Volatile>, _: &Admin, ctx: &mut TxContext): Coin<LpCoin> {
+  public fun claim_admin_fees<LpCoin>(
+    pool: &mut InterestPool<Volatile>, 
+    _: &Admin, 
+    c: &Clock,
+    request: UpdateBalancesRequest,
+    ctx: &mut TxContext
+  ): Coin<LpCoin> {
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
 
-    claim_admin_fees_impl(state, coin_states);
+    claim_admin_fees_impl(state, c, request, coin_states);
 
     let admin_balance = df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey { });
 
@@ -1613,12 +1654,14 @@ module clamm::interest_clamm_volatile {
   public fun update_parameters<LpCoin>(
     pool: &mut InterestPool<Volatile>,
     _: &Admin, 
+    c: &Clock,
+    request: UpdateBalancesRequest,
     values: vector<Option<u256>>
   ) {
     let pool_id = object::id(pool);
     let (state, coin_states) = borrow_mut_state_and_coin_states<LpCoin>(pool);
 
-    claim_admin_fees_impl(state, coin_states);
+    claim_admin_fees_impl(state, c, request, coin_states);
 
     let mid_fee = option::destroy_with_default( *vector::borrow(&values, 0), state.fees.mid_fee);
     let out_fee = option::destroy_with_default( *vector::borrow(&values, 1), state.fees.out_fee);

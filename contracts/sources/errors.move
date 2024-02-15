@@ -46,6 +46,7 @@ module clamm::errors {
   const EXTRA_PROFIT_IS_TOO_BIG: u64 = 43;
   const ADJUSTMENT_STEP_IS_TOO_BIG: u64 = 44;
   const MA_HALF_TIME_OUT_OF_RANGE: u64 = 45;
+  const MISSING_COIN_BALANCE: u64 = 46;
   
   public fun invalid_curve(): u64 {
     INVALID_CURVE
@@ -229,5 +230,9 @@ module clamm::errors {
 
   public fun ma_half_time_out_of_range(): u64 {
     MA_HALF_TIME_OUT_OF_RANGE
+  }
+
+  public fun missing_coin_balance(): u64 {
+    MISSING_COIN_BALANCE
   }
 }

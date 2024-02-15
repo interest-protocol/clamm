@@ -8,6 +8,8 @@ module clamm::volatile_admin_tests {
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
+  use clamm::eth::ETH;
+  use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
   use clamm::amm_admin::Admin;
@@ -29,14 +31,23 @@ module clamm::volatile_admin_tests {
 
     setup_2pool(test, 15000, 10);
 
+    let c = clock::create_for_testing(ctx(test));
+
     next_tx(test, alice);
     { 
       let pool = test::take_shared<InterestPool<Volatile>>(test);
       let cap = test::take_from_sender<Admin>(test);
 
+      let request = interest_clamm_volatile::update_balance_request();
+
+      interest_clamm_volatile::update_balance<LP_COIN, USDC>(&pool, &mut request);
+      interest_clamm_volatile::update_balance<LP_COIN, ETH>(&pool, &mut request);
+
       interest_clamm_volatile::update_parameters<LP_COIN>(
         &mut pool,
         &cap,
+        &c,
+        request,
         vector[
           option::some(MIN_FEE + 123),
           option::some(MIN_FEE + 1234),
@@ -65,9 +76,16 @@ module clamm::volatile_admin_tests {
       let pool = test::take_shared<InterestPool<Volatile>>(test);
       let cap = test::take_from_sender<Admin>(test);
 
+      let request = interest_clamm_volatile::update_balance_request();
+
+      interest_clamm_volatile::update_balance<LP_COIN, USDC>(&pool, &mut request);
+      interest_clamm_volatile::update_balance<LP_COIN, ETH>(&pool, &mut request);      
+
       interest_clamm_volatile::update_parameters<LP_COIN>(
         &mut pool,
         &cap,
+        &c,
+        request,
         vector[
           option::none(),
           option::none(),
@@ -90,6 +108,8 @@ module clamm::volatile_admin_tests {
       test::return_to_sender(test, cap);
       test::return_shared(pool);
     };
+
+    clock::destroy_for_testing(c);
     test::end(scenario);
   }
 

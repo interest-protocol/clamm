@@ -616,13 +616,19 @@ module clamm::volatile_3pool_swap_tests {
         i = i + 1;
       };        
 
-      burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, ctx(test)));
+      let request = interest_clamm_volatile::update_balance_request();
+
+      interest_clamm_volatile::update_balance<LP_COIN, USDC>(&pool, &mut request);
+      interest_clamm_volatile::update_balance<LP_COIN, ETH>(&pool, &mut request);
+      interest_clamm_volatile::update_balance<LP_COIN, BTC>(&pool, &mut request);      
+
+      burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, &c, request, ctx(test)));
 
       assert_eq(interest_clamm_volatile::lp_coin_supply<LP_COIN>(&pool), 385241469605);
 
       assert_eq(
         interest_clamm_volatile::balances<LP_COIN>(&pool),
-        vector [557682685072416773722245, 17854974962058449905, 344591887198698606034]
+        vector[557682685576000000000000, 17854975450000000000, 344591888209000000000]
       );
       assert_eq(
         interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&pool),
@@ -670,7 +676,7 @@ module clamm::volatile_3pool_swap_tests {
       );  
      assert_eq(
         interest_clamm_volatile::virtual_price<LP_COIN>(&pool),
-        3924628681227382897
+        3924628722381078480
       ); 
      assert_eq(
         interest_clamm_volatile::invariant_<LP_COIN>(&pool),
