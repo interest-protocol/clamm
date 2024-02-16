@@ -1489,13 +1489,13 @@ module clamm::interest_clamm_volatile {
 
   fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, c: &Clock, request: BalancesRequest, coin_states: vector<CoinState>) {
     let (a, gamma) = get_a_gamma(state, c);
-    let request_state_id = object::id(state);
+    let state_id = object::id(state);
 
     let xcp_profit = state.xcp_profit;
     let xcp_profit_a = state.xcp_profit_a;
     let vprice = state.virtual_price;
 
-    let BalancesRequest { coins, version, state_id } = request;
+    let BalancesRequest { coins, version, state_id: request_state_id } = request;
     
     assert!(state_id == request_state_id, errors::wrong_pool_id());
     assert!(state.version == version, errors::version_was_updated());
