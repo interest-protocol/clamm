@@ -877,7 +877,7 @@ module clamm::interest_clamm_volatile {
     coin::take(borrow_mut_coin_balance(&mut state.id), remove_amount, ctx)
   }
 
-  public fun balance_request<LpCoin>(pool: &InterestPool<Volatile>): BalancesRequest {
+  public fun balances_request<LpCoin>(pool: &InterestPool<Volatile>): BalancesRequest {
     let state = borrow_state<LpCoin>(interest_pool::borrow_uid(pool));
     let state_id = object::id(state);
     BalancesRequest {

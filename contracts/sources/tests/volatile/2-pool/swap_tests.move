@@ -474,7 +474,7 @@ module clamm::volatile_2pool_swap_tests {
         i = i + 1;
       };
 
-      let request = interest_clamm_volatile::balance_request<LP_COIN>(&pool);
+      let request = interest_clamm_volatile::balances_request<LP_COIN>(&pool);
 
       interest_clamm_volatile::read_balance<LP_COIN, USDC>(&pool, &mut request);
       interest_clamm_volatile::read_balance<LP_COIN, ETH>(&pool, &mut request);

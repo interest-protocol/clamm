@@ -38,7 +38,7 @@ module clamm::volatile_admin_tests {
       let pool = test::take_shared<InterestPool<Volatile>>(test);
       let cap = test::take_from_sender<Admin>(test);
 
-      let request = interest_clamm_volatile::balance_request<LP_COIN>(&pool);
+      let request = interest_clamm_volatile::balances_request<LP_COIN>(&pool);
 
       interest_clamm_volatile::read_balance<LP_COIN, USDC>(&pool, &mut request);
       interest_clamm_volatile::read_balance<LP_COIN, ETH>(&pool, &mut request);
@@ -76,7 +76,7 @@ module clamm::volatile_admin_tests {
       let pool = test::take_shared<InterestPool<Volatile>>(test);
       let cap = test::take_from_sender<Admin>(test);
 
-      let request = interest_clamm_volatile::balance_request<LP_COIN>(&pool);
+      let request = interest_clamm_volatile::balances_request<LP_COIN>(&pool);
 
       interest_clamm_volatile::read_balance<LP_COIN, USDC>(&pool, &mut request);
       interest_clamm_volatile::read_balance<LP_COIN, ETH>(&pool, &mut request);      
