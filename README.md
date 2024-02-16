@@ -19,8 +19,6 @@ Make sure you have the latest version of the Sui binaries installed on your mach
   sui move test --gas-limit 5000000000
 ```
 
-Only the UniV2 invariant has been formally verified.
-
 ### Publish
 
 ```bash
