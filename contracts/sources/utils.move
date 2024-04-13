@@ -1,5 +1,6 @@
 module clamm::utils {
-  use std::vector;
+  // === Imports ===
+
   use std::type_name::TypeName;
 
   use sui::vec_set::{Self, VecSet};
@@ -8,17 +9,15 @@ module clamm::utils {
 
   use clamm::interest_pool::{Self, InterestPool};
 
-  public fun are_coins_ordered<Curve>(pool: &InterestPool<Curve>, coins: vector<TypeName>): bool {
-    eq(&compare(&interest_pool::coins(pool), &coins))
-  }
+  // === Public-Mutative Functions ===
 
-  public fun make_coins_from_vector(data: vector<TypeName>): VecSet<TypeName> {
-    let len = vector::length(&data);
-    let set = vec_set::empty();
-    let i = 0;
+  public fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
+    let len = data.length();
+    let mut set = vec_set::empty();
+    let mut i = 0;
 
     while (len > i) {
-      vec_set::insert(&mut set, *vector::borrow(&data, i));
+      set.insert(*&data[i]);
       i = i + 1;
     };
 
@@ -27,9 +26,9 @@ module clamm::utils {
 
   public fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
     (
-      *vector::borrow(&x, 0),
-      *vector::borrow(&x, 1),
-      *vector::borrow(&x, 2)
+      *&x[0],
+      *&x[1],
+      *&x[2]
     )
   }
 
@@ -41,14 +40,36 @@ module clamm::utils {
   }
 
   public fun empty_vector(x: u256): vector<u256> {
-    let data = vector::empty();
+    let mut data = vector::empty();
 
-    let i = 0;
+    let mut i = 0;
     while (x > i) {
-      vector::push_back(&mut data, 0);
+      data.push_back(0);
       i = i + 1;
     };
 
     data
   }
+
+  // === Public-View Functions ===
+
+  public fun are_coins_ordered<Curve>(pool: &InterestPool<Curve>, coins: vector<TypeName>): bool {
+    eq(&compare(&interest_pool::coins(pool), &coins))
+  }
+
+  public fun to_u8(x: u64): u8 {
+    (x as u8)
+  }
+
+  public fun to_u64(x: u256): u64 {
+    (x as u64)
+  }
+
+  public fun to_u256(x: u64): u256 {
+    (x as u256)
+  }
+
+  public fun head<T: copy + drop>(x: vector<T>): T {
+    *&x[0]
+  }  
 }

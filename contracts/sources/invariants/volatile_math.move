@@ -5,15 +5,19 @@
 */
 module clamm::volatile_math {
   // === Imports ===
-  
-  use std::vector;
 
   use sui::math::pow;
-
   use suitears::math256::{diff, sum, max};
   use suitears::vectors::descending_insertion_sort;
 
+  use clamm::utils;
   use clamm::errors;
+
+  use fun pow as u64.pow;
+  use fun sum as vector.sum; 
+  use fun utils::to_u8 as u64.to_u8;
+  use fun utils::head as vector.head;
+  use fun utils::to_u256 as u64.to_u256;
 
   // === Constants ===
 
@@ -35,110 +39,125 @@ module clamm::volatile_math {
   
   /*
   * @notice It calculates the minimum amplifier value based on the number of coins in the pool.  
+  *
   * @n_coins The number of coins in the pool 
   * @return u256 The minimum amplifier value
   */
   public fun min_a(n_coins: u64): u256 {
-    (pow(n_coins, (n_coins as u8)) as u256) * A_MULTIPLIER / 100
+    n_coins.pow(n_coins.to_u8()).to_u256() * A_MULTIPLIER / 100
   }
 
   /*
   * @notice It calculates the maximum amplifier value based on the number of coins in the pool.  
+  *
   * @n_coins The number of coins in the pool 
   * @return u256 The maximum amplifier value
   */
   public fun max_a(n_coins: u64): u256 {
-    (pow(n_coins, (n_coins as u8)) as u256) * A_MULTIPLIER * 1000      
+    n_coins.pow(n_coins.to_u8()).to_u256() * A_MULTIPLIER / 1000    
   }
 
   /*
   * @notice It calculates the geometric mean of all the balances in the pool 
+  *
   * @dev The `unsorted_balances` have been normalized to a fixed-point value with a precision of 1e18. 
   * @dev The `unsorted_balances` are the coin balances * their prices in Coin at index 0 in the pool. 
+  *
   * @param unsorted_balances The balances in the pool. 
   * @param sort If we should sort before calculating the geometric mean 
   * @return u256 The geometric mean of `balances`
   */
   public fun geometric_mean(unsorted_balances: vector<u256>, sort: bool): u256 {
-    let balances = if (sort) { descending_insertion_sort(unsorted_balances) } else { unsorted_balances };
+    let balances = if (sort) descending_insertion_sort(unsorted_balances) else unsorted_balances;
 
-    let len = vector::length(&balances);
-    let d = *vector::borrow(&balances, 0); 
-    let prev_d = 0;
+    let len = balances.length();
+    let mut d = balances.head(); 
+    let mut prev_d = 0;
 
     while (diff(prev_d, d) > 1 && diff(prev_d, d) * PRECISION >= d) {
       prev_d = d;
-      let temp = PRECISION;
+      let mut temp = PRECISION;
 
-      let i = 0;
+      let mut i = 0;
       while (len > i) {
-        temp = temp * (*vector::borrow(&balances, i)) / d;  
+        temp = temp * *&balances[i] / d;  
         i = i + 1;
       };
-      d = d * (((len as u256) - 1) * PRECISION + temp) / ((len as u256) * PRECISION);
+      d = d * ((len.to_u256() - 1) * PRECISION + temp) / (len.to_u256() * PRECISION);
     };
     d
   }
 
+  /*
+  * @notice It calculates the geometric mean of all the balances in the pool 
+  *
+  * @dev The `unsorted_balances` have been normalized to a fixed-point value with a precision of 1e18. 
+  * @dev The `unsorted_balances` are the coin balances * their prices in Coin at index 0 in the pool. 
+  *
+  * @param unsorted_balances The balances in the pool. 
+  * @param sort If we should sort before calculating the geometric mean 
+  * @return u256 The geometric mean of `balances`
+  */
   public fun reduction_coefficient(x: vector<u256>, fee_gamma: u256): u256 {
-    let s = sum(x);
-    let n_coins = vector::length(&x);
+    let s = x.sum();
+    let n_coins = x.length();
 
-    let i = 0;
-    let k = PRECISION;
+    let mut i = 0;
+    let mut k = PRECISION;
 
     while(i < n_coins) {
-      k = k * (n_coins as u256) * *vector::borrow(&x, i) / s;
+      k = k * n_coins.to_u256() * *&x[i] / s;
       i = i + 1;
     };
 
-    if (fee_gamma != 0) {
+    if (fee_gamma != 0)
       fee_gamma * PRECISION / (fee_gamma + PRECISION - k)
-    } else {
+    else
       k
-    }
   }
 
   /*
   * @notice It calculates the invariant of the pool. 
+  *
   * @dev The `unsorted_balances` have been normalized to a fixed-point value with a precision of 1e18. 
   * @dev The `unsorted_balances` are the coin balances * their prices in Coin at index 0 in the pool. 
+  *
   * @param ann The amplifier value. 
   * @param gamma The gamma value. 
   * @param unsorted_balances The balances in the pool. 
   * @return u256 The invariant of the pool
   */
   public fun invariant_(ann: u256, gamma: u256, unsorted_balances: vector<u256>): u256 {
-    let n_coins = vector::length(&unsorted_balances);
+    let n_coins = unsorted_balances.length();
     
     assert_ann_is_within_range(ann, n_coins);
     assert_gamma_is_within_range(gamma);
 
     let x = descending_insertion_sort(unsorted_balances);
-    let fst = *vector::borrow(&x, 0);
+    let fst = x.head();
 
     assert!(fst >= POW_10_9 && fst <= POW_10_15 * PRECISION, errors::unsafe_value());
 
-    let n_coins_u256 = (n_coins as u256);
+    let n_coins_u256 = n_coins.to_u256();
 
-    let i = 1;
+    let mut i = 1;
     while (n_coins > i) {
-      let frac = *vector::borrow(&x, (i as u64)) * PRECISION / fst;
+      let frac = *&x[i] * PRECISION / fst;
       assert!(frac >= POW_10_11, errors::unsafe_value());
       i = i + 1;
     };
 
-    let d = n_coins_u256 * geometric_mean(x, false);
-    let s = sum(x);
-    let d_prev = 0;
+    let mut d = n_coins_u256 * geometric_mean(x, false);
+    let s = x.sum();
+    let mut d_prev = 0;
 
     while (diff(d, d_prev) * POW_10_14 >= max(POW_10_16, d)) {
       d_prev = d;
-      let k0 = PRECISION;
+      let mut k0 = PRECISION;
 
-      let i = 0;
+      let mut i = 0;
       while (i < n_coins) {
-        k0 = k0 * *vector::borrow(&x, i) * n_coins_u256 / d;
+        k0 = k0 * *&x[i] * n_coins_u256 / d;
         i = i + 1;
       };
 
@@ -151,7 +170,7 @@ module clamm::volatile_math {
       let neg_fprime = (s + s * mul2 / PRECISION) + mul1 * n_coins_u256 / k0 - mul2 * d / PRECISION;
 
       let d_plus = d * (neg_fprime  + s) / neg_fprime;
-      let d_minus = d * d / neg_fprime;
+      let mut d_minus = d * d / neg_fprime;
       
       d_minus = if (PRECISION > k0)
         d_minus + d * (mul1 / neg_fprime) / PRECISION * (PRECISION - k0) / k0
@@ -161,9 +180,9 @@ module clamm::volatile_math {
       d = if (d_plus > d_minus) d_plus - d_minus else (d_minus - d_plus) / 2;
     };
     
-    let i = 0;
+    let mut i = 0;
     while (n_coins > i) {
-      let frac = *vector::borrow(&x, i) * PRECISION / d;
+      let frac = *&x[i] * PRECISION / d;
       assert_balance_is_within_range(frac);
       i = i + 1;
     };
@@ -173,8 +192,10 @@ module clamm::volatile_math {
 
   /*
   * @notice It calculates the invariant of the pool. 
+  *
   * @dev The `balances` have been normalized to a fixed-point value with a precision of 1e18. 
   * @dev The `balances` are the coin balances * their prices in Coin at index 0 in the pool. 
+  *
   * @param ann The amplifier value. 
   * @param gamma The gamma value. 
   * @param balances The balances in the pool. 
@@ -182,48 +203,48 @@ module clamm::volatile_math {
   * @return u256 The new balance for the Coin at `coin_out_index`. 
   */
   public fun y(ann: u256, gamma: u256, balances: &vector<u256>, d: u256, coin_out_index: u64): u256 {
-    let n_coins = vector::length(balances);
+    let n_coins = balances.length();
     
     assert_ann_is_within_range(ann, n_coins);
     assert_gamma_is_within_range(gamma);
 
     assert!(d >= POW_10_17 && d <= POW_10_15 * PRECISION, errors::invalid_invariant());
 
-    let j = 0;
+    let mut j = 0;
     while (n_coins > j) {
       if (j != coin_out_index) {
-        let frac = *vector::borrow(balances, j) * PRECISION / d;
+        let frac = *&balances[j] * PRECISION / d;
         assert_balance_is_within_range(frac);
       };
       j = j + 1;
     };
 
-    let n_coins_u256 = (n_coins as u256);
-    let y = d / n_coins_u256;
-    let k0_i = PRECISION;
-    let s_i = 0;
+    let n_coins_u256 = n_coins.to_u256();
+    let mut y = d / n_coins_u256;
+    let mut k0_i = PRECISION;
+    let mut s_i = 0;
 
-    let new_x = *balances;
-    *vector::borrow_mut(&mut new_x, coin_out_index) = 0;
+    let mut new_x = *balances;
+    *&mut new_x[coin_out_index] = 0;
     let x_sorted = descending_insertion_sort(new_x);
 
-    let converge_limit = max(max(*vector::borrow(&x_sorted, 0) / POW_10_14, d / POW_10_14), 100);
+    let converge_limit = max(max(x_sorted.head() / POW_10_14, d / POW_10_14), 100);
 
-    let j = 2;
+    let mut j = 2;
     while (j < n_coins + 1) {
-      let x = *vector::borrow(&x_sorted, n_coins - j);
+      let x = *&x_sorted[n_coins - j];
       y = y * d / (x * n_coins_u256);
       s_i = s_i + x;
       j = j + 1;
     };
 
-    let j = 0;
+    let mut j = 0;
     while (j < n_coins - 1) {
-      k0_i = k0_i * *vector::borrow(&x_sorted, j) * n_coins_u256 / d;
+      k0_i = k0_i * *&x_sorted[j] * n_coins_u256 / d;
       j = j + 1;
     };
 
-    let y_prev = 0;
+    let mut y_prev = 0;
 
     while(diff(y, y_prev) >= max(converge_limit, y / POW_10_14)) {
       y_prev = y;
@@ -238,7 +259,7 @@ module clamm::volatile_math {
       
       let mul2 = PRECISION + (2 * PRECISION) * k0 / g1k0;
 
-      let yfprime = PRECISION * y + s * mul2 + mul1;
+      let mut yfprime = PRECISION * y + s * mul2 + mul1;
 
       let dyfprime = d * mul2;
       
@@ -246,7 +267,7 @@ module clamm::volatile_math {
 
       let fprime = yfprime / y;
 
-      let y_minus = mul1 / fprime;
+      let mut y_minus = mul1 / fprime;
       
       let y_plus = (yfprime + PRECISION * d) / fprime + y_minus * PRECISION / k0;
       y_minus = y_minus + PRECISION * s / fprime;
@@ -262,6 +283,7 @@ module clamm::volatile_math {
 
   /*
   * @notice It calculates the half power for number `power`. 
+  *
   * @param power The initial value.  
   * @param precision The maximum return value  
   * @return u256 the half power of `power`
@@ -272,19 +294,19 @@ module clamm::volatile_math {
     if (intpow > 59) return 0;
 
     let otherpow = power - intpow * PRECISION;
-    let result = PRECISION / (pow(2, (intpow as u8)) as u256);
+    let result = PRECISION / pow(2, (intpow as u8)).to_u256();
     
     if (otherpow == 0) return result;
 
     let x = 500000000000000000; // 0.5e17
-    let term = PRECISION;
-    let s = PRECISION;
-    let neg = false;
+    let mut term = PRECISION;
+    let mut s = PRECISION;
+    let mut neg = false;
 
-    let i = 1;
+    let mut i = 1;
     while (i < 256) {
       let k = i * PRECISION;
-      let c = k - PRECISION;
+      let mut c = k - PRECISION;
       if (otherpow > c) {
         c = otherpow - c;
         neg = !neg;
@@ -303,14 +325,15 @@ module clamm::volatile_math {
 
   /*
   * @notice It calculates the square root of `x`. 
+  *
   * @param x The initial value.  
   * @return u256 the square root of `x`
   */
   public fun sqrt(x: u256): u256 {
     if (x == 0) return 0;
 
-    let z = (x + PRECISION) / 2;
-    let y = x;
+    let mut z = (x + PRECISION) / 2;
+    let mut y = x;
 
     while (z != y) {
       y = z;
@@ -324,6 +347,7 @@ module clamm::volatile_math {
 
   /*
   * @notice It assers that the amplifier is within a valid range. 
+  *
   * @param ann The amplifier.  
   * @param n_coins The number of coins in the pool. 
   */
@@ -333,6 +357,7 @@ module clamm::volatile_math {
 
   /*
   * @notice It assers that gamma is within a valid range. 
+  *
   * @param gamma The gamma.  
   */
   fun assert_gamma_is_within_range(gamma: u256) {
@@ -341,9 +366,11 @@ module clamm::volatile_math {
 
   /*
   * @notice It assers that a Coin balance is within a valid range. 
+  *
   * @param balance The balance. 
   */
   fun assert_balance_is_within_range(balance: u256) {
     assert!(balance >= POW_10_16 && balance <= POW_10_20, errors::unsafe_value());
   }
 }
+

@@ -1,4 +1,5 @@
 module clamm::errors {
+  // === Constants ===
 
   const INVALID_CURVE: u64 = 0;
   const SAME_COIN_INDEX: u64 = 1;
@@ -49,7 +50,9 @@ module clamm::errors {
   const MISSING_COIN_BALANCE: u64 = 46;
   const VERSION_WAS_UPDATED: u64 = 47;
   const WRONG_POOL_ID: u64 = 48;
-  
+
+  // === Public-View Functions ===
+
   public fun invalid_curve(): u64 {
     INVALID_CURVE
   }

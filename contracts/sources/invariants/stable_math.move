@@ -5,24 +5,30 @@
 */
 module clamm::stable_math {
   // === Imports === 
-  
-  use std::vector;
 
-  use sui::clock::{Self, Clock};  
-
-  use clamm::errors;
+  use sui::clock::Clock;  
 
   use suitears::math256::{diff, sum};
+  
+  use clamm::utils;
+  use clamm::errors;
+
+  use fun sum as vector.sum; 
+  use fun utils::to_u64 as u256.to_u64;
+  use fun utils::to_u256 as u64.to_u256;
 
   // === Public-View Functions ===
 
   /*
   * @notice It calculates the amplifier for the Stable invariant. A higher `A` makes the bonding curve more linear. 
+  *
   * @dev The `A` needs to be updated over time to avoid impermanent loss as it flattens the bonding curve.  
+  *
   * @param a0 The amplifier at the initial time. 
   * @param t0 The initial timestamp.  
   * @param a1 The amplifier at the final time.  
   * @param t1 The final timestamp.  
+  * @param clock The `Clock` shared object
   * @return u256 The current `A` value. 
   */
   public fun a(
@@ -30,9 +36,9 @@ module clamm::stable_math {
     t0: u256,
     a1: u256,
     t1: u256, 
-    clock_object: &Clock
+    clock: &Clock
   ): u256 {
-    let current_timestamp = (clock::timestamp_ms(clock_object) as u256);
+    let current_timestamp = (clock.timestamp_ms() as u256);
 
     if (current_timestamp >= t1) return a1;
 
@@ -44,29 +50,31 @@ module clamm::stable_math {
 
   /*
   * @notice It calculates the stable invariant. 
+  *
   * @dev The `balances` have been normalized to a fixed-point value with a precision of 1e18. 
+  *
   * @param amp The current amplifier value.   
   * @param balances All coin balances in the pool. 
   * @return u256 The current invariant 
   */
   public fun invariant_(amp: u256, balances: vector<u256>): u256 {
-    let s = sum(balances);
+    let s = balances.sum();
     if (s == 0) return 0;
     
-    let n_coins = vector::length(&balances);
-    let n_coins_u256 = (n_coins as u256);
+    let n_coins = balances.length();
+    let n_coins_u256 = n_coins.to_u256();
 
-    let _prev_d = 0;
-    let d = s;
+    let mut _prev_d = 0;
+    let mut d = s;
     let ann = amp * n_coins_u256;
 
-    let i = 0;
+    let mut i = 0;
     while(255 > i) {
-      let d_p = d;
+      let mut d_p = d;
 
-      let j = 0;
+      let mut j = 0;
       while(j < n_coins) {
-        d_p = d_p * d / (*vector::borrow(&balances, j) * n_coins_u256);
+        d_p = d_p * d / (*&balances[j] * n_coins_u256);
         j = j + 1;
       };
 
@@ -83,7 +91,9 @@ module clamm::stable_math {
 
   /*
   * @notice It calculates the new balance for the Coin at `coin_out_index` from a new balance of Coin at `coin_in_index`. 
+  *
   * @dev `balances` and `new_balance_in` have been normalized to a fixed-point value with a precision of 1e18. 
+  *
   * @param amp The current amplifier value.   
   * @param coin_in_index The index of the Coin `new_balance_in` being added to `balances`. 
   * @param coin_out_index The index of the Coin we wish to remove from `balances`. 
@@ -101,19 +111,19 @@ module clamm::stable_math {
     assert!(coin_in_index != coin_out_index, errors::same_coin_index());
 
     let d = invariant_(amp, balances);
-    let c = d;
-    let s = 0;
-    let n_coins = (vector::length(&balances) as u256);
+    let mut c = d;
+    let mut s = 0;
+    let n_coins = balances.length().to_u256();
     let ann = amp * n_coins;
 
-    let i = 0;
+    let mut i = 0;
 
     while (n_coins > i) {
       if (i == coin_in_index) {
         s = s + new_balance_in;
         c = c * d / (new_balance_in * n_coins);
       } else if (i != coin_out_index) {
-        let x = *vector::borrow(&balances, (i as u64));
+        let x = *&balances[i.to_u64()]; 
         s = s + x;
         c = c * d / (x * n_coins);
       };
@@ -123,10 +133,10 @@ module clamm::stable_math {
 
     c = c * d / (ann * n_coins);
     let b = s + d / ann;
-    let y = d;
-    let _prev_y = 0;
+    let mut y = d;
+    let mut _prev_y = 0;
 
-    let i = 0;
+    let mut i = 0;
 
     while(255 > i) {
       _prev_y = y;
@@ -142,7 +152,9 @@ module clamm::stable_math {
 
   /*
   * @notice It calculates the new balance for the Coin at `coin_index` when removing liquidity. 
+  *
   * @dev `balances` have been normalized to a fixed-point value with a precision of 1e18. 
+  *
   * @param amp The current amplifier value.   
   * @param coin_index The index of the Coin balance that needs to be updated. 
   * @param balances All coin balances in the pool. 
@@ -168,7 +180,9 @@ module clamm::stable_math {
 
   /*
   * @notice It calculates the new balance for the Coin at `coin_index` when the invariant changes. 
+  *
   * @dev `balances` have been normalized to a fixed-point value with a precision of 1e18. 
+  *
   * @param amp The current amplifier value.   
   * @param coin_index The index of the Coin balance that needs to be updated. 
   * @param balances All coin balances in the pool. 
@@ -176,16 +190,16 @@ module clamm::stable_math {
   * @return u256 The new balance for Coin at index `coin_index`. 
   */
   public fun y_d(amp: u256, coin_index: u256, balances: vector<u256>, _invariant: u256): u256 {
-    let c = _invariant;
-    let s = 0;
-    let n_coins = (vector::length(&balances) as u256);
+    let mut c = _invariant;
+    let mut s = 0;
+    let n_coins = balances.length().to_u256();
     let ann = amp * n_coins;
 
-    let i = 0;
+    let mut i = 0;
 
     while (n_coins > i) {
       if (i != coin_index) {
-        let x = *vector::borrow(&balances, (i as u64));
+        let x = *&balances[i.to_u64()];
         s = s + x;
         c = c * _invariant / (x * n_coins);
       };
@@ -194,8 +208,8 @@ module clamm::stable_math {
 
     c = c * _invariant / (ann * n_coins);
     let b = s + _invariant / ann;
-    let y = _invariant;
-    let _prev_y = 0;
+    let mut y = _invariant;
+    let mut _prev_y = 0;
 
     let i = 0;
     while (255 > i) {

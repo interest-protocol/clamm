@@ -1,13 +1,16 @@
 [package]
 name = "CLAMM"
-version = "0.0.1"
+edition = "2024.beta"
+license = "MIT"
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 
 [dependencies]
-MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/testnet" }
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
-SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "testnet" }
+MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/mainnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "main" }
 
 [addresses]
 clamm = "0x0"
 std = "0x1"
 sui = "0x2"
+suitears = "0xf7334947a5037552a94cee15fc471dbda71bf24d46c97ee24e1fdac38e26644c"

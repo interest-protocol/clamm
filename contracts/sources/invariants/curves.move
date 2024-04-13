@@ -21,7 +21,7 @@ module clamm::curves {
   *
   * @dev Read more at https://resources.curve.fi/base-features/understanding-crypto-pools/
   */
-  struct Volatile {}
+  public struct Volatile {}
 
   /*
   * @dev We implement the CurveV1 invariant which supports multiple stable coins                                                                                 
@@ -31,12 +31,13 @@ module clamm::curves {
   * P = product of balances                                                                   
   * n = number of tokens                                                                      
   */
-  struct Stable {}
+  public struct Stable {}
 
   // === Public View Functions ===  
 
   /*
   * @notice Checks if the `Type` is equal to `Volatile`
+  *
   * @return bool 
   */
   public fun is_volatile<Type>(): bool {
@@ -45,6 +46,7 @@ module clamm::curves {
 
   /*
   * @notice Checks if the `Type` is equal to `Stable`
+  *
   * @return bool 
   */
   public fun is_stable<Type>(): bool {
@@ -53,6 +55,7 @@ module clamm::curves {
 
   /*
   * @notice Checks if the `Type` is equal to `Stable` or `Volatile`
+  *
   * @return bool 
   */
   public fun is_curve<Type>(): bool {
@@ -75,6 +78,7 @@ module clamm::curves {
 
   /*
   * @notice Checks if `A` is equal to `B`
+  *
   * @return bool 
   */
   fun are_equal<A, B>(): bool {

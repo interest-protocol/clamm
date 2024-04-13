@@ -1,33 +1,36 @@
 module clamm::interest_pool {
+  // === Imports ===
+
   use std::type_name::TypeName;
 
-  use sui::object::{Self, UID};
-  use sui::tx_context::TxContext;
-  use sui::vec_set::{Self, VecSet};
+  use sui::vec_set::VecSet;
 
   use clamm::curves;
 
-  friend clamm::interest_clamm_stable;
-  friend clamm::interest_clamm_volatile;
+  // === Structs ===
 
-  struct InterestPool<phantom Curve> has key, store {
+  public struct InterestPool<phantom Curve> has key, store {
     id: UID,
     coins: VecSet<TypeName>
   }
 
+  // === Public-View Functions ===
+
   public fun coins<Curve>(self: &InterestPool<Curve>): vector<TypeName> {
-    *vec_set::keys(&self.coins)
+    *self.coins.keys()
   }
 
-  public(friend) fun borrow_mut_uid<Curve>(self: &mut InterestPool<Curve>): &mut UID {
+  // === Public-Package Functions ===
+
+  public(package) fun uid_mut<Curve>(self: &mut InterestPool<Curve>): &mut UID {
     &mut self.id
   }
 
-  public(friend) fun borrow_uid<Curve>(self: &InterestPool<Curve>): &UID {
+  public(package) fun uid<Curve>(self: &InterestPool<Curve>): &UID {
     &self.id
   }
 
-  public(friend) fun new<Curve>(coins: VecSet<TypeName>, ctx: &mut TxContext): InterestPool<Curve>  {
+  public(package) fun new<Curve>(coins: VecSet<TypeName>, ctx: &mut TxContext): InterestPool<Curve>  {
     curves::assert_curve<Curve>();
     InterestPool{
       id: object::new(ctx),
