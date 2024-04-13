@@ -44,7 +44,7 @@ The DEX supports two types of [Curve](https://curve.fi/) pools denoted as:
 
 ## Contact Us
 
-- Twitter: [@interest_dinero](https://twitter.com/interest_dinero)
+- Twitter: [@IPXSui](https://twitter.com/IPXSui)
 - Discord: https://discord.gg/interest
 - Telegram: https://t.me/interestprotocol
 - Email: [contact@interestprotocol.com](mailto:contact@interestprotocol.com)
