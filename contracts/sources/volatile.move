@@ -1,5 +1,5 @@
 // CurveV2 in Move - All logic from Curve
-// It is best to for the first coin to be a stable coin as all Coins r quoted from it
+// It is best to for the first coin to be a stable coin or Sui as all Coins are quoted from it
 // https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
 module clamm::interest_clamm_volatile {
   // === Imports ===
@@ -118,7 +118,7 @@ module clamm::interest_clamm_volatile {
 
   public struct BalancesRequest {
     coins: VecMap<TypeName, u256>,
-    state_id: ID,
+    state_id: address,
     version: u256
   }
 
@@ -136,7 +136,7 @@ module clamm::interest_clamm_volatile {
     price: u256, // @ on a pool with 2 coins, we only need 1 price
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): Coin<LpCoin> {
+  ): (address, Coin<LpCoin>) {
     let coin_a_value = coin_a.value();
     let coin_b_value = coin_b.value();
 
@@ -190,11 +190,13 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(object::id(&pool));
+    let pool_id = object::id_address(&pool);
+
+    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool_id);
 
     public_share_object(pool);
 
-    lp_coin
+    (pool_id, lp_coin)
   }
 
   #[lint_allow(share_owned)]
@@ -210,7 +212,7 @@ module clamm::interest_clamm_volatile {
     price: vector<u256>, // @ on a pool with 3 coins, we only need 2 prices
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): Coin<LpCoin> {
+  ): (address, Coin<LpCoin>) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0
@@ -270,11 +272,13 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(object::id(&pool));
+    let pool_id = object::id_address(&pool);
+
+    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool_id);
 
     public_share_object(pool);
 
-    lp_coin
+    (pool_id, lp_coin)
   }
 
   public fun swap<CoinIn, CoinOut, LpCoin>(
@@ -290,7 +294,7 @@ module clamm::interest_clamm_volatile {
     let coin_in_value = coin_in.value();
     assert!(coin_in_value != 0, errors::no_zero_coin());
 
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
     let coin_in_index = coin_state<CoinIn>(&state.id).index;
     
@@ -444,7 +448,7 @@ module clamm::interest_clamm_volatile {
   ): (Coin<CoinA>, Coin<CoinB>) {
     assert!(lp_coin.value() != 0, errors::no_zero_coin());
 
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
 
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
@@ -480,7 +484,7 @@ module clamm::interest_clamm_volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
 
     let state = state_mut<LpCoin>(pool.uid_mut());
 
@@ -520,7 +524,7 @@ module clamm::interest_clamm_volatile {
 
     assert!(lp_coin_amount != 0, errors::no_zero_coin());
 
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
 
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
     let (a, gamma) = get_a_gamma(state, clock);
@@ -571,7 +575,7 @@ module clamm::interest_clamm_volatile {
 
   public fun balances_request<LpCoin>(pool: &InterestPool<Volatile>): BalancesRequest {
     let state = state<LpCoin>(pool.uid());
-    let state_id = object::id(state);
+    let state_id = object::id_address(state);
     BalancesRequest {
       state_id,
       coins: vec_map::empty(),
@@ -581,7 +585,7 @@ module clamm::interest_clamm_volatile {
 
   public fun read_balance<LpCoin, CoinType>(pool: &InterestPool<Volatile>, request: &mut BalancesRequest) {
     let state = state<LpCoin>(pool.uid()); 
-    let state_id = object::id(state);
+    let state_id = object::id_address(state);
 
     assert!(state_id == request.state_id, errors::wrong_pool_id());
     assert!(state.version == request.version, errors::version_was_updated());
@@ -932,7 +936,7 @@ module clamm::interest_clamm_volatile {
     future_time: u64
   ) {
     let timestamp = clock.timestamp_ms();
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
 
     let state = state_mut<LpCoin>(pool.uid_mut());
     assert!(timestamp >= state.a_gamma.initial_time + MIN_RAMP_TIME, errors::wait_one_day());
@@ -972,7 +976,7 @@ module clamm::interest_clamm_volatile {
     clock:&Clock, 
   ) {
     let timestamp = clock.timestamp_ms();
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
 
     let state = state_mut<LpCoin>(pool.uid_mut());
     let (a, gamma) = get_a_gamma(state, clock);
@@ -996,7 +1000,7 @@ module clamm::interest_clamm_volatile {
     request: BalancesRequest,
     values: vector<Option<u256>>
   ) {
-    let pool_id = object::id(pool);
+    let pool_id = object::id_address(pool);
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
     claim_admin_fees_impl(state, clock, request, coin_states);
@@ -1619,7 +1623,7 @@ module clamm::interest_clamm_volatile {
 
   fun claim_admin_fees_impl<LpCoin>(state: &mut State<LpCoin>, clock: &Clock, request: BalancesRequest, coin_states: vector<CoinState>) {
     let (a, gamma) = get_a_gamma(state, clock);
-    let state_id = object::id(state);
+    let state_id = object::id_address(state);
 
     let xcp_profit = state.xcp_profit;
     let xcp_profit_a = state.xcp_profit_a;

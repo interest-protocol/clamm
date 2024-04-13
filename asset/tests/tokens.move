@@ -1,12 +1,8 @@
 #[test_only]
 module clamm::dai {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct DAI has drop {}
+  public struct DAI has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: DAI, ctx: &mut TxContext) {
@@ -32,13 +28,9 @@ module clamm::dai {
 
 #[test_only]
 module clamm::usdc {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct USDC has drop {}
+  public struct USDC has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: USDC, ctx: &mut TxContext) {
@@ -64,13 +56,9 @@ module clamm::usdc {
 
 #[test_only]
 module clamm::usdt {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct USDT has drop {}
+  public struct USDT has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: USDT, ctx: &mut TxContext) {
@@ -96,13 +84,9 @@ module clamm::usdt {
 
 #[test_only]
 module clamm::true_usd {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct TRUE_USD has drop {}
+  public struct TRUE_USD has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: TRUE_USD, ctx: &mut TxContext) {
@@ -128,13 +112,9 @@ module clamm::true_usd {
 
 #[test_only]
 module clamm::frax {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct FRAX has drop {}
+  public struct FRAX has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: FRAX, ctx: &mut TxContext) {
@@ -160,13 +140,9 @@ module clamm::frax {
 
 #[test_only]
 module clamm::btc {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct BTC has drop {}
+  public struct BTC has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: BTC, ctx: &mut TxContext) {
@@ -192,13 +168,9 @@ module clamm::btc {
 
 #[test_only]
 module clamm::eth {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct ETH has drop {}
+  public struct ETH has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: ETH, ctx: &mut TxContext) {
@@ -224,13 +196,9 @@ module clamm::eth {
 
 #[test_only]
 module clamm::lp_coin {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct LP_COIN has drop {}
+  public struct LP_COIN has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: LP_COIN, ctx: &mut TxContext) {
@@ -256,13 +224,9 @@ module clamm::lp_coin {
 
 #[test_only]
 module clamm::lp_coin_2 {
-  use std::option;
-
-  use sui::transfer;
   use sui::coin;
-  use sui::tx_context::{Self, TxContext};
 
-  struct LP_COIN_2 has drop {}
+  public struct LP_COIN_2 has drop {}
 
   #[lint_allow(share_owned)]
   fun init(witness: LP_COIN_2, ctx: &mut TxContext) {

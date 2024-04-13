@@ -3,8 +3,6 @@ module clamm::amm_test_utils {
 
   use sui::math;
   use sui::clock;
-  use sui::transfer;
-  use sui::tx_context::TxContext;
   use sui::coin::{mint_for_testing, Coin, CoinMetadata};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
