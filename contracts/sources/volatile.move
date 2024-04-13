@@ -24,7 +24,7 @@ module clamm::interest_clamm_volatile {
   use clamm::amm_admin::Admin;
   use clamm::curves::Volatile;
   use clamm::pool_events as events;
-  use clamm::interest_pool::{Self, InterestPool, new};
+  use clamm::interest_pool::{new, InterestPool};
   use clamm::utils::{
     empty_vector,
     vector_2_to_tuple,
@@ -33,6 +33,7 @@ module clamm::interest_clamm_volatile {
     make_coins_vec_set_from_vector,
   };
 
+  use fun coin::take as Balance.take;
   use fun utils::head as vector.head;
   use fun utils::to_u64 as u256.to_u64;
   use fun utils::to_u256 as u64.to_u256;
@@ -384,7 +385,7 @@ module clamm::interest_clamm_volatile {
 
     increment_version(state);
 
-    coin::take(coin_balance_mut(&mut state.id), amount_out, ctx)
+    coin_balance_mut(&mut state.id).take(amount_out, ctx)
   }
 
   public fun add_liquidity_2_pool<CoinA, CoinB, LpCoin>(
@@ -475,7 +476,7 @@ module clamm::interest_clamm_volatile {
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
 
-    assert!(coin::value(&lp_coin) != 0, errors::no_zero_coin());
+    assert!(lp_coin.value() != 0, errors::no_zero_coin());
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
@@ -515,7 +516,7 @@ module clamm::interest_clamm_volatile {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinOut> {
-    let lp_coin_amount = coin::value(&lp_coin);
+    let lp_coin_amount = lp_coin.value();
 
     assert!(lp_coin_amount != 0, errors::no_zero_coin());
 
@@ -565,7 +566,7 @@ module clamm::interest_clamm_volatile {
 
     increment_version(state);
 
-    coin::take(coin_balance_mut(&mut state.id), remove_amount, ctx)
+    coin_balance_mut(&mut state.id).take(remove_amount, ctx)
   }
 
   public fun balances_request<LpCoin>(pool: &InterestPool<Volatile>): BalancesRequest {
@@ -919,7 +920,7 @@ module clamm::interest_clamm_volatile {
 
     events::emit_claim_admin_fees<LpCoin>(value);
 
-    coin::take(admin_balance, value, ctx)
+    admin_balance.take(value, ctx)
   }
 
   public fun ramp<LpCoin>(
@@ -1285,7 +1286,7 @@ module clamm::interest_clamm_volatile {
       let remove_amount = mul_down(coin_amount, coin_state.decimals_scalar).to_u64();
       assert!(remove_amount >= min_amount, errors::slippage());
 
-      coin::take(coin_balance_mut(&mut state.id), remove_amount, ctx)
+      coin_balance_mut(&mut state.id).take(remove_amount, ctx)
   }
 
   fun add_state<LpCoin>(
@@ -1629,7 +1630,7 @@ module clamm::interest_clamm_volatile {
     
     assert!(state_id == request_state_id, errors::wrong_pool_id());
     assert!(state.version == version, errors::version_was_updated());
-    assert!(n_coins == vec_map::size(&coins), errors::missing_coin_balance());
+    assert!(n_coins == coins.size(), errors::missing_coin_balance());
 
     let mut i = 0;
     while (n_coins > i) {
@@ -1645,8 +1646,7 @@ module clamm::interest_clamm_volatile {
       let fees = (xcp_profit - xcp_profit_a) * state.fees.admin_fee / 20000000000;
       if (fees != 0) {
         let frac = mul_up(state.lp_coin_supply.supply_value().to_u256() * ROLL, div_up (vprice, (vprice - fees)) - PRECISION);
-        balance::join(
-          df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey {}), 
+        df::borrow_mut<AdminCoinBalanceKey, Balance<LpCoin>>(&mut state.id, AdminCoinBalanceKey {}).join( 
           state.lp_coin_supply.increase_supply((frac / ROLL).to_u64())
         );
         state.xcp_profit = xcp_profit - (fees * 2)
@@ -1666,14 +1666,14 @@ module clamm::interest_clamm_volatile {
   // * Borrow State Functions
 
   fun state_and_coin_states<LpCoin>(pool: &InterestPool<Volatile>): (&State<LpCoin>, vector<CoinState>) {
-    let coins = interest_pool::coins(pool);    
+    let coins = pool.coins();    
     let state = state<LpCoin>(pool.uid());
     let coin_states = coin_state_vector_in_order(state, coins);
     (state, coin_states)
   }
 
   fun state_and_coin_states_mut<LpCoin>(pool: &mut InterestPool<Volatile>): (&mut State<LpCoin>, vector<CoinState>) {
-    let coins = interest_pool::coins(pool);    
+    let coins = pool.coins();   
     let state = state_mut<LpCoin>(pool.uid_mut());
     let coin_states = coin_state_vector_in_order(state, coins);
     (state, coin_states)
@@ -1741,6 +1741,4 @@ module clamm::interest_clamm_volatile {
   fun state_mut<LpCoin>(id: &mut UID): &mut State<LpCoin> {
     dof::borrow_mut(id, StateKey {})
   }
-
-  // === Test Functions ===
 }

@@ -7,7 +7,7 @@ module clamm::utils {
 
   use suitears::comparator::{compare, eq};
 
-  use clamm::interest_pool::{Self, InterestPool};
+  use clamm::interest_pool::InterestPool;
 
   // === Public-Mutative Functions ===
 
@@ -34,8 +34,8 @@ module clamm::utils {
 
   public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
     (
-      *vector::borrow(&x, 0),
-      *vector::borrow(&x, 1),
+      *&x[0],
+      *&x[1],
     )
   }
 
@@ -54,7 +54,7 @@ module clamm::utils {
   // === Public-View Functions ===
 
   public fun are_coins_ordered<Curve>(pool: &InterestPool<Curve>, coins: vector<TypeName>): bool {
-    eq(&compare(&interest_pool::coins(pool), &coins))
+    eq(&compare(&pool.coins(), &coins))
   }
 
   public fun to_u8(x: u64): u8 {

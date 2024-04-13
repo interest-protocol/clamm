@@ -23,6 +23,7 @@ module clamm::interest_clamm_stable {
   use clamm::stable_math::{y, y_lp, a as get_a, invariant_};
   use clamm::utils::{empty_vector, are_coins_ordered, make_coins_vec_set_from_vector};
 
+  use fun coin::take as Balance.take;
   use fun utils::to_u64 as u256.to_u64;
   use fun utils::to_u256 as u64.to_u256;
   use fun coin::from_balance as Balance.to_coin;
@@ -344,7 +345,7 @@ module clamm::interest_clamm_stable {
 
     let admin_balance_in = coin_out_balance.split(admin_fee_out);
 
-    let coin_out = coin::take(coin_out_balance, amount_out, ctx);
+    let coin_out = coin_out_balance.take(amount_out, ctx);
 
     admin_balance_mut<CoinOut>(&mut state.id).join(admin_balance_in);
 
@@ -566,7 +567,7 @@ module clamm::interest_clamm_stable {
 
     events::emit_remove_liquidity<Stable, CoinType, LpCoin>(pool_id, amount_to_take, lp_coin_value);
 
-    let coin_out = coin::take(&mut coin_state.balance, amount_to_take, ctx);
+    let coin_out = coin_state.balance.take(amount_to_take, ctx);
 
     assert!(virtual_price_impl(state<LpCoin>(pool.uid()), clock) >= prev_invariant, errors::invalid_invariant());
 
@@ -808,7 +809,7 @@ module clamm::interest_clamm_stable {
 
   public fun coin_balance<CoinType, LpCoin>(pool: &InterestPool<Stable>): u64 {
     let state = state<LpCoin>(pool.uid());
-    balance::value(&coin_state<CoinType>(&state.id).balance)
+    coin_state<CoinType>(&state.id).balance.value()
   }     
   
   // @dev Price is returned in 1e18
@@ -923,7 +924,7 @@ module clamm::interest_clamm_stable {
 
     events::emit_take_fees<Stable, CoinType, LpCoin>(pool_id, amount);
 
-    coin::take(admin_balance, amount, ctx)
+    admin_balance.take(amount, ctx)
   }
 
   // === Private Functions ===
@@ -971,13 +972,13 @@ module clamm::interest_clamm_stable {
 
     let denormalized_value = *current_balance * coin_state.decimals / PRECISION;
 
-    let balance_to_remove = denormalized_value * lp_coin_value.to_u256() / balance::supply_value(&state.lp_coin_supply).to_u256();
+    let balance_to_remove = denormalized_value * lp_coin_value.to_u256() / state.lp_coin_supply.supply_value().to_u256();
 
     assert!(balance_to_remove.to_u64() >= *&min_amounts[coin_state.index], errors::slippage());
 
     *current_balance = *current_balance - (balance_to_remove * PRECISION / coin_state.decimals);
 
-    coin::take(&mut coin_state.balance, balance_to_remove.to_u64(), ctx)
+    coin_state.balance.take(balance_to_remove.to_u64(), ctx)
   }
 
   fun add_coin<CoinType>(id: &mut UID, coin_decimals: &CoinDecimals, index: u64) {
