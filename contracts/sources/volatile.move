@@ -136,7 +136,7 @@ module clamm::interest_clamm_volatile {
     price: u256, // @ on a pool with 2 coins, we only need 1 price
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): (address, Coin<LpCoin>) {
+  ): (Coin<LpCoin>, address) {
     let coin_a_value = coin_a.value();
     let coin_b_value = coin_b.value();
 
@@ -196,7 +196,7 @@ module clamm::interest_clamm_volatile {
 
     public_share_object(pool);
 
-    (pool_id, lp_coin)
+    (lp_coin, pool_id)
   }
 
   #[lint_allow(share_owned)]
@@ -212,7 +212,7 @@ module clamm::interest_clamm_volatile {
     price: vector<u256>, // @ on a pool with 3 coins, we only need 2 prices
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): (address, Coin<LpCoin>) {
+  ): (Coin<LpCoin>, address) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0
@@ -278,7 +278,7 @@ module clamm::interest_clamm_volatile {
 
     public_share_object(pool);
 
-    (pool_id, lp_coin)
+    (lp_coin, pool_id)
   }
 
   public fun swap<CoinIn, CoinOut, LpCoin>(

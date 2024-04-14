@@ -91,7 +91,7 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,     
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): Coin<LpCoin> {
+  ): (Coin<LpCoin>, address)  {
     assert!(coin_a.value() != 0 && coin_b.value() != 0, errors::no_zero_liquidity_amounts());
 
     let mut pool = interest_pool::new<Stable>(make_coins_vec_set_from_vector(vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), ctx);
@@ -113,11 +113,13 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_2_pool(&mut pool, clock, coin_a, coin_b, 0, ctx);
 
-    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(object::id_address(&pool));
+    let pool_id = object::id_address(&pool);
+
+    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool_id);
 
     public_share_object(pool);
 
-    lp_coin
+    (lp_coin, pool_id)
   }
 
   #[lint_allow(share_owned)]
@@ -130,7 +132,7 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,     
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): Coin<LpCoin> {
+  ): (Coin<LpCoin>, address) {
     assert!(coin_a.value() != 0 && coin_b.value() != 0 && coin_c.value() != 0, errors::no_zero_liquidity_amounts());
 
     let mut pool = interest_pool::new<Stable>(make_coins_vec_set_from_vector(vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), ctx);
@@ -154,11 +156,13 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_3_pool(&mut pool, clock, coin_a, coin_b, coin_c, 0, ctx);
 
-    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(object::id_address(&pool));
+    let pool_id = object::id_address(&pool);
+
+    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool_id);
 
     public_share_object(pool);
 
-    lp_coin
+    (lp_coin, pool_id)
   }
 
   #[lint_allow(share_owned)]
@@ -172,7 +176,7 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,      
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): Coin<LpCoin> {
+  ): (Coin<LpCoin>, address) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0 
@@ -206,11 +210,13 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_4_pool(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, 0, ctx);
 
-    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(object::id_address(&pool));
+    let pool_id = object::id_address(&pool);
+
+    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool_id);
 
     public_share_object(pool);
 
-    lp_coin
+    (lp_coin, pool_id)
   }
 
   #[lint_allow(share_owned)]
@@ -225,7 +231,7 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,      
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): Coin<LpCoin> {
+  ): (Coin<LpCoin>, address) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0 
@@ -261,11 +267,13 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_5_pool(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
 
-    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(object::id_address(&pool));
+    let pool_id = object::id_address(&pool);
+
+    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool_id);
 
     public_share_object(pool);
 
-    lp_coin
+    (lp_coin, pool_id)
   }
 
   public fun swap<CoinIn, CoinOut, LpCoin>(
