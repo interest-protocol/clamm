@@ -289,7 +289,7 @@ module clamm::interest_clamm_stable {
     let admin_coin_in = coin_in.split(admin_fee_in, ctx);
 
     // Has no fees to properly calculate new out balance
-    let normalized_value = (coin_in_value - fee_in - admin_fee_in).to_u256() * PRECISION / coin_out_decimals;
+    let normalized_value = (coin_in_value - fee_in - admin_fee_in).to_u256() * PRECISION / coin_in_decimals;
 
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);
 
@@ -918,11 +918,9 @@ module clamm::interest_clamm_stable {
     let admin_balance = admin_balance_mut<CoinType, LpCoin>(state_mut(pool.state_mut()));
     let amount = admin_balance.value();
 
-    let coin_out = admin_balance.take(amount, ctx);
-
     events::emit_take_fees<Stable, CoinType, LpCoin>(pool_address, amount);
 
-    coin_out
+    admin_balance.take(amount, ctx)
   }
 
   // === Private Functions ===
