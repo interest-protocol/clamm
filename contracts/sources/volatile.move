@@ -22,9 +22,9 @@ module clamm::interest_clamm_volatile {
   use clamm::utils;
   use clamm::errors;
   use clamm::volatile_math;
-  use clamm::amm_admin::Admin;
   use clamm::curves::Volatile;
   use clamm::pool_events as events;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_pool::{Self, InterestPool};
   use clamm::utils::{
     empty_vector,
@@ -133,7 +133,7 @@ module clamm::interest_clamm_volatile {
     price: u256, // @ on a pool with 2 coins, we only need 1 price
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): (Coin<LpCoin>, address) {
+  ): (InterestPool<Volatile>, PoolAdmin, Coin<LpCoin>) {
     let coin_a_value = coin_a.value();
     let coin_b_value = coin_b.value();
 
@@ -145,7 +145,7 @@ module clamm::interest_clamm_volatile {
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>()];
 
-    let mut pool = add_state<LpCoin>(
+    let (mut pool, pool_admin) = add_state<LpCoin>(
       clock,
       coins,
       coin_decimals,
@@ -184,13 +184,10 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    let pool_id = pool.addy();
+    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool.addy());
 
-    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool_id);
 
-    public_share_object(pool);
-
-    (lp_coin, pool_id)
+    (pool, pool_admin, lp_coin)
   }
 
   #[lint_allow(share_owned)]
@@ -206,7 +203,7 @@ module clamm::interest_clamm_volatile {
     price: vector<u256>, // @ on a pool with 3 coins, we only need 2 prices
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): (Coin<LpCoin>, address) {
+  ): (InterestPool<Volatile>, PoolAdmin, Coin<LpCoin>) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0
@@ -216,7 +213,7 @@ module clamm::interest_clamm_volatile {
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()];
 
-    let mut pool = add_state<LpCoin>(
+    let (mut pool, pool_admin) = add_state<LpCoin>(
       clock,
       coins,
       coin_decimals,
@@ -263,13 +260,9 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    let pool_id = pool.addy();
+    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
 
-    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool_id);
-
-    public_share_object(pool);
-
-    (lp_coin, pool_id)
+    (pool, pool_admin, lp_coin)
   }
 
   public fun swap<CoinIn, CoinOut, LpCoin>(
@@ -897,11 +890,12 @@ module clamm::interest_clamm_volatile {
 
   public fun claim_admin_fees<LpCoin>(
     pool: &mut InterestPool<Volatile>, 
-    _: &Admin, 
+    pool_admin: &PoolAdmin, 
     clock: &Clock,
     request: BalancesRequest,
     ctx: &mut TxContext
   ): Coin<LpCoin> {
+    pool.assert_pool_admin(pool_admin);
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
     claim_admin_fees_impl(state, clock, request, coin_states);
@@ -917,12 +911,13 @@ module clamm::interest_clamm_volatile {
 
   public fun ramp<LpCoin>(
     pool: &mut InterestPool<Volatile>,
-    _: &Admin, 
+    pool_admin: &PoolAdmin, 
     clock: &Clock, 
     future_a: u256, 
     future_gamma: u256, 
     future_time: u64
   ) {
+    pool.assert_pool_admin(pool_admin);
     let timestamp = clock.timestamp_ms();
     let pool_id = pool.addy();
 
@@ -960,9 +955,10 @@ module clamm::interest_clamm_volatile {
 
   public fun stop_ramp<LpCoin>(
     pool: &mut InterestPool<Volatile>,
-    _: &Admin, 
+    pool_admin: &PoolAdmin, 
     clock:&Clock, 
   ) {
+    pool.assert_pool_admin(pool_admin);
     let timestamp = clock.timestamp_ms();
     let pool_id = pool.addy();
 
@@ -983,11 +979,12 @@ module clamm::interest_clamm_volatile {
 
   public fun update_parameters<LpCoin>(
     pool: &mut InterestPool<Volatile>,
-    _: &Admin, 
+    pool_admin: &PoolAdmin, 
     clock: &Clock,
     request: BalancesRequest,
     values: vector<Option<u256>>
   ) {
+    pool.assert_pool_admin(pool_admin);
     let pool_id = pool.addy();
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
@@ -1291,7 +1288,7 @@ module clamm::interest_clamm_volatile {
     rebalancing_params: vector<u256>,
     fee_params: vector<u256>, 
     ctx: &mut TxContext
-  ): InterestPool<Volatile> {
+  ): (InterestPool<Volatile>, PoolAdmin) {
     assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
     assert!(rebalancing_params.length() == 3, errors::must_have_3_values());
     assert!(fee_params.length() == 3, errors::must_have_3_values());

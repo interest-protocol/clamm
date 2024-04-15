@@ -51,6 +51,7 @@ module clamm::errors {
   const VERSION_WAS_UPDATED: u64 = 47;
   const WRONG_POOL_ID: u64 = 48;
   const INVALID_VERSION: u64 = 49;
+  const INVALID_POOL_ADMIN: u64 = 50;
 
   // === Public-View Functions ===
 
@@ -253,4 +254,8 @@ module clamm::errors {
   public fun invalid_version(): u64 {
     INVALID_VERSION
   }
+
+  public fun invalid_pool_admin(): u64 {
+    INVALID_POOL_ADMIN
+  }  
 }
