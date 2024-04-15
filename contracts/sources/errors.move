@@ -50,6 +50,7 @@ module clamm::errors {
   const MISSING_COIN_BALANCE: u64 = 46;
   const VERSION_WAS_UPDATED: u64 = 47;
   const WRONG_POOL_ID: u64 = 48;
+  const INVALID_VERSION: u64 = 49;
 
   // === Public-View Functions ===
 
@@ -247,5 +248,9 @@ module clamm::errors {
 
   public fun wrong_pool_id(): u64 {
     WRONG_POOL_ID
+  }
+
+  public fun invalid_version(): u64 {
+    INVALID_VERSION
   }
 }
