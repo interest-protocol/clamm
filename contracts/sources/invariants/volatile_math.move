@@ -54,7 +54,7 @@ module clamm::volatile_math {
   * @return u256 The maximum amplifier value
   */
   public fun max_a(n_coins: u64): u256 {
-    n_coins.pow(n_coins.to_u8()).to_u256() * A_MULTIPLIER / 1000    
+    n_coins.pow(n_coins.to_u8()).to_u256() * A_MULTIPLIER * 1000    
   }
 
   /*

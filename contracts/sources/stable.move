@@ -539,17 +539,17 @@ module clamm::interest_clamm_stable {
 
     let prev_invariant = virtual_price_impl(state, clock);
 
-    let mut balances = state.balances;
-    let initial_balances = state.balances;
-
     let (index, decimals) = coin_state_metadata<CoinType, LpCoin>(state);
-    let current_coin_balance = &mut balances[index]; 
+
+    let balances = state.balances;
+
+    let current_coin_balance = &mut state.balances[index]; 
     let initial_coin_balance = *current_coin_balance;
     
     *current_coin_balance = y_lp(
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
       index.to_u256(),
-      initial_balances,
+      balances,
       lp_coin_value.to_u256(),
       state.lp_coin_supply.supply_value().to_u256(),
     ) + 1; // give an edge to the protocol
@@ -1015,13 +1015,11 @@ module clamm::interest_clamm_stable {
         admin_balances: bag::new(ctx)
     };
 
-    let pool = interest_pool::new<Stable>(
+    interest_pool::new<Stable>(
       make_coins_vec_set_from_vector(coins),
       versioned::create(STATE_V1_VERSION, state_v1, ctx), 
       ctx
-    );
-
-    pool
+    )
   }
 
   fun virtual_price_impl<LpCoin>(state: &StateV1<LpCoin>, clock: &Clock): u256 {
