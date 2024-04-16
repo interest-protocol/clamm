@@ -52,6 +52,10 @@ module clamm::errors {
   const WRONG_POOL_ID: u64 = 48;
   const INVALID_VERSION: u64 = 49;
   const INVALID_POOL_ADMIN: u64 = 50;
+  const INVALID_RULE_NAME: u64 = 51;
+  const RULE_NOT_ADDED: u64 = 52;
+  const WRONG_REQUEST_POOL_ADDRESS: u64 = 53;
+  const RULE_NOT_APPROVED: u64 = 54;
 
   // === Public-View Functions ===
 
@@ -257,5 +261,21 @@ module clamm::errors {
 
   public fun invalid_pool_admin(): u64 {
     INVALID_POOL_ADMIN
-  }  
+  } 
+
+  public fun invalid_rule_name(): u64 {
+    INVALID_RULE_NAME
+  }    
+
+  public fun rule_not_added(): u64 {
+    RULE_NOT_ADDED
+  }
+
+  public fun wrong_request_pool_address(): u64 {
+    WRONG_REQUEST_POOL_ADDRESS
+  }
+
+  public fun rule_not_approved(): u64 {
+    RULE_NOT_APPROVED
+  }
 }

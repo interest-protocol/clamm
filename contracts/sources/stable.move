@@ -20,7 +20,7 @@ module clamm::interest_clamm_stable {
   use clamm::stable_fees::{Self, StableFees};
   use clamm::interest_pool::{Self, InterestPool};
   use clamm::stable_math::{y, y_lp, a as get_a, invariant_};
-  use clamm::utils::{empty_vector, are_coins_ordered, make_coins_vec_set_from_vector};
+  use clamm::utils::{empty_vector, make_coins_vec_set_from_vector};
 
   use fun coin::take as Balance.take;
   use fun utils::to_u64 as u256.to_u64;
@@ -343,7 +343,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
+    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
@@ -382,7 +382,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
+    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
@@ -425,7 +425,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
     assert!(
-      are_coins_ordered(
+      interest_pool::are_coins_ordered(
         pool, 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]), 
       errors::coins_must_be_in_order()
@@ -473,7 +473,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
     assert!(
-      are_coins_ordered(
+      interest_pool::are_coins_ordered(
         pool, 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]), 
       errors::coins_must_be_in_order()
@@ -565,7 +565,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>) {
     assert!(
-      are_coins_ordered(
+      interest_pool::are_coins_ordered(
         pool, 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), 
       errors::coins_must_be_in_order()
@@ -606,7 +606,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
     assert!(
-      are_coins_ordered(
+      interest_pool::are_coins_ordered(
         pool, 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), 
       errors::coins_must_be_in_order()
@@ -649,7 +649,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
     assert!(
-      are_coins_ordered(
+      interest_pool::are_coins_ordered(
         pool, 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]), 
       errors::coins_must_be_in_order()
@@ -694,7 +694,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
     assert!(
-      are_coins_ordered(
+      interest_pool::are_coins_ordered(
         pool, 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]), 
       errors::coins_must_be_in_order()
