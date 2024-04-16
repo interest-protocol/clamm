@@ -9,10 +9,10 @@ module clamm::volatile_2pool_swap_tests {
   use sui::test_scenario::{Self as test, next_tx, ctx}; 
 
   use clamm::eth::ETH;
-  use clamm::amm_admin;
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_clamm_volatile;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_2pool;
@@ -445,7 +445,7 @@ module clamm::volatile_2pool_swap_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Volatile>>(test);
-      let admin_cap = test::take_from_sender<amm_admin::Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut i = 0;
 
       while (200 > i) {

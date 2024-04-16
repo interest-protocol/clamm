@@ -13,7 +13,7 @@ module clamm::volatile_3pool_claim_fees_tests {
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
-  use clamm::amm_admin::Admin;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_clamm_volatile;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_3pool;
@@ -33,7 +33,7 @@ module clamm::volatile_3pool_claim_fees_tests {
     next_tx(test, alice); 
     {
       let mut pool = test::take_shared<InterestPool<Volatile>>(test);  
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
 
       let mut i = 0;
 
