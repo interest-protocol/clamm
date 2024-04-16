@@ -12,9 +12,9 @@ module clamm::volatile_3pool_swap_tests {
   use clamm::btc::BTC;
   use clamm::eth::ETH;
   use clamm::usdc::USDC;
-  use clamm::amm_admin::Admin;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_3pool;
   use clamm::amm_test_utils ::{people, scenario, mint};
@@ -564,7 +564,7 @@ module clamm::volatile_3pool_swap_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Volatile>>(test);  
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
 
       let mut i = 0;
 

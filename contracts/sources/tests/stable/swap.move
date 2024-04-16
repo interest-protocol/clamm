@@ -15,9 +15,9 @@ module clamm::stable_swap_tests {
   use clamm::stable_fees;
   use clamm::stable_math;
   use clamm::curves::Stable;
-  use clamm::interest_clamm_stable;
-  use clamm::amm_admin::Admin;
   use clamm::lp_coin::LP_COIN;
+  use clamm::pool_admin::PoolAdmin;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_3pool;
   use clamm::stable_simulation::{Self as sim, State as SimState};
@@ -105,10 +105,10 @@ module clamm::stable_swap_tests {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test); 
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
 
       interest_clamm_stable::update_fee<LP_COIN>(
-           &mut pool,
+        &mut pool,
         &admin_cap,
         option::none(),
         option::none(),

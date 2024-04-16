@@ -25,4 +25,11 @@ module clamm::pool_admin {
   public fun addy(self: &PoolAdmin): address {
     self.id.to_address()
   }  
+
+  // === Test Functions ===
+
+  #[test_only]
+  public fun new_for_testing(ctx: &mut TxContext): PoolAdmin {
+    new(ctx)
+  }
 }

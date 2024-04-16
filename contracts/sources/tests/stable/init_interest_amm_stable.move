@@ -6,13 +6,14 @@ module clamm::init_interest_amm_stable {
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use clamm::interest_clamm_stable;
   use clamm::dai::DAI;
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
   use clamm::frax::FRAX;
+  use clamm::interest_pool;
   use clamm::lp_coin::LP_COIN;
   use clamm::true_usd::TRUE_USD;
+  use clamm::interest_clamm_stable;
   use clamm::stable_simulation::{Self as sim, State as SimState};
   use clamm::amm_test_utils::{people, mint, normalize_amount, setup_dependencies};
 
@@ -41,7 +42,7 @@ module clamm::init_interest_amm_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let mut sim_state = test::take_shared<SimState>(test);
 
-      let (lp_coin, _) = interest_clamm_stable::new_3_pool(
+      let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -52,8 +53,10 @@ module clamm::init_interest_amm_stable {
         ctx(test)
       );
 
-      burn(lp_coin);
-
+      burn(lp_coin);    
+      interest_pool::share(pool);
+      transfer::public_transfer(pool_admin, alice);
+  
       sim::set_state(
         &mut sim_state, 
         initial_a, 
@@ -93,7 +96,7 @@ module clamm::init_interest_amm_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let mut sim_state = test::take_shared<SimState>(test);
 
-      let (lp_coin, _) = interest_clamm_stable::new_4_pool(
+      let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -105,7 +108,9 @@ module clamm::init_interest_amm_stable {
         ctx(test)
       );
 
-      burn(lp_coin);
+      burn(lp_coin);    
+      interest_pool::share(pool);
+      transfer::public_transfer(pool_admin, alice);
 
       sim::set_state(
         &mut sim_state, 
@@ -152,7 +157,7 @@ module clamm::init_interest_amm_stable {
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
       let mut sim_state = test::take_shared<SimState>(test);
 
-      let (lp_coin, _) = interest_clamm_stable::new_5_pool(
+      let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool(
         &c,
         initial_a,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
@@ -165,7 +170,9 @@ module clamm::init_interest_amm_stable {
         ctx(test)
       );
 
-      burn(lp_coin);
+      burn(lp_coin);    
+      interest_pool::share(pool);
+      transfer::public_transfer(pool_admin, alice);
 
       sim::set_state(
         &mut sim_state, 
