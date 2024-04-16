@@ -11,7 +11,6 @@ module clamm::amm_test_utils {
   use clamm::btc::{Self, BTC};
   use clamm::eth::{Self, ETH};
   use clamm::dai::{Self, DAI};
-  use clamm::amm_admin as admin;
   use clamm::usdt::{Self, USDT};
   use clamm::usdc::{Self, USDC};
   use clamm::frax::{Self, FRAX};
@@ -48,7 +47,6 @@ module clamm::amm_test_utils {
       usdc::init_for_testing(ctx(test));
       usdt::init_for_testing(ctx(test));
       lp_coin::init_for_testing(ctx(test));
-      admin::init_for_testing(ctx(test));
       frax::init_for_testing(ctx(test));
       true_usd::init_for_testing(ctx(test));
 
