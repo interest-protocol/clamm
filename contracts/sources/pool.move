@@ -7,13 +7,16 @@ module clamm::interest_pool {
   use sui::versioned::Versioned;
 
   use clamm::curves;
+  use clamm::errors;
+  use clamm::pool_admin::{Self, PoolAdmin};
 
   // === Structs ===
 
-  public struct InterestPool<phantom Curve> has key, store {
+  public struct InterestPool<phantom Curve> has key {
     id: UID,
     coins: VecSet<TypeName>,
-    state: Versioned
+    state: Versioned,
+    pool_admin_address: address
   }
 
   // === Public-View Functions ===
@@ -26,15 +29,28 @@ module clamm::interest_pool {
     *self.coins.keys()
   }
 
-  // === Public-Package Functions ===
-
-  public(package) fun uid<Curve>(self: &InterestPool<Curve>): &UID {
-    &self.id
+  public fun pool_admin_address<Curve>(self: &InterestPool<Curve>): address {
+    self.pool_admin_address
   }
 
-  public(package) fun uid_mut<Curve>(self: &mut InterestPool<Curve>): &mut UID {
+  // === Public Mutative Functions ===
+
+  public fun share<Curve>(self: InterestPool<Curve>) {
+    transfer::share_object(self);
+  }
+
+  public fun assert_pool_admin<Curve>(self: &InterestPool<Curve>, pool_admin: &PoolAdmin) {
+    assert!(self.pool_admin_address == pool_admin.addy(), errors::invalid_pool_admin());
+  }
+
+  // === Admin Functions ===
+
+  public fun uid_mut<Curve>(self: &mut InterestPool<Curve>, pool_admin: &PoolAdmin): &mut UID {
+    assert_pool_admin(self, pool_admin);
     &mut self.id
   }
+
+  // === Public-Package Functions ===
 
   public(package) fun state<Curve>(self: &InterestPool<Curve>): &Versioned {
     &self.state
@@ -44,12 +60,16 @@ module clamm::interest_pool {
     &mut self.state
   }
 
-  public(package) fun new<Curve>(coins: VecSet<TypeName>, state: Versioned, ctx: &mut TxContext): InterestPool<Curve>  {
+  public(package) fun new<Curve>(coins: VecSet<TypeName>, state: Versioned, ctx: &mut TxContext): (InterestPool<Curve>, PoolAdmin)  {
     curves::assert_curve<Curve>();
-    InterestPool {
+    let pool_admin = pool_admin::new(ctx);
+    let pool = InterestPool {
       id: object::new(ctx),
       coins,
-      state
-    }
+      state,
+      pool_admin_address: pool_admin.addy()
+    };
+
+    (pool, pool_admin)
   }
 }

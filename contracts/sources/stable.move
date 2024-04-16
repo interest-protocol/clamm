@@ -7,7 +7,6 @@ module clamm::interest_clamm_stable {
   use sui::bag::{Self, Bag};
   use sui::coin::{Self, Coin};
   use sui::versioned::{Self, Versioned};
-  use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
 
   use suitears::math256::min;
@@ -16,7 +15,7 @@ module clamm::interest_clamm_stable {
   use clamm::utils;
   use clamm::errors;
   use clamm::curves::Stable;
-  use clamm::amm_admin::Admin;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::pool_events as events;
   use clamm::stable_fees::{Self, StableFees};
   use clamm::interest_pool::{Self, InterestPool};
@@ -87,12 +86,12 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,     
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Coin<LpCoin>, address)  {
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>)  {
     assert!(coin_a.value() != 0 && coin_b.value() != 0, errors::no_zero_liquidity_amounts());
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>()];
 
-    let mut pool = add_state<LpCoin>( 
+    let (mut pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -101,8 +100,7 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());      
+    let state = load_mut<LpCoin>(pool.state_mut());      
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -110,11 +108,9 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_2_pool(&mut pool, clock, coin_a, coin_b, 0, ctx);
 
-    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool_address);
+    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool.addy());
 
-    public_share_object(pool);
-
-    (lp_coin, pool_address)
+    (pool, pool_admin, lp_coin)
   }
 
   #[lint_allow(share_owned)]
@@ -127,12 +123,12 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,     
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Coin<LpCoin>, address) {
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
     assert!(coin_a.value() != 0 && coin_b.value() != 0 && coin_c.value() != 0, errors::no_zero_liquidity_amounts());
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()];
 
-    let mut pool = add_state<LpCoin>( 
+    let (mut pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -141,8 +137,7 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());      
+    let state = load_mut<LpCoin>(pool.state_mut());      
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -151,11 +146,9 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_3_pool(&mut pool, clock, coin_a, coin_b, coin_c, 0, ctx);
 
-    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool_address);
+    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
 
-    public_share_object(pool);
-
-    (lp_coin, pool_address)
+    (pool, pool_admin, lp_coin)
   }
 
   #[lint_allow(share_owned)]
@@ -169,7 +162,7 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,      
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Coin<LpCoin>, address) {
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0 
@@ -180,7 +173,7 @@ module clamm::interest_clamm_stable {
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()];
 
-    let mut pool = add_state<LpCoin>( 
+    let (mut pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -189,8 +182,7 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());    
+    let state = load_mut<LpCoin>(pool.state_mut());    
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -200,11 +192,9 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_4_pool(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, 0, ctx);
 
-    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool_address);
+    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool.addy());
 
-    public_share_object(pool);
-
-    (lp_coin, pool_address)
+    (pool, pool_admin, lp_coin)
   }
 
   #[lint_allow(share_owned)]
@@ -219,7 +209,7 @@ module clamm::interest_clamm_stable {
     coin_decimals: &CoinDecimals,      
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Coin<LpCoin>, address) {
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
     assert!(
       coin_a.value() != 0 
       && coin_b.value() != 0 
@@ -237,7 +227,7 @@ module clamm::interest_clamm_stable {
       type_name::get<CoinE>()
     ];
 
-    let mut pool = add_state<LpCoin>( 
+    let (mut pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -246,8 +236,7 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -258,11 +247,10 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_5_pool(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
 
-    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool_address);
+    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool.addy());
 
-    public_share_object(pool);
 
-    (lp_coin, pool_address)
+    (pool, pool_admin, lp_coin)
   }
 
   public fun swap<CoinIn, CoinOut, LpCoin>(
@@ -278,7 +266,7 @@ module clamm::interest_clamm_stable {
     assert!(coin_in_value != 0, errors::cannot_swap_zero_value());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let (coin_in_index, coin_in_decimals) = coin_state_metadata<CoinIn, LpCoin>(state);
     let (coin_out_index, coin_out_decimals) = coin_state_metadata<CoinOut, LpCoin>(state);
@@ -358,7 +346,7 @@ module clamm::interest_clamm_stable {
     assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
     
@@ -380,7 +368,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     lp_coin
   }
@@ -397,7 +385,7 @@ module clamm::interest_clamm_stable {
     assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
     
@@ -421,7 +409,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     lp_coin
   }
@@ -444,7 +432,7 @@ module clamm::interest_clamm_stable {
     );
     
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
     let prev_invariant = virtual_price_impl(state, clock);
     
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
@@ -468,7 +456,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     lp_coin
   }
@@ -492,7 +480,7 @@ module clamm::interest_clamm_stable {
     );
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
     
@@ -519,7 +507,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     lp_coin
   }
@@ -535,7 +523,7 @@ module clamm::interest_clamm_stable {
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
 
@@ -564,7 +552,7 @@ module clamm::interest_clamm_stable {
 
     let coin_out = coin_state_balance_mut<CoinType, LpCoin>(state).take(amount_to_take, ctx);
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     coin_out
   }
@@ -587,7 +575,7 @@ module clamm::interest_clamm_stable {
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
 
@@ -605,7 +593,7 @@ module clamm::interest_clamm_stable {
       lp_coin_value
     );
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     (coin_a, coin_b)
   }
@@ -628,7 +616,7 @@ module clamm::interest_clamm_stable {
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
 
@@ -648,7 +636,7 @@ module clamm::interest_clamm_stable {
       lp_coin_value
     );
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     (coin_a, coin_b, coin_c)
   }
@@ -671,7 +659,7 @@ module clamm::interest_clamm_stable {
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut()); 
+    let state = load_mut<LpCoin>(pool.state_mut()); 
 
     let prev_invariant = virtual_price_impl(state, clock);
 
@@ -693,7 +681,7 @@ module clamm::interest_clamm_stable {
       lp_coin_value
     );
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     (coin_a, coin_b, coin_c, coin_d)
   }
@@ -716,7 +704,7 @@ module clamm::interest_clamm_stable {
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let prev_invariant = virtual_price_impl(state, clock);
 
@@ -740,7 +728,7 @@ module clamm::interest_clamm_stable {
       lp_coin_value
     );
 
-    assert!(virtual_price_impl(state<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());    
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());    
 
     (coin_a, coin_b, coin_c, coin_d, coin_e)
   }
@@ -748,65 +736,65 @@ module clamm::interest_clamm_stable {
   // === Public-View Functions ===
 
   public fun balances<LpCoin>(pool: &mut InterestPool<Stable>): vector<u256> {
-    state<LpCoin>(pool.state_mut()).balances
+    load<LpCoin>(pool.state_mut()).balances
   }
 
   public fun initial_a<LpCoin>(pool: &mut InterestPool<Stable>): u256 {
-    state<LpCoin>(pool.state_mut()).initial_a
+    load<LpCoin>(pool.state_mut()).initial_a
   }
 
   public fun future_a<LpCoin>(pool: &mut InterestPool<Stable>): u256 {
-    state<LpCoin>(pool.state_mut()).future_a
+    load<LpCoin>(pool.state_mut()).future_a
   }  
 
   public fun initial_a_time<LpCoin>(pool: &mut InterestPool<Stable>): u256 {
-    state<LpCoin>(pool.state_mut()).initial_a_time
+    load<LpCoin>(pool.state_mut()).initial_a_time
   }    
 
   public fun future_a_time<LpCoin>(pool: &mut InterestPool<Stable>): u256 {
-    state<LpCoin>(pool.state_mut()).future_a_time
+    load<LpCoin>(pool.state_mut()).future_a_time
   }    
 
   public fun a<LpCoin>(
     pool: &mut InterestPool<Stable>,
     clock: &Clock,
   ): u256 {
-    let state = state<LpCoin>(pool.state_mut());
+    let state = load<LpCoin>(pool.state_mut());
     get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock)
   }
 
   public fun lp_coin_supply<LpCoin>(pool: &mut InterestPool<Stable>): u64 {
-    state<LpCoin>(pool.state_mut()).lp_coin_supply.supply_value()
+    load<LpCoin>(pool.state_mut()).lp_coin_supply.supply_value()
   }
 
   public fun lp_coin_decimals_scalar<LpCoin>(pool: &mut InterestPool<Stable>): u256 {
-    state<LpCoin>(pool.state_mut()).lp_coin_decimals_scalar
+    load<LpCoin>(pool.state_mut()).lp_coin_decimals_scalar
   }  
 
   public fun n_coins<LpCoin>(pool: &mut InterestPool<Stable>): u64 {
-    state<LpCoin>(pool.state_mut()).n_coins
+    load<LpCoin>(pool.state_mut()).n_coins
   }
 
   public fun fees<LpCoin>(pool: &mut InterestPool<Stable>): StableFees {
-    state<LpCoin>(pool.state_mut()).fees
+    load<LpCoin>(pool.state_mut()).fees
   }
 
   public fun admin_balance<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u64 {
-    state<LpCoin>(pool.state_mut()).admin_balances.borrow<TypeName, Balance<CoinType>>(type_name::get<CoinType>()).value()
+    load<LpCoin>(pool.state_mut()).admin_balances.borrow<TypeName, Balance<CoinType>>(type_name::get<CoinType>()).value()
   } 
 
   public fun coin_decimals<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u8 {
-    let (_, decimals) = coin_state_metadata<CoinType, LpCoin>(state(pool.state_mut()));
+    let (_, decimals) = coin_state_metadata<CoinType, LpCoin>(load(pool.state_mut()));
     (decimals as u8)
   } 
 
   public fun coin_index<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u8 {
-    let (index, _) = coin_state_metadata<CoinType, LpCoin>(state(pool.state_mut()));
+    let (index, _) = coin_state_metadata<CoinType, LpCoin>(load(pool.state_mut()));
     (index as u8)
   }  
 
   public fun coin_balance<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u64 {
-    coin_state_balance<CoinType, LpCoin>(state<LpCoin>(pool.state_mut())).value()
+    coin_state_balance<CoinType, LpCoin>(load<LpCoin>(pool.state_mut())).value()
   }     
   
   // @dev Price is returned in 1e18
@@ -814,7 +802,7 @@ module clamm::interest_clamm_stable {
     pool: &mut InterestPool<Stable>,
     clock: &Clock,
   ): u256 {
-    virtual_price_impl(state<LpCoin>(pool.state_mut()), clock)
+    virtual_price_impl(load<LpCoin>(pool.state_mut()), clock)
   }
 
   public fun quote_swap<CoinIn, CoinOut, LpCoin>(
@@ -822,7 +810,7 @@ module clamm::interest_clamm_stable {
     clock: &Clock,
     amount: u64    
   ): (u64, u64, u64) {
-    let state = state<LpCoin>(pool.state_mut());
+    let state = load<LpCoin>(pool.state_mut());
 
     let (coin_in_index, coin_in_decimals) = coin_state_metadata<CoinIn, LpCoin>(state);
     let (coin_out_index, coin_out_decimals) = coin_state_metadata<CoinOut, LpCoin>(state);
@@ -849,10 +837,11 @@ module clamm::interest_clamm_stable {
 
   // === Admin Functions ===
 
-  public fun ramp<LpCoin>(pool: &mut InterestPool<Stable>, _: &Admin, clock: &Clock, future_a: u256, future_a_time: u256) {
+  public fun ramp<LpCoin>(pool: &mut InterestPool<Stable>, pool_admin: &PoolAdmin, clock: &Clock, future_a: u256, future_a_time: u256) {
+    pool.assert_pool_admin(pool_admin);
     let current_timestamp = clock.timestamp_ms();
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     assert!(current_timestamp > state.initial_a_time.to_u64() + MIN_RAMP_TIME, errors::wait_one_day());
     assert!(future_a_time >= (current_timestamp + MIN_RAMP_TIME).to_u256(), errors::future_ramp_time_is_too_short());
@@ -870,11 +859,12 @@ module clamm::interest_clamm_stable {
     events::emit_ramp_a<LpCoin>(pool_address, amp, future_a, future_a_time, current_timestamp);
   }
 
-  public fun stop_ramp<LpCoin>(pool: &mut InterestPool<Stable>, _: &Admin, clock: &Clock) {
+  public fun stop_ramp<LpCoin>(pool: &mut InterestPool<Stable>, pool_admin: &PoolAdmin, clock: &Clock) {
+    pool.assert_pool_admin(pool_admin);
     let current_timestamp = clock.timestamp_ms();
 
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock); 
 
@@ -888,13 +878,14 @@ module clamm::interest_clamm_stable {
 
   public fun update_fee<LpCoin>(
     pool: &mut InterestPool<Stable>,
-    _: &Admin,
+    pool_admin: &PoolAdmin,
     fee_in_percent: Option<u256>,
     fee_out_percent: Option<u256>, 
     admin_fee_percent: Option<u256>,  
   ) {
+    pool.assert_pool_admin(pool_admin);
     let pool_address = pool.addy();
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     stable_fees::update_fee_in_percent(&mut state.fees, fee_in_percent);
     stable_fees::update_fee_out_percent(&mut state.fees, fee_out_percent);  
@@ -910,12 +901,13 @@ module clamm::interest_clamm_stable {
 
   public fun take_fees<CoinType, LpCoin>(
     pool: &mut InterestPool<Stable>,
-    _: &Admin,
+    pool_admin: &PoolAdmin,
     ctx: &mut TxContext
   ): Coin<CoinType> {
+    pool.assert_pool_admin(pool_admin);
     let pool_address = pool.addy();
 
-    let admin_balance = admin_balance_mut<CoinType, LpCoin>(state_mut(pool.state_mut()));
+    let admin_balance = admin_balance_mut<CoinType, LpCoin>(load_mut(pool.state_mut()));
     let amount = admin_balance.value();
 
     events::emit_take_fees<Stable, CoinType, LpCoin>(pool_address, amount);
@@ -988,14 +980,14 @@ module clamm::interest_clamm_stable {
     });
   }
 
-  fun add_state<LpCoin>(
+  fun new_pool<LpCoin>(
     coin_decimals: &CoinDecimals,  
     initial_a: u256,
     lp_coin_supply: Supply<LpCoin>,
     coins: vector<TypeName>,
     n_coins: u64,
     ctx: &mut TxContext
-  ): InterestPool<Stable> {
+  ): (InterestPool<Stable>, PoolAdmin) {
 
     assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
     assert!(decimals<LpCoin>(coin_decimals) == 9, errors::must_have_9_decimals());
@@ -1035,12 +1027,12 @@ module clamm::interest_clamm_stable {
     k * state.lp_coin_decimals_scalar / supply
   }
 
-  fun state<LpCoin>(versioned: &mut Versioned): &StateV1<LpCoin> {
+  fun load<LpCoin>(versioned: &mut Versioned): &StateV1<LpCoin> {
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
   }
 
-  fun state_mut<LpCoin>(versioned: &mut Versioned): &mut StateV1<LpCoin> {
+  fun load_mut<LpCoin>(versioned: &mut Versioned): &mut StateV1<LpCoin> {
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
   }

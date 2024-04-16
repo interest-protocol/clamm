@@ -12,10 +12,10 @@ module clamm::stable_swap_fees_tests {
   use clamm::usdc::USDC;
   use clamm::stable_fees;
   use clamm::curves::Stable;
-  use clamm::interest_clamm_stable;
-  use clamm::amm_admin::Admin;
   use clamm::lp_coin::LP_COIN;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
+  use clamm::pool_admin::{Self, PoolAdmin};
   use clamm::init_interest_amm_stable::setup_3pool;
   use clamm::amm_test_utils::{people, scenario, mint};
 
@@ -38,7 +38,7 @@ module clamm::stable_swap_fees_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
 
       interest_clamm_stable::update_fee<LP_COIN>(
         &mut pool,
@@ -64,7 +64,6 @@ module clamm::stable_swap_fees_tests {
     test::end(scenario);      
   }
 
-
   #[test]
   fun takes_fees_correctly() {
    let mut scenario = scenario();
@@ -77,15 +76,15 @@ module clamm::stable_swap_fees_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let c = test::take_shared<Clock>(test);
 
       interest_clamm_stable::update_fee<LP_COIN>(
-                &mut pool,
+        &mut pool,
         &admin_cap,
         option::some(MAX_FEE_PERCENT),
-          option::some(MAX_FEE_PERCENT),
-          option::some(MAX_ADMIN_FEE),
+        option::some(MAX_FEE_PERCENT),
+        option::some(MAX_ADMIN_FEE),
       );
 
       // Swap to collect fees
@@ -113,7 +112,7 @@ module clamm::stable_swap_fees_tests {
         ctx(test)
       ));
 
-      let balances= interest_clamm_stable::balances<LP_COIN>(&mut pool);
+      let balances = interest_clamm_stable::balances<LP_COIN>(&mut pool);
 
       let admin_dai_balance = interest_clamm_stable::admin_balance<DAI, LP_COIN>(&mut pool);
       let admin_dai = interest_clamm_stable::take_fees<DAI, LP_COIN>(&mut pool, &admin_cap, ctx(test));
@@ -144,4 +143,28 @@ module clamm::stable_swap_fees_tests {
     };
     test::end(scenario);      
   }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  fun take_fees_invalid_admin() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let pool_admin_cap = pool_admin::new(test.ctx());
+
+      burn(interest_clamm_stable::take_fees<USDC, LP_COIN>(&mut pool, &pool_admin_cap, ctx(test)));
+
+      pool_admin::destroy(pool_admin_cap);
+      
+      test::return_shared(pool);
+    };
+    test::end(scenario);      
+  }  
 }

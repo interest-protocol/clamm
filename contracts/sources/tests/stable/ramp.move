@@ -6,10 +6,10 @@ module clamm::stable_ramp_tests {
   use sui::test_scenario::{Self as test, next_tx};
 
   use clamm::curves::Stable;
-  use clamm::interest_clamm_stable;
-  use clamm::amm_admin::Admin;
   use clamm::lp_coin::LP_COIN;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
+  use clamm::pool_admin::{Self, PoolAdmin};
   use clamm::amm_test_utils::{people, scenario};
   use clamm::init_interest_amm_stable::setup_3pool;
 
@@ -29,7 +29,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);
 
       let initial_a = interest_clamm_stable::initial_a<LP_COIN>(&mut pool);
@@ -92,7 +92,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);     
 
       clock::increment_for_testing(&mut c, MIN_RAMP_TIME);
@@ -122,7 +122,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);
 
       let amp = interest_clamm_stable::a<LP_COIN>(&mut pool, &c);
@@ -166,7 +166,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);      
 
       // initial_a_time is at Zero - We need to wait more than 1 day
@@ -198,7 +198,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);      
 
       clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
@@ -227,7 +227,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);      
 
       clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
@@ -256,7 +256,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);      
 
       clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
@@ -285,7 +285,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);      
 
       clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
@@ -314,7 +314,7 @@ module clamm::stable_ramp_tests {
     next_tx(test, alice);
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let admin_cap = test::take_from_sender<Admin>(test);
+      let admin_cap = test::take_from_sender<PoolAdmin>(test);
       let mut c = test::take_shared<Clock>(test);      
 
       clock::set_for_testing(&mut c, MIN_RAMP_TIME + 1);
@@ -329,4 +329,60 @@ module clamm::stable_ramp_tests {
 
     test::end(scenario); 
   } 
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  fun ramp_invalid_admin() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let pool_admin_cap = pool_admin::new(test.ctx());
+      let c = test::take_shared<Clock>(test);      
+
+      // Ramp down is too low
+      interest_clamm_stable::ramp<LP_COIN>(&mut pool,&pool_admin_cap, &c, 360 / (MAX_A_CHANGE + 1), ((MIN_RAMP_TIME * 2 + 1) as u256));
+
+      pool_admin::destroy(pool_admin_cap);
+
+      test::return_shared(c);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  }   
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  fun stop_ramp_invalid_admin() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let pool_admin_cap = pool_admin::new(test.ctx());
+      let c = test::take_shared<Clock>(test);      
+
+      // Ramp down is too low
+      interest_clamm_stable::stop_ramp<LP_COIN>(&mut pool, &pool_admin_cap, &c);
+
+      pool_admin::destroy(pool_admin_cap);
+
+      test::return_shared(c);
+      test::return_shared(pool); 
+    };    
+
+    test::end(scenario); 
+  }     
 }
