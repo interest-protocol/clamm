@@ -12,7 +12,6 @@ module clamm::interest_clamm_volatile {
   use sui::table::{Self, Table};
   use sui::vec_map::{Self, VecMap};
   use sui::versioned::{Self, Versioned};
-  use sui::transfer::public_share_object;
   use sui::balance::{Self, Supply, Balance};
   
   use suitears::math256::{Self, min, sum, diff, mul_div_up};
@@ -145,7 +144,7 @@ module clamm::interest_clamm_volatile {
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>()];
 
-    let (mut pool, pool_admin) = add_state<LpCoin>(
+    let (mut pool, pool_admin) = new_pool<LpCoin>(
       clock,
       coins,
       coin_decimals,
@@ -157,7 +156,7 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     // @dev This is the quote coin in the pool 
     // So we do not need to pass a price
@@ -213,7 +212,7 @@ module clamm::interest_clamm_volatile {
 
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()];
 
-    let (mut pool, pool_admin) = add_state<LpCoin>(
+    let (mut pool, pool_admin) = new_pool<LpCoin>(
       clock,
       coins,
       coin_decimals,
@@ -225,7 +224,7 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     // @dev This is the quote coin in the pool 
     // So we do not need to pass a price
@@ -437,7 +436,7 @@ module clamm::interest_clamm_volatile {
     // Make sure the second argument is in right order
     assert!(are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let total_supply = state.lp_coin_supply.supply_value();
     let lp_coin_amount = state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
@@ -470,7 +469,7 @@ module clamm::interest_clamm_volatile {
 
     let pool_id = pool.addy();
 
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
 
     let total_supply = state.lp_coin_supply.supply_value();
     let lp_coin_amount = state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
@@ -558,7 +557,7 @@ module clamm::interest_clamm_volatile {
   }
 
   public fun balances_request<LpCoin>(pool: &mut InterestPool<Volatile>): BalancesRequest {
-    let state = state<LpCoin>(pool.state_mut());
+    let state = load<LpCoin>(pool.state_mut());
     let state_id = object::id_address(state);
     BalancesRequest {
       state_id,
@@ -568,7 +567,7 @@ module clamm::interest_clamm_volatile {
   }
 
   public fun read_balance<LpCoin, CoinType>(pool: &mut InterestPool<Volatile>, request: &mut BalancesRequest) {
-    let state = state<LpCoin>(pool.state_mut()); 
+    let state = load<LpCoin>(pool.state_mut()); 
     let state_id = object::id_address(state);
 
     assert!(state_id == request.state_id, errors::wrong_pool_id());
@@ -583,151 +582,151 @@ module clamm::interest_clamm_volatile {
   // === Public-View Functions ===
 
   public fun invariant_<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    state<LpCoin>(pool.state_mut()).d
+    load<LpCoin>(pool.state_mut()).d
   }  
 
   public fun a<LpCoin>(pool: &mut InterestPool<Volatile>, clock: &Clock): u256 {
-    let (a, _) = get_a_gamma(state<LpCoin>(pool.state_mut()), clock);
+    let (a, _) = get_a_gamma(load<LpCoin>(pool.state_mut()), clock);
     a
   }
 
   public fun future_a<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    state<LpCoin>(pool.state_mut()).a_gamma.future_a
+    load<LpCoin>(pool.state_mut()).a_gamma.future_a
   }  
 
   public fun min_a<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    state<LpCoin>(pool.state_mut()).min_a
+    load<LpCoin>(pool.state_mut()).min_a
   }   
 
   public fun max_a<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    state<LpCoin>(pool.state_mut()).max_a
+    load<LpCoin>(pool.state_mut()).max_a
   }   
 
   public fun initial_time<LpCoin>(pool: &mut InterestPool<Volatile>): u64 {
-    state<LpCoin>(pool.state_mut()).a_gamma.initial_time
+    load<LpCoin>(pool.state_mut()).a_gamma.initial_time
   }  
 
   public fun future_time<LpCoin>(pool: &mut InterestPool<Volatile>): u64 {
-    state<LpCoin>(pool.state_mut()).a_gamma.future_time
+    load<LpCoin>(pool.state_mut()).a_gamma.future_time
   }    
 
   public fun gamma<LpCoin>(pool: &mut InterestPool<Volatile>, clock: &Clock): u256 {
-    let state = state<LpCoin>(pool.state_mut());
+    let state = load<LpCoin>(pool.state_mut());
     let (_, gamma) = get_a_gamma(state, clock);
     gamma
   }  
 
   public fun future_gamma<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    state<LpCoin>(pool.state_mut()).a_gamma.future_gamma
+    load<LpCoin>(pool.state_mut()).a_gamma.future_gamma
   }    
 
   public fun lp_coin_supply<LpCoin>(pool: &mut InterestPool<Volatile>): u64 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.lp_coin_supply.supply_value()
   }
 
   public fun n_coins<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.n_coins
   }
 
   public fun balances<LpCoin>(pool: &mut InterestPool<Volatile>): vector<u256> {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.balances
   }  
 
   public fun xcp_profit<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.xcp_profit
   }  
 
   public fun xcp_profit_a<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.xcp_profit_a
   }  
 
   public fun virtual_price<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.virtual_price
   }    
 
   public fun adjustment_step<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.rebalancing_params.adjustment_step
   }     
 
   public fun extra_profit<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.rebalancing_params.extra_profit
   }      
 
   public fun ma_half_time<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.rebalancing_params.ma_half_time
   } 
 
   public fun last_prices_timestamp<LpCoin>(pool: &mut InterestPool<Volatile>): u64 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.last_prices_timestamp
   } 
 
   public fun not_adjusted<LpCoin>(pool: &mut InterestPool<Volatile>): bool {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.not_adjusted
   }  
 
   public fun admin_fee<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.fees.admin_fee
   } 
 
   public fun gamma_fee<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.fees.gamma_fee
   } 
 
   public fun mid_fee<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.fees.mid_fee
   }   
 
   public fun out_fee<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     state.fees.out_fee
   }  
 
   public fun coin_price<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     coin_state<CoinType, LpCoin>(state).price
   }
 
   public fun coin_last_price<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     coin_state<CoinType, LpCoin>(state).last_price
   }  
 
   public fun coin_index<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): u64 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     coin_state<CoinType, LpCoin>(state).index
   }  
 
   public fun coin_price_oracle<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     coin_state<CoinType, LpCoin>(state).price_oracle
   }  
 
   public fun coin_decimals_scalar<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     coin_state<CoinType, LpCoin>(state).decimals_scalar
   }  
 
   public fun coin_type<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): TypeName {
-    let state = state<LpCoin>(pool.state_mut());  
+    let state = load<LpCoin>(pool.state_mut());  
     coin_state<CoinType, LpCoin>(state).type_name
   }  
 
   public fun coin_balance<LpCoin, CoinType>(pool: &mut InterestPool<Volatile>): u64 {
-    let state = state<LpCoin>(pool.state_mut()); 
+    let state = load<LpCoin>(pool.state_mut()); 
     coin_balance_impl<CoinType, LpCoin>(state).value()
   }          
 
@@ -738,7 +737,7 @@ module clamm::interest_clamm_volatile {
 
   public fun fee<LpCoin>(pool: &mut InterestPool<Volatile>): u256 {
     let balances_in_price = balances_in_price<LpCoin>(pool);
-    let state = state<LpCoin>(pool.state_mut());
+    let state = load<LpCoin>(pool.state_mut());
     fee_impl<LpCoin>(state, balances_in_price)
   }
 
@@ -921,7 +920,7 @@ module clamm::interest_clamm_volatile {
     let timestamp = clock.timestamp_ms();
     let pool_id = pool.addy();
 
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
     assert!(timestamp >= state.a_gamma.initial_time + MIN_RAMP_TIME, errors::wait_one_day());
     assert!(future_time >= timestamp + MIN_RAMP_TIME, errors::future_ramp_time_is_too_short());
 
@@ -962,7 +961,7 @@ module clamm::interest_clamm_volatile {
     let timestamp = clock.timestamp_ms();
     let pool_id = pool.addy();
 
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
     let (a, gamma) = get_a_gamma(state, clock);
 
     state.a_gamma.a = a;
@@ -1278,7 +1277,7 @@ module clamm::interest_clamm_volatile {
       coin_balance_mut(state).take(remove_amount, ctx)
   }
 
-  fun add_state<LpCoin>(
+  fun new_pool<LpCoin>(
     clock: &Clock,
     coins: vector<TypeName>,
     coin_decimals: &CoinDecimals,   
@@ -1658,14 +1657,14 @@ module clamm::interest_clamm_volatile {
 
   fun state_and_coin_states<LpCoin>(pool: &mut InterestPool<Volatile>): (&StateV1<LpCoin>, vector<CoinState>) {
     let coins = pool.coins();    
-    let state = state<LpCoin>(pool.state_mut());
+    let state = load<LpCoin>(pool.state_mut());
     let coin_states = coin_state_vector_in_order(state, coins);
     (state, coin_states)
   }
 
   fun state_and_coin_states_mut<LpCoin>(pool: &mut InterestPool<Volatile>): (&mut StateV1<LpCoin>, vector<CoinState>) {
     let coins = pool.coins();   
-    let state = state_mut<LpCoin>(pool.state_mut());
+    let state = load_mut<LpCoin>(pool.state_mut());
     let coin_states = coin_state_vector_in_order(state, coins);
     (state, coin_states)
   }
@@ -1721,12 +1720,12 @@ module clamm::interest_clamm_volatile {
     state.coin_states.borrow_mut(type_name)
   }
 
-  fun state<LpCoin>(versioned: &mut Versioned): &StateV1<LpCoin> {
+  fun load<LpCoin>(versioned: &mut Versioned): &StateV1<LpCoin> {
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
   }
 
-  fun state_mut<LpCoin>(versioned: &mut Versioned): &mut StateV1<LpCoin> {
+  fun load_mut<LpCoin>(versioned: &mut Versioned): &mut StateV1<LpCoin> {
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
   }

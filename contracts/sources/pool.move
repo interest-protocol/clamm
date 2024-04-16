@@ -29,6 +29,10 @@ module clamm::interest_pool {
     *self.coins.keys()
   }
 
+  public fun pool_admin_address<Curve>(self: &InterestPool<Curve>): address {
+    self.pool_admin_address
+  }
+
   // === Public Mutative Functions ===
 
   public fun share<Curve>(self: InterestPool<Curve>) {
