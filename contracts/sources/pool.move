@@ -41,7 +41,7 @@ module clamm::interest_pool {
     config: Bag
   }
 
-  public struct RulesBuilder {
+  public struct HooksBuilder {
     rules: VecMap<String, VecSet<TypeName>>,
     config: Bag
   }
@@ -62,8 +62,8 @@ module clamm::interest_pool {
     assert!(self.pool_admin_address == pool_admin.addy(), errors::invalid_pool_admin());
   }
 
-  public fun new_rules_builder(ctx: &mut TxContext): RulesBuilder {
-    RulesBuilder {
+  public fun new_hooks_builder(ctx: &mut TxContext): HooksBuilder {
+    HooksBuilder {
       rules: vec_map::empty(),
       config: bag::new(ctx)
     }
@@ -145,24 +145,24 @@ module clamm::interest_pool {
   // === Witness Functions ===
 
   public fun add_rule<Rule: drop>(
-    rules_builder: &mut RulesBuilder, 
+    hooks_builder: &mut HooksBuilder, 
     name: String,
     _: Rule,
   ) {
 
-    if (!rules_builder.rules.contains(&name)) {
-      rules_builder.rules.insert(name, vec_set::empty());
+    if (!hooks_builder.rules.contains(&name)) {
+      hooks_builder.rules.insert(name, vec_set::empty());
     };
 
-    rules_builder.rules.get_mut(&name).insert(type_name::get<Rule>());
+    hooks_builder.rules.get_mut(&name).insert(type_name::get<Rule>());
   }
 
   public fun add_rule_config<Rule: drop, Config: store>(
-    rules_builder: &mut RulesBuilder, 
+    hooks_builder: &mut HooksBuilder, 
     _: Rule,
     config: Config  
   ) {
-    rules_builder.config.add(type_name::get<Rule>(), config)
+    hooks_builder.config.add(type_name::get<Rule>(), config)
   }
 
   public fun config_mut<Curve, Rule: drop, Config: store>(pool: &mut InterestPool<Curve>, _: Rule): &mut Config {
@@ -200,12 +200,12 @@ module clamm::interest_pool {
   public(package) fun new_with_hooks<Curve>(
     coins: VecSet<TypeName>, 
     state: Versioned, 
-    rules_builder: RulesBuilder,
+    hooks_builder: HooksBuilder,
      ctx: &mut TxContext
   ): (InterestPool<Curve>, PoolAdmin)  {
     curves::assert_curve<Curve>();
 
-    let RulesBuilder { rules, config  } = rules_builder;
+    let HooksBuilder { rules, config  } = hooks_builder;
 
     let pool_admin = pool_admin::new(ctx);
     let pool = InterestPool {
