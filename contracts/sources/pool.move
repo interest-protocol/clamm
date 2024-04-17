@@ -215,6 +215,32 @@ module clamm::interest_pool {
     &mut self.state
   }
 
+  public(package) fun new_request<Curve>(self: &InterestPool<Curve>, name: String): Request {
+    Request {
+      name,
+      pool_address: self.addy(),
+      approvals: vec_set::empty()
+    }
+  }
+
+  public(package) fun confirm<Curve>(self: &InterestPool<Curve>, request: Request) {
+    let hooks = self.hooks.borrow();
+    let Request { name, pool_address, approvals } = request;
+
+    assert!(hooks.rules.contains(&name), errors::invalid_rule_name());
+    assert!(self.addy() == pool_address, errors::wrong_request_pool_address());
+
+    let rules = (*hooks.rules.get(&name)).into_keys();
+    let rules_len = rules.length();
+    let mut i = 0;
+
+    while (rules_len > i) {
+      let rule = &rules[i];
+      assert!(approvals.contains(rule), errors::rule_not_approved());
+      i = i + 1;
+    }
+  } 
+
   public(package) fun new<Curve>(coins: VecSet<TypeName>, state: Versioned, ctx: &mut TxContext): (InterestPool<Curve>, PoolAdmin)  {
     curves::assert_curve<Curve>();
     let pool_admin = pool_admin::new(ctx);
@@ -250,32 +276,6 @@ module clamm::interest_pool {
 
     (pool, pool_admin)
   }  
-
-  public(package) fun new_request<Curve>(self: &InterestPool<Curve>, name: String): Request {
-    Request {
-      name,
-      pool_address: self.addy(),
-      approvals: vec_set::empty()
-    }
-  }
-
-  public(package) fun confirm<Curve>(self: &InterestPool<Curve>, request: Request) {
-    let hooks = self.hooks.borrow();
-    let Request { name, pool_address, approvals } = request;
-
-    assert!(hooks.rules.contains(&name), errors::invalid_rule_name());
-    assert!(self.addy() == pool_address, errors::wrong_request_pool_address());
-
-    let rules = (*hooks.rules.get(&name)).into_keys();
-    let rules_len = rules.length();
-    let mut i = 0;
-
-    while (rules_len > i) {
-      let rule = &rules[i];
-      assert!(approvals.contains(rule), errors::rule_not_approved());
-      i = i + 1;
-    }
-  } 
 
   // === Private Functions ===  
 

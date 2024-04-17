@@ -56,6 +56,8 @@ module clamm::errors {
   const RULE_NOT_ADDED: u64 = 52;
   const WRONG_REQUEST_POOL_ADDRESS: u64 = 53;
   const RULE_NOT_APPROVED: u64 = 54;
+  const THIS_POOL_HAS_HOOKS: u64 = 55;
+  const THIS_POOL_HAS_NO_HOOKS: u64 = 56;
 
   // === Public-View Functions ===
 
@@ -278,4 +280,12 @@ module clamm::errors {
   public fun rule_not_approved(): u64 {
     RULE_NOT_APPROVED
   }
+
+  public fun this_pool_has_hooks(): u64 {
+    THIS_POOL_HAS_HOOKS
+  }
+
+  public fun this_pool_has_no_hooks(): u64 {
+    THIS_POOL_HAS_NO_HOOKS
+  }  
 }

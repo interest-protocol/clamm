@@ -18,8 +18,8 @@ module clamm::interest_clamm_stable {
   use clamm::pool_admin::PoolAdmin;
   use clamm::pool_events as events;
   use clamm::stable_fees::{Self, StableFees};
-  use clamm::interest_pool::{Self, InterestPool};
   use clamm::stable_math::{y, y_lp, a as get_a, invariant_};
+  use clamm::interest_pool::{Self, InterestPool, HooksBuilder};
   use clamm::utils::{empty_vector, make_coins_vec_set_from_vector};
 
   use fun coin::take as Balance.take;
@@ -77,7 +77,6 @@ module clamm::interest_clamm_stable {
 
   // === Public-Mutative Functions ===
 
-  #[lint_allow(share_owned)]
   public fun new_2_pool<CoinA, CoinB, LpCoin>(
     clock: &Clock,
     initial_a: u256,
@@ -87,33 +86,28 @@ module clamm::interest_clamm_stable {
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
   ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>)  {
-    assert!(coin_a.value() != 0 && coin_b.value() != 0, errors::no_zero_liquidity_amounts());
-
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>()];
 
-    let (mut pool, pool_admin) = new_pool<LpCoin>( 
+    let (pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
       coins,
-      coins.length(), 
       ctx
     );
-
-    let state = load_mut<LpCoin>(pool.state_mut());      
-
-    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
-    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
-
-    let lp_coin = add_liquidity_2_pool(&mut pool, clock, coin_a, coin_b, 0, ctx);
-
-    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool.addy());
+    
+    let (pool, lp_coin) = new_2_pool_impl<CoinA, CoinB, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b, 
+      coin_decimals, 
+      ctx
+    );
 
     (pool, pool_admin, lp_coin)
   }
 
-  #[lint_allow(share_owned)]
   public fun new_3_pool<CoinA, CoinB, CoinC, LpCoin>(
     clock: &Clock,
     initial_a: u256,
@@ -124,34 +118,29 @@ module clamm::interest_clamm_stable {
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
   ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
-    assert!(coin_a.value() != 0 && coin_b.value() != 0 && coin_c.value() != 0, errors::no_zero_liquidity_amounts());
-
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()];
 
-    let (mut pool, pool_admin) = new_pool<LpCoin>( 
+    let (pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
       coins,
-      coins.length(), 
       ctx
     );
 
-    let state = load_mut<LpCoin>(pool.state_mut());      
+    let (pool, lp_coin) = new_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b,
+      coin_c, 
+      coin_decimals, 
+      ctx
+    );
 
-    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
-    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
-    add_coin<CoinC, LpCoin>(state, coin_decimals, 2);
-
-    let lp_coin = add_liquidity_3_pool(&mut pool, clock, coin_a, coin_b, coin_c, 0, ctx);
-
-    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
-
-    (pool, pool_admin, lp_coin)
+    (pool, pool_admin, lp_coin)        
   }
 
-  #[lint_allow(share_owned)]
   public fun new_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
     clock: &Clock,
     initial_a: u256,
@@ -163,41 +152,35 @@ module clamm::interest_clamm_stable {
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
   ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
-    assert!(
-      coin_a.value() != 0 
-      && coin_b.value() != 0 
-      && coin_c.value() != 0
-      && coin_d.value() != 0,
-      errors::no_zero_liquidity_amounts()
-    );
+    let coins = vector[
+      type_name::get<CoinA>(), 
+      type_name::get<CoinB>(), 
+      type_name::get<CoinC>(), 
+      type_name::get<CoinD>()
+    ];
 
-    let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()];
-
-    let (mut pool, pool_admin) = new_pool<LpCoin>( 
+    let (pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
       coins,
-      coins.length(), 
       ctx
     );
 
-    let state = load_mut<LpCoin>(pool.state_mut());    
+    let (pool, lp_coin) = new_4_pool_impl<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b,
+      coin_c, 
+      coin_d,
+      coin_decimals, 
+      ctx
+    );
 
-    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
-    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
-    add_coin<CoinC, LpCoin>(state, coin_decimals, 2);
-    add_coin<CoinD, LpCoin>(state, coin_decimals, 3);
-
-    let lp_coin = add_liquidity_4_pool(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, 0, ctx);
-
-    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool.addy());
-
-    (pool, pool_admin, lp_coin)
+    (pool, pool_admin, lp_coin)      
   }
 
-  #[lint_allow(share_owned)]
   public fun new_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     clock: &Clock,
     initial_a: u256,
@@ -210,15 +193,6 @@ module clamm::interest_clamm_stable {
     lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
   ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
-    assert!(
-      coin_a.value() != 0 
-      && coin_b.value() != 0 
-      && coin_c.value() != 0
-      && coin_d.value() != 0
-      && coin_e.value() != 0,
-      errors::no_zero_liquidity_amounts()
-    );
-
     let coins = vector[
       type_name::get<CoinA>(), 
       type_name::get<CoinB>(), 
@@ -227,510 +201,182 @@ module clamm::interest_clamm_stable {
       type_name::get<CoinE>()
     ];
 
-    let (mut pool, pool_admin) = new_pool<LpCoin>( 
+    let (pool, pool_admin) = new_pool<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
       coins,
-      coins.length(), 
       ctx
     );
 
-    let state = load_mut<LpCoin>(pool.state_mut());
+    let (pool, lp_coin) = new_5_pool_impl<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b,
+      coin_c, 
+      coin_d,
+      coin_e,
+      coin_decimals, 
+      ctx
+    );
 
-    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
-    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
-    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
-    add_coin<CoinC, LpCoin>(state, coin_decimals, 2);
-    add_coin<CoinD, LpCoin>(state, coin_decimals, 3);
-    add_coin<CoinE, LpCoin>(state, coin_decimals, 4);
+    (pool, pool_admin, lp_coin)   
+  }
 
-    let lp_coin = add_liquidity_5_pool(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
+  public fun new_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
+    clock: &Clock,
+    hooks_builder: HooksBuilder,
+    initial_a: u256,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_decimals: &CoinDecimals,     
+    lp_coin_supply: Supply<LpCoin>,
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>)  {
+    let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>()];
 
-    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool.addy());
-
+    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
+      hooks_builder,
+      coin_decimals,
+      initial_a, 
+      lp_coin_supply, 
+      coins,
+      ctx
+    );
+    
+    let (pool, lp_coin) = new_2_pool_impl<CoinA, CoinB, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b, 
+      coin_decimals, 
+      ctx
+    );
 
     (pool, pool_admin, lp_coin)
   }
 
-  public fun swap<CoinIn, CoinOut, LpCoin>(
-    pool: &mut InterestPool<Stable>,
+  public fun new_3_pool_with_hooks<CoinA, CoinB, CoinC, LpCoin>(
     clock: &Clock,
-    mut coin_in: Coin<CoinIn>,
-    min_amount: u64,
-    ctx: &mut TxContext
-  ): Coin<CoinOut> {
-    assert!(type_name::get<CoinIn>() != type_name::get<CoinOut>(), errors::cannot_swap_same_coin());
-    
-    let coin_in_value = coin_in.value();
-    assert!(coin_in_value != 0, errors::cannot_swap_zero_value());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let (coin_in_index, coin_in_decimals) = coin_state_metadata<CoinIn, LpCoin>(state);
-    let (coin_out_index, coin_out_decimals) = coin_state_metadata<CoinOut, LpCoin>(state);
-
-    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_value);
-    let  admin_fee_in = stable_fees::calculate_admin_amount(&state.fees, fee_in);
-
-    let admin_coin_in = coin_in.split(admin_fee_in, ctx);
-
-    // Has no fees to properly calculate new out balance
-    let normalized_value = (coin_in_value - fee_in - admin_fee_in).to_u256() * PRECISION / coin_in_decimals;
-
-    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);
-
-    let prev_k = invariant_(amp, state.balances);
-
-    let new_out_balance = y(
-      amp,
-      coin_in_index.to_u256(),
-      coin_out_index.to_u256(),
-      *&state.balances[coin_in_index] + normalized_value,
-      state.balances
-    );
-
-    let normalized_amount_out = *&state.balances[coin_out_index] - new_out_balance;
-    let amount_out = (normalized_amount_out * coin_out_decimals / PRECISION).to_u64();
-    
-    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
-    let admin_fee_out = stable_fees::calculate_admin_amount(&state.fees, fee_out);
-
-    let amount_out = amount_out - fee_out - admin_fee_out;
-
-    assert!(amount_out >= min_amount, errors::slippage());
-
-    let coin_in_balance = &mut state.balances[coin_in_index];
-    *coin_in_balance = *coin_in_balance + normalized_value + ((fee_in - admin_fee_in).to_u256() * PRECISION / coin_in_decimals);
-
-    let coin_out_balance = &mut state.balances[coin_out_index];
-    // We need to remove the admin fee from balance
-    *coin_out_balance = *coin_out_balance - (amount_out + admin_fee_out).to_u256() * PRECISION / coin_out_decimals; 
-
-    // * Invariant must hold after all balances updates
-    assert!(invariant_(amp, state.balances) >= prev_k, errors::invalid_invariant());
-
-    /*
-    * The admin fees are not part of the liquidity (do not accrue swap fees) and not counted on the invariant calculation
-    * Fees are applied both on coin in and coin out to keep the balance in the pool
-    * 1 - Deposit coin_in (without admin fees) to balance
-    * 2 - Deposit coin_admin_in (admin fees on coin)
-    * 3 - Deposit coin_admin_out (admin fees on coin out)
-    * 4 - Take coin_out for user
-    */
-    coin_state_balance_mut<CoinIn, LpCoin>(state).join(coin_in.into_balance());
-    admin_balance_mut<CoinIn, LpCoin>(state).join(admin_coin_in.into_balance());
-
-    let coin_out_balance = coin_state_balance_mut<CoinOut, LpCoin>(state);
-
-    let admin_balance_in = coin_out_balance.split(admin_fee_out);
-
-    let coin_out = coin_out_balance.take(amount_out, ctx);
-
-    admin_balance_mut<CoinOut, LpCoin>(state).join(admin_balance_in);
-
-    events::emit_swap<Stable, CoinIn, CoinOut, LpCoin>(pool_address, coin_in_value, amount_out);
-
-    coin_out
-  }
-
-  public fun add_liquidity_2_pool<CoinA, CoinB, LpCoin>(
-    pool: &mut InterestPool<Stable>,
-    clock: &Clock,
-    coin_a: Coin<CoinA>,
-    coin_b: Coin<CoinB>,
-    lp_coin_min_amount: u64,
-    ctx: &mut TxContext     
-  ): Coin<LpCoin> {
-    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-    
-    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
-
-    let prev_k = invariant_(amp, state.balances);
-
-    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
-    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
-
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
-
-    events::emit_add_liquidity_2_pool<Stable, CoinA, CoinB, LpCoin>(
-      pool_address, 
-      coin_a_value, 
-      coin_b_value, 
-      mint_amount
-    );
-
-    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    lp_coin
-  }
-
-  public fun add_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    pool: &mut InterestPool<Stable>,
-    clock: &Clock,
+    hooks_builder: HooksBuilder,
+    initial_a: u256,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
-    lp_coin_min_amount: u64,
-    ctx: &mut TxContext     
-  ): Coin<LpCoin> {
-    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
+    coin_decimals: &CoinDecimals,     
+    lp_coin_supply: Supply<LpCoin>,
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
+    let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()];
 
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-    
-    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
-
-    let prev_k = invariant_(amp, state.balances);
-
-    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
-    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
-    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
-
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
-
-    events::emit_add_liquidity_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(
-      pool_address, 
-      coin_a_value, 
-      coin_b_value, 
-      coin_c_value, 
-      mint_amount
+    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
+      hooks_builder,
+      coin_decimals,
+      initial_a, 
+      lp_coin_supply, 
+      coins,
+      ctx
     );
 
-    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
+    let (pool, lp_coin) = new_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b,
+      coin_c, 
+      coin_decimals, 
+      ctx
+    );
 
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    lp_coin
+    (pool, pool_admin, lp_coin)        
   }
 
-  public fun add_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
-    pool: &mut InterestPool<Stable>,
+  public fun new_4_pool_with_hooks<CoinA, CoinB, CoinC, CoinD, LpCoin>(
     clock: &Clock,
+    hooks_builder: HooksBuilder,
+    initial_a: u256,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
     coin_d: Coin<CoinD>,
-    lp_coin_min_amount: u64,
-    ctx: &mut TxContext     
-  ): Coin<LpCoin> {
-    assert!(
-      interest_pool::are_coins_ordered(
-        pool, 
-        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]), 
-      errors::coins_must_be_in_order()
-    );
-    
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-    let prev_invariant = virtual_price_impl(state, clock);
-    
-    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
-    let prev_k = invariant_(amp, state.balances);
+    coin_decimals: &CoinDecimals,      
+    lp_coin_supply: Supply<LpCoin>,
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
+    let coins = vector[
+      type_name::get<CoinA>(), 
+      type_name::get<CoinB>(), 
+      type_name::get<CoinC>(), 
+      type_name::get<CoinD>()
+    ];
 
-    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
-    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
-    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
-    let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
-
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
-
-    events::emit_add_liquidity_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(
-      pool_address, 
-      coin_a_value, 
-      coin_b_value, 
-      coin_c_value,
-      coin_d_value, 
-      mint_amount
+    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
+      hooks_builder,
+      coin_decimals,
+      initial_a, 
+      lp_coin_supply, 
+      coins,
+      ctx
     );
 
-    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
+    let (pool, lp_coin) = new_4_pool_impl<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b,
+      coin_c, 
+      coin_d,
+      coin_decimals, 
+      ctx
+    );
 
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    lp_coin
+    (pool, pool_admin, lp_coin)      
   }
 
-  public fun add_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-    pool: &mut InterestPool<Stable>,
+  public fun new_5_pool_with_hooks<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     clock: &Clock,
+    hooks_builder: HooksBuilder,
+    initial_a: u256,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
     coin_d: Coin<CoinD>,
     coin_e: Coin<CoinE>,
-    lp_coin_min_amount: u64,
-    ctx: &mut TxContext     
-  ): Coin<LpCoin> {
-    assert!(
-      interest_pool::are_coins_ordered(
-        pool, 
-        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]), 
-      errors::coins_must_be_in_order()
-    );
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-    
-    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
-    let prev_k = invariant_(amp, state.balances);
-
-    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
-    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
-    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
-    let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
-    let coin_e_value = deposit_coin<CoinE, LpCoin>(state, coin_e);
-
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
-
-    events::emit_add_liquidity_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-      pool_address, 
-      coin_a_value, 
-      coin_b_value, 
-      coin_c_value,
-      coin_d_value,
-      coin_e_value, 
-      mint_amount
-    );
-
-    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    lp_coin
-  }
-
-  public fun remove_one_coin_liquidity<CoinType, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    clock: &Clock,
-    lp_coin: Coin<LpCoin>,
-    min_amount: u64,
-    ctx: &mut TxContext    
-  ): Coin<CoinType> {
-    let lp_coin_value = lp_coin.value();
-    assert!(lp_coin_value != 0, errors::no_zero_coin());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-
-    let (index, decimals) = coin_state_metadata<CoinType, LpCoin>(state);
-
-    let balances = state.balances;
-
-    let current_coin_balance = &mut state.balances[index]; 
-    let initial_coin_balance = *current_coin_balance;
-    
-    *current_coin_balance = y_lp(
-      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
-      index.to_u256(),
-      balances,
-      lp_coin_value.to_u256(),
-      state.lp_coin_supply.supply_value().to_u256(),
-    ) + 1; // give an edge to the protocol
-
-    let amount_to_take = ((initial_coin_balance - min(initial_coin_balance, *current_coin_balance)) * decimals / PRECISION).to_u64();
-
-    assert!(amount_to_take >= min_amount, errors::slippage());
-
-    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
-
-    events::emit_remove_liquidity<Stable, CoinType, LpCoin>(pool_address, amount_to_take, lp_coin_value);
-
-    let coin_out = coin_state_balance_mut<CoinType, LpCoin>(state).take(amount_to_take, ctx);
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    coin_out
-  }
-
-  public fun remove_liquidity_2_pool<CoinA, CoinB, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    lp_coin: Coin<LpCoin>,
-    clock: &Clock,
-    min_amounts: vector<u64>,
+    coin_decimals: &CoinDecimals,      
+    lp_coin_supply: Supply<LpCoin>,
     ctx: &mut TxContext
-  ): (Coin<CoinA>, Coin<CoinB>) {
-    assert!(
-      interest_pool::are_coins_ordered(
-        pool, 
-        vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), 
-      errors::coins_must_be_in_order()
+  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
+    let coins = vector[
+      type_name::get<CoinA>(), 
+      type_name::get<CoinB>(), 
+      type_name::get<CoinC>(), 
+      type_name::get<CoinD>(),
+      type_name::get<CoinE>()
+    ];
+
+    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
+      hooks_builder,
+      coin_decimals,
+      initial_a, 
+      lp_coin_supply, 
+      coins,
+      ctx
     );
 
-    let lp_coin_value = lp_coin.value();
-    assert!(lp_coin_value != 0, errors::no_zero_coin());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-
-    let (coin_a, coin_b) = (
-      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+    let (pool, lp_coin) = new_5_pool_impl<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      pool,
+      clock, 
+      coin_a, 
+      coin_b,
+      coin_c, 
+      coin_d,
+      coin_e,
+      coin_decimals, 
+      ctx
     );
 
-    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
-
-    events::emit_remove_liquidity_2_pool<Stable, CoinA, CoinB, LpCoin>(
-      pool_address, 
-      coin_a.value(),
-      coin_b.value(),
-      lp_coin_value
-    );
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    (coin_a, coin_b)
-  }
-
-  public fun remove_liquidity_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    lp_coin: Coin<LpCoin>,
-    clock: &Clock,
-    min_amounts: vector<u64>,
-    ctx: &mut TxContext
-  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
-    assert!(
-      interest_pool::are_coins_ordered(
-        pool, 
-        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), 
-      errors::coins_must_be_in_order()
-    );
-
-    let lp_coin_value = lp_coin.value();
-    assert!(lp_coin_value != 0, errors::no_zero_coin());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-
-    let (coin_a, coin_b, coin_c) = (
-      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-    );
-
-    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
-
-    events::emit_remove_liquidity_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(
-      pool_address, 
-      coin_a.value(),
-      coin_b.value(),
-      coin_c.value(),
-      lp_coin_value
-    );
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    (coin_a, coin_b, coin_c)
-  }
-
-  public fun remove_liquidity_4_pool<CoinA, CoinB, CoinC, CoinD, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    lp_coin: Coin<LpCoin>,
-    clock: &Clock,
-    min_amounts: vector<u64>,
-    ctx: &mut TxContext
-  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
-    assert!(
-      interest_pool::are_coins_ordered(
-        pool, 
-        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]), 
-      errors::coins_must_be_in_order()
-    );
-
-    let lp_coin_value = lp_coin.value();
-    assert!(lp_coin_value != 0, errors::no_zero_coin());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut()); 
-
-    let prev_invariant = virtual_price_impl(state, clock);
-
-    let (coin_a, coin_b, coin_c, coin_d) = (
-      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinD, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-    );
-
-    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
-
-    events::emit_remove_liquidity_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(
-      pool_address, 
-      coin_a.value(),
-      coin_b.value(),
-      coin_c.value(),
-      coin_d.value(),
-      lp_coin_value
-    );
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    (coin_a, coin_b, coin_c, coin_d)
-  }
-
-  public fun remove_liquidity_5_pool<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    lp_coin: Coin<LpCoin>,
-    clock: &Clock,
-    min_amounts: vector<u64>,
-    ctx: &mut TxContext
-  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
-    assert!(
-      interest_pool::are_coins_ordered(
-        pool, 
-        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]), 
-      errors::coins_must_be_in_order()
-    );
-
-    let lp_coin_value = lp_coin.value();
-    assert!(lp_coin_value != 0, errors::no_zero_coin());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-
-    let (coin_a, coin_b, coin_c, coin_d, coin_e) = (
-      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinD, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-      take_coin<CoinE, LpCoin>(state, lp_coin_value, min_amounts, ctx),
-    );
-
-    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
-
-    events::emit_remove_liquidity_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
-      pool_address, 
-      coin_a.value(),
-      coin_b.value(),
-      coin_c.value(),
-      coin_d.value(),
-      coin_e.value(),
-      lp_coin_value
-    );
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());    
-
-    (coin_a, coin_b, coin_c, coin_d, coin_e)
+    (pool, pool_admin, lp_coin)   
   }
 
   // === Public-View Functions ===
@@ -917,6 +563,608 @@ module clamm::interest_clamm_stable {
 
   // === Private Functions ===
 
+  #[lint_allow(share_owned)]
+  fun new_2_pool_impl<CoinA, CoinB, LpCoin>(
+    pool: InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_decimals: &CoinDecimals,     
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, Coin<LpCoin>)  {
+    assert!(coin_a.value() != 0 && coin_b.value() != 0, errors::no_zero_liquidity_amounts());
+
+    let state = load_mut<LpCoin>(pool.state_mut());      
+
+    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
+    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
+    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
+
+    let lp_coin = add_liquidity_2_pool_impl(&mut pool, clock, coin_a, coin_b, 0, ctx);
+
+    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool.addy());
+
+    (pool, lp_coin)
+  }
+
+  #[lint_allow(share_owned)]
+  fun new_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
+    pool: InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_decimals: &CoinDecimals,     
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, Coin<LpCoin>) {
+    assert!(coin_a.value() != 0 && coin_b.value() != 0 && coin_c.value() != 0, errors::no_zero_liquidity_amounts());
+
+    let state = load_mut<LpCoin>(pool.state_mut());      
+
+    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
+    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
+    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
+    add_coin<CoinC, LpCoin>(state, coin_decimals, 2);
+
+    let lp_coin = add_liquidity_3_pool_impl(&mut pool, clock, coin_a, coin_b, coin_c, 0, ctx);
+
+    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
+
+    (pool, lp_coin)
+  }
+
+  #[lint_allow(share_owned)]
+  fun new_4_pool_impl<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    pool: InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    coin_decimals: &CoinDecimals,      
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, Coin<LpCoin>) {
+    assert!(
+      coin_a.value() != 0 
+      && coin_b.value() != 0 
+      && coin_c.value() != 0
+      && coin_d.value() != 0,
+      errors::no_zero_liquidity_amounts()
+    );
+
+    let state = load_mut<LpCoin>(pool.state_mut());    
+
+    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
+    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
+    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
+    add_coin<CoinC, LpCoin>(state, coin_decimals, 2);
+    add_coin<CoinD, LpCoin>(state, coin_decimals, 3);
+
+    let lp_coin = add_liquidity_4_pool_impl(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, 0, ctx);
+
+    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool.addy());
+
+    (pool, lp_coin)
+  }
+
+  #[lint_allow(share_owned)]
+  fun new_5_pool_impl<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    pool: InterestPool<Stable>,    
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    coin_e: Coin<CoinE>,
+    coin_decimals: &CoinDecimals,      
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, Coin<LpCoin>) {
+    assert!(
+      coin_a.value() != 0 
+      && coin_b.value() != 0 
+      && coin_c.value() != 0
+      && coin_d.value() != 0
+      && coin_e.value() != 0,
+      errors::no_zero_liquidity_amounts()
+    );
+
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
+    add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
+    add_coin<CoinB, LpCoin>(state, coin_decimals, 1);
+    add_coin<CoinC, LpCoin>(state, coin_decimals, 2);
+    add_coin<CoinD, LpCoin>(state, coin_decimals, 3);
+    add_coin<CoinE, LpCoin>(state, coin_decimals, 4);
+
+    let lp_coin = add_liquidity_5_pool_impl(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
+
+    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool.addy());
+
+
+    (pool, lp_coin)
+  }
+
+  fun swap_impl<CoinIn, CoinOut, LpCoin>(
+    pool: &mut InterestPool<Stable>,
+    clock: &Clock,
+    mut coin_in: Coin<CoinIn>,
+    min_amount: u64,
+    ctx: &mut TxContext
+  ): Coin<CoinOut> {
+    assert!(type_name::get<CoinIn>() != type_name::get<CoinOut>(), errors::cannot_swap_same_coin());
+    
+    let coin_in_value = coin_in.value();
+    assert!(coin_in_value != 0, errors::cannot_swap_zero_value());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let (coin_in_index, coin_in_decimals) = coin_state_metadata<CoinIn, LpCoin>(state);
+    let (coin_out_index, coin_out_decimals) = coin_state_metadata<CoinOut, LpCoin>(state);
+
+    let fee_in = stable_fees::calculate_fee_in_amount(&state.fees, coin_in_value);
+    let  admin_fee_in = stable_fees::calculate_admin_amount(&state.fees, fee_in);
+
+    let admin_coin_in = coin_in.split(admin_fee_in, ctx);
+
+    // Has no fees to properly calculate new out balance
+    let normalized_value = (coin_in_value - fee_in - admin_fee_in).to_u256() * PRECISION / coin_in_decimals;
+
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);
+
+    let prev_k = invariant_(amp, state.balances);
+
+    let new_out_balance = y(
+      amp,
+      coin_in_index.to_u256(),
+      coin_out_index.to_u256(),
+      *&state.balances[coin_in_index] + normalized_value,
+      state.balances
+    );
+
+    let normalized_amount_out = *&state.balances[coin_out_index] - new_out_balance;
+    let amount_out = (normalized_amount_out * coin_out_decimals / PRECISION).to_u64();
+    
+    let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
+    let admin_fee_out = stable_fees::calculate_admin_amount(&state.fees, fee_out);
+
+    let amount_out = amount_out - fee_out - admin_fee_out;
+
+    assert!(amount_out >= min_amount, errors::slippage());
+
+    let coin_in_balance = &mut state.balances[coin_in_index];
+    *coin_in_balance = *coin_in_balance + normalized_value + ((fee_in - admin_fee_in).to_u256() * PRECISION / coin_in_decimals);
+
+    let coin_out_balance = &mut state.balances[coin_out_index];
+    // We need to remove the admin fee from balance
+    *coin_out_balance = *coin_out_balance - (amount_out + admin_fee_out).to_u256() * PRECISION / coin_out_decimals; 
+
+    // * Invariant must hold after all balances updates
+    assert!(invariant_(amp, state.balances) >= prev_k, errors::invalid_invariant());
+
+    /*
+    * The admin fees are not part of the liquidity (do not accrue swap fees) and not counted on the invariant calculation
+    * Fees are applied both on coin in and coin out to keep the balance in the pool
+    * 1 - Deposit coin_in (without admin fees) to balance
+    * 2 - Deposit coin_admin_in (admin fees on coin)
+    * 3 - Deposit coin_admin_out (admin fees on coin out)
+    * 4 - Take coin_out for user
+    */
+    coin_state_balance_mut<CoinIn, LpCoin>(state).join(coin_in.into_balance());
+    admin_balance_mut<CoinIn, LpCoin>(state).join(admin_coin_in.into_balance());
+
+    let coin_out_balance = coin_state_balance_mut<CoinOut, LpCoin>(state);
+
+    let admin_balance_in = coin_out_balance.split(admin_fee_out);
+
+    let coin_out = coin_out_balance.take(amount_out, ctx);
+
+    admin_balance_mut<CoinOut, LpCoin>(state).join(admin_balance_in);
+
+    events::emit_swap<Stable, CoinIn, CoinOut, LpCoin>(pool_address, coin_in_value, amount_out);
+
+    coin_out
+  }
+
+  fun add_liquidity_2_pool_impl<CoinA, CoinB, LpCoin>(
+    pool: &mut InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext     
+  ): Coin<LpCoin> {
+    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
+
+    let prev_k = invariant_(amp, state.balances);
+
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+
+    events::emit_add_liquidity_2_pool<Stable, CoinA, CoinB, LpCoin>(
+      pool_address, 
+      coin_a_value, 
+      coin_b_value, 
+      mint_amount
+    );
+
+    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
+  }
+
+  fun add_liquidity_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
+    pool: &mut InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext     
+  ): Coin<LpCoin> {
+    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
+
+    let prev_k = invariant_(amp, state.balances);
+
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
+
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+
+    events::emit_add_liquidity_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(
+      pool_address, 
+      coin_a_value, 
+      coin_b_value, 
+      coin_c_value, 
+      mint_amount
+    );
+
+    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
+  }
+
+  fun add_liquidity_4_pool_impl<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    pool: &mut InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext     
+  ): Coin<LpCoin> {
+    assert!(
+      interest_pool::are_coins_ordered(
+        pool, 
+        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]), 
+      errors::coins_must_be_in_order()
+    );
+    
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+    let prev_invariant = virtual_price_impl(state, clock);
+    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
+    let prev_k = invariant_(amp, state.balances);
+
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
+    let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
+
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+
+    events::emit_add_liquidity_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(
+      pool_address, 
+      coin_a_value, 
+      coin_b_value, 
+      coin_c_value,
+      coin_d_value, 
+      mint_amount
+    );
+
+    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
+  }
+
+  fun add_liquidity_5_pool_impl<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    pool: &mut InterestPool<Stable>,
+    clock: &Clock,
+    coin_a: Coin<CoinA>,
+    coin_b: Coin<CoinB>,
+    coin_c: Coin<CoinC>,
+    coin_d: Coin<CoinD>,
+    coin_e: Coin<CoinE>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext     
+  ): Coin<LpCoin> {
+    assert!(
+      interest_pool::are_coins_ordered(
+        pool, 
+        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]), 
+      errors::coins_must_be_in_order()
+    );
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+    
+    let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
+    let prev_k = invariant_(amp, state.balances);
+
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
+    let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
+    let coin_e_value = deposit_coin<CoinE, LpCoin>(state, coin_e);
+
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+
+    events::emit_add_liquidity_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      pool_address, 
+      coin_a_value, 
+      coin_b_value, 
+      coin_c_value,
+      coin_d_value,
+      coin_e_value, 
+      mint_amount
+    );
+
+    let lp_coin = state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx);
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    lp_coin
+  }
+
+  fun remove_one_coin_liquidity_impl<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    clock: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amount: u64,
+    ctx: &mut TxContext    
+  ): Coin<CoinType> {
+    let lp_coin_value = lp_coin.value();
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+
+    let (index, decimals) = coin_state_metadata<CoinType, LpCoin>(state);
+
+    let balances = state.balances;
+
+    let current_coin_balance = &mut state.balances[index]; 
+    let initial_coin_balance = *current_coin_balance;
+    
+    *current_coin_balance = y_lp(
+      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
+      index.to_u256(),
+      balances,
+      lp_coin_value.to_u256(),
+      state.lp_coin_supply.supply_value().to_u256(),
+    ) + 1; // give an edge to the protocol
+
+    let amount_to_take = ((initial_coin_balance - min(initial_coin_balance, *current_coin_balance)) * decimals / PRECISION).to_u64();
+
+    assert!(amount_to_take >= min_amount, errors::slippage());
+
+    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
+
+    events::emit_remove_liquidity<Stable, CoinType, LpCoin>(pool_address, amount_to_take, lp_coin_value);
+
+    let coin_out = coin_state_balance_mut<CoinType, LpCoin>(state).take(amount_to_take, ctx);
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    coin_out
+  }
+
+  fun remove_liquidity_2_pool_impl<CoinA, CoinB, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    lp_coin: Coin<LpCoin>,
+    clock: &Clock,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>) {
+    assert!(
+      interest_pool::are_coins_ordered(
+        pool, 
+        vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), 
+      errors::coins_must_be_in_order()
+    );
+
+    let lp_coin_value = lp_coin.value();
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+
+    let (coin_a, coin_b) = (
+      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+    );
+
+    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
+
+    events::emit_remove_liquidity_2_pool<Stable, CoinA, CoinB, LpCoin>(
+      pool_address, 
+      coin_a.value(),
+      coin_b.value(),
+      lp_coin_value
+    );
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    (coin_a, coin_b)
+  }
+
+  fun remove_liquidity_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    lp_coin: Coin<LpCoin>,
+    clock: &Clock,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
+    assert!(
+      interest_pool::are_coins_ordered(
+        pool, 
+        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), 
+      errors::coins_must_be_in_order()
+    );
+
+    let lp_coin_value = lp_coin.value();
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+
+    let (coin_a, coin_b, coin_c) = (
+      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+    );
+
+    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
+
+    events::emit_remove_liquidity_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(
+      pool_address, 
+      coin_a.value(),
+      coin_b.value(),
+      coin_c.value(),
+      lp_coin_value
+    );
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    (coin_a, coin_b, coin_c)
+  }
+
+  fun remove_liquidity_4_pool_impl<CoinA, CoinB, CoinC, CoinD, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    lp_coin: Coin<LpCoin>,
+    clock: &Clock,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
+    assert!(
+      interest_pool::are_coins_ordered(
+        pool, 
+        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]), 
+      errors::coins_must_be_in_order()
+    );
+
+    let lp_coin_value = lp_coin.value();
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut()); 
+
+    let prev_invariant = virtual_price_impl(state, clock);
+
+    let (coin_a, coin_b, coin_c, coin_d) = (
+      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinD, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+    );
+
+    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
+
+    events::emit_remove_liquidity_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(
+      pool_address, 
+      coin_a.value(),
+      coin_b.value(),
+      coin_c.value(),
+      coin_d.value(),
+      lp_coin_value
+    );
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    (coin_a, coin_b, coin_c, coin_d)
+  }
+
+  fun remove_liquidity_5_pool_impl<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    lp_coin: Coin<LpCoin>,
+    clock: &Clock,
+    min_amounts: vector<u64>,
+    ctx: &mut TxContext
+  ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
+    assert!(
+      interest_pool::are_coins_ordered(
+        pool, 
+        vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]), 
+      errors::coins_must_be_in_order()
+    );
+
+    let lp_coin_value = lp_coin.value();
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+
+    let (coin_a, coin_b, coin_c, coin_d, coin_e) = (
+      take_coin<CoinA, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinB, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinC, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinD, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+      take_coin<CoinE, LpCoin>(state, lp_coin_value, min_amounts, ctx),
+    );
+
+    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
+
+    events::emit_remove_liquidity_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
+      pool_address, 
+      coin_a.value(),
+      coin_b.value(),
+      coin_c.value(),
+      coin_d.value(),
+      coin_e.value(),
+      lp_coin_value
+    );
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());    
+
+    (coin_a, coin_b, coin_c, coin_d, coin_e)
+  }
+
   fun calculate_mint_amount<LpCoin>(state: &StateV1<LpCoin>, amp: u256, prev_k: u256, lp_coin_min_amount: u64): u64 {
     let new_k = invariant_(amp, state.balances);
 
@@ -985,14 +1233,58 @@ module clamm::interest_clamm_stable {
     initial_a: u256,
     lp_coin_supply: Supply<LpCoin>,
     coins: vector<TypeName>,
-    n_coins: u64,
     ctx: &mut TxContext
   ): (InterestPool<Stable>, PoolAdmin) {
+    let state_v1 = new_state_v1(
+      coin_decimals,
+      initial_a,
+      lp_coin_supply,
+      coins.length(),
+      ctx
+    );
 
+    interest_pool::new<Stable>(
+      make_coins_vec_set_from_vector(coins),
+      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
+      ctx
+    )
+  }
+
+  fun new_pool_with_hooks<LpCoin>(
+    hooks_builder: HooksBuilder,
+    coin_decimals: &CoinDecimals,  
+    initial_a: u256,
+    lp_coin_supply: Supply<LpCoin>,
+    coins: vector<TypeName>,
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, PoolAdmin) {
+    let state_v1 = new_state_v1(
+      coin_decimals,
+      initial_a,
+      lp_coin_supply,
+      coins.length(),
+      ctx
+    );
+
+    interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(coins),
+      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
+      hooks_builder,
+      ctx
+    )
+  }
+
+  fun new_state_v1<LpCoin>(
+    coin_decimals: &CoinDecimals,  
+    initial_a: u256,
+    lp_coin_supply: Supply<LpCoin>,
+    n_coins: u64,
+    ctx: &mut TxContext    
+  ): StateV1<LpCoin> {
     assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
     assert!(decimals<LpCoin>(coin_decimals) == 9, errors::must_have_9_decimals());
 
-    let state_v1 = StateV1 {
+    StateV1 {
         id: object::new(ctx),
         balances: empty_vector(n_coins.to_u256()),
         initial_a,
@@ -1005,13 +1297,7 @@ module clamm::interest_clamm_stable {
         fees: stable_fees::new(),
         coins: bag::new(ctx),
         admin_balances: bag::new(ctx)
-    };
-
-    interest_pool::new<Stable>(
-      make_coins_vec_set_from_vector(coins),
-      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
-      ctx
-    )
+    }  
   }
 
   fun virtual_price_impl<LpCoin>(state: &StateV1<LpCoin>, clock: &Clock): u256 {
