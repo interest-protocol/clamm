@@ -181,7 +181,7 @@ module clamm::interest_clamm_stable_hooks {
     min_amount: u64,
     ctx: &mut TxContext
   ): (Request, Coin<CoinOut>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_swap_hook(), errors::this_pool_has_no_hooks());
     assert!(request.name().bytes() == interest_pool::start_swap(), errors::must_be_start_swap_request());
     interest_pool::confirm(pool, request);
 
@@ -202,7 +202,7 @@ module clamm::interest_clamm_stable_hooks {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): (Request, Coin<LpCoin>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_add_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
@@ -227,7 +227,7 @@ module clamm::interest_clamm_stable_hooks {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): (Request, Coin<LpCoin>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_add_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
@@ -253,7 +253,7 @@ module clamm::interest_clamm_stable_hooks {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): (Request, Coin<LpCoin>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_add_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
@@ -289,7 +289,7 @@ module clamm::interest_clamm_stable_hooks {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): (Request, Coin<LpCoin>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_add_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
@@ -322,7 +322,7 @@ module clamm::interest_clamm_stable_hooks {
     min_amount: u64,
     ctx: &mut TxContext    
   ): (Request, Coin<CoinType>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_remove_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
@@ -351,7 +351,7 @@ module clamm::interest_clamm_stable_hooks {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Request, Coin<CoinA>, Coin<CoinB>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_remove_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
@@ -382,7 +382,7 @@ module clamm::interest_clamm_stable_hooks {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Request, Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_remove_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
@@ -414,7 +414,7 @@ module clamm::interest_clamm_stable_hooks {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Request, Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_remove_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
@@ -447,7 +447,7 @@ module clamm::interest_clamm_stable_hooks {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Request, Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
-    assert!(pool.has_hooks(), errors::this_pool_has_no_hooks());
+    assert!(pool.has_remove_liquidity_hook(), errors::this_pool_has_no_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
