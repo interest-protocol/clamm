@@ -1,7 +1,7 @@
 module clamm::interest_pool {
   // === Imports ===
 
-  use std::string::String;
+  use std::string::{Self, String};
   use std::type_name::{Self, TypeName};
 
   use sui::bag::{Self, Bag};
@@ -15,6 +15,8 @@ module clamm::interest_pool {
   use clamm::errors;
   use clamm::pool_admin::{Self, PoolAdmin};
 
+  use fun string::utf8 as vector.utf8;
+
   // === Constants ===
 
   const START_SWAP: vector<u8> = b"START_SWAP";
@@ -23,8 +25,8 @@ module clamm::interest_pool {
   const START_ADD_LIQUIDITY: vector<u8> = b"START_ADD_LIQUIDITY";
   const FINISH_ADD_LIQUIDITY: vector<u8> = b"FINISH_ADD_LIQUIDITY";
 
-  const START_REMOVE_LIQUIDITY: vector<u8> = b"START_ADD_LIQUIDITY";
-  const FINISH_REMOVE_LIQUIDITY: vector<u8> = b"FINISH_ADD_LIQUIDITY";
+  const START_REMOVE_LIQUIDITY: vector<u8> = b"START_REMOVE_LIQUIDITY";
+  const FINISH_REMOVE_LIQUIDITY: vector<u8> = b"FINISH_REMOVE_LIQUIDITY";
 
   // === Structs ===
 
@@ -63,8 +65,19 @@ module clamm::interest_pool {
   }
 
   public fun new_hooks_builder(ctx: &mut TxContext): HooksBuilder {
+    let mut rules = vec_map::empty();
+
+    rules.insert(START_SWAP.utf8(), vec_set::empty());
+    rules.insert(FINISH_SWAP.utf8(), vec_set::empty());
+    
+    rules.insert(START_ADD_LIQUIDITY.utf8(), vec_set::empty());
+    rules.insert(FINISH_ADD_LIQUIDITY.utf8(), vec_set::empty());
+    
+    rules.insert(START_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
+    rules.insert(FINISH_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
+
     HooksBuilder {
-      rules: vec_map::empty(),
+      rules,
       config: bag::new(ctx)
     }
   }
@@ -115,6 +128,30 @@ module clamm::interest_pool {
     self.hooks.is_some()
   }
 
+  public fun has_swap_hook<Curve>(self: &InterestPool<Curve>): bool {
+    has_hook(self, START_SWAP, FINISH_SWAP)
+  }
+
+  public fun has_add_liquidity_hook<Curve>(self: &InterestPool<Curve>): bool {
+    has_hook(self, START_ADD_LIQUIDITY, FINISH_ADD_LIQUIDITY)
+  }
+
+  public fun has_remove_liquidity_hook<Curve>(self: &InterestPool<Curve>): bool {
+    has_hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
+  }
+
+  public fun swap_hook<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+    hook(self, START_SWAP, FINISH_SWAP)
+  }
+
+  public fun add_liquidity_hook<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+    hook(self, START_ADD_LIQUIDITY, FINISH_ADD_LIQUIDITY)
+  }
+
+  public fun remove_liquidity_hook<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+    hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
+  }
+
   public fun has_rule_config<Curve, Rule: drop>(pool: &InterestPool<Curve>): bool {
     pool.hooks.borrow().config.contains(type_name::get<Rule>())
   }
@@ -135,13 +172,6 @@ module clamm::interest_pool {
     request.approvals
   }
 
-  // === Admin Functions ===
-
-  public fun uid_mut<Curve>(self: &mut InterestPool<Curve>, pool_admin: &PoolAdmin): &mut UID {
-    assert_pool_admin(self, pool_admin);
-    &mut self.id
-  }
-
   // === Witness Functions ===
 
   public fun add_rule<Rule: drop>(
@@ -149,11 +179,6 @@ module clamm::interest_pool {
     name: String,
     _: Rule,
   ) {
-
-    if (!hooks_builder.rules.contains(&name)) {
-      hooks_builder.rules.insert(name, vec_set::empty());
-    };
-
     hooks_builder.rules.get_mut(&name).insert(type_name::get<Rule>());
   }
 
@@ -171,6 +196,13 @@ module clamm::interest_pool {
 
   public fun approve<Rule: drop>(request: &mut Request, _: Rule) {
     request.approvals.insert(type_name::get<Rule>());
+  }
+
+  // === Admin Functions ===
+
+  public fun uid_mut<Curve>(self: &mut InterestPool<Curve>, pool_admin: &PoolAdmin): &mut UID {
+    assert_pool_admin(self, pool_admin);
+    &mut self.id
   }
 
   // === Public-Package Functions ===
@@ -244,4 +276,29 @@ module clamm::interest_pool {
       i = i + 1;
     }
   } 
+
+  // === Private Functions ===  
+
+  fun has_hook<Curve>(self: &InterestPool<Curve>, start: vector<u8>, finish: vector<u8>): bool {
+    if (!has_hooks(self)) return false;
+
+    let rules = self.hooks.borrow().rules;
+
+    !rules.get(&start.utf8()).is_empty() || !rules.get(&finish.utf8()).is_empty()
+  }  
+
+  fun hook<Curve>(
+    self: &InterestPool<Curve>, 
+    start: vector<u8>, 
+    finish: vector<u8>
+  ): (vector<TypeName>, vector<TypeName>) {
+    if (!has_hooks(self)) return (vector[], vector[]);
+
+    let rules = self.hooks.borrow().rules;
+
+    (
+      (*rules.get(&start.utf8())).into_keys(),
+      (*rules.get(&finish.utf8())).into_keys(),
+    )
+  }
 }
