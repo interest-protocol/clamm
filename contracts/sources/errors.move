@@ -58,6 +58,12 @@ module clamm::errors {
   const RULE_NOT_APPROVED: u64 = 54;
   const THIS_POOL_HAS_HOOKS: u64 = 55;
   const THIS_POOL_HAS_NO_HOOKS: u64 = 56;
+  const MUST_BE_START_SWAP_REQUEST: u64 = 57;
+  const MUST_BE_FINISH_SWAP_REQUEST: u64 = 58;
+  const MUST_BE_START_ADD_LIQUIDITY_REQUEST: u64 = 59;
+  const MUST_BE_FINISH_ADD_LIQUIDITY_REQUEST: u64 = 60;
+  const MUST_BE_START_REMOVE_LIQUIDITY_REQUEST: u64 = 61;
+  const MUST_BE_FINISH_REMOVE_LIQUIDITY_REQUEST: u64 = 62;
 
   // === Public-View Functions ===
 
@@ -287,5 +293,29 @@ module clamm::errors {
 
   public fun this_pool_has_no_hooks(): u64 {
     THIS_POOL_HAS_NO_HOOKS
+  }
+
+  public fun must_be_start_swap_request(): u64 {
+    MUST_BE_START_SWAP_REQUEST
   }  
+
+  public fun must_be_finish_swap_request(): u64 {
+    MUST_BE_FINISH_SWAP_REQUEST
+  }  
+
+  public fun must_be_start_add_liquidity_request(): u64 {
+    MUST_BE_START_ADD_LIQUIDITY_REQUEST
+  }  
+
+  public fun must_be_finish_add_liquidity_request(): u64 {
+    MUST_BE_FINISH_ADD_LIQUIDITY_REQUEST
+  }      
+
+  public fun must_be_start_remove_liquidity_request(): u64 {
+    MUST_BE_START_REMOVE_LIQUIDITY_REQUEST
+  }  
+
+  public fun must_be_finish_remove_liquidity_request(): u64 {
+    MUST_BE_FINISH_REMOVE_LIQUIDITY_REQUEST
+  } 
 }
