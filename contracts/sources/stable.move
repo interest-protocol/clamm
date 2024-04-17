@@ -555,6 +555,54 @@ module clamm::interest_clamm_stable {
 
   // === Public-Package Functions ===
 
+  fun new_state_v1<LpCoin>(
+    coin_decimals: &CoinDecimals,  
+    initial_a: u256,
+    lp_coin_supply: Supply<LpCoin>,
+    n_coins: u64,
+    ctx: &mut TxContext    
+  ): StateV1<LpCoin> {
+    assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
+    assert!(decimals<LpCoin>(coin_decimals) == 9, errors::must_have_9_decimals());
+
+    StateV1 {
+        id: object::new(ctx),
+        balances: empty_vector(n_coins.to_u256()),
+        initial_a,
+        future_a: initial_a,
+        initial_a_time: 0,
+        future_a_time: 0,
+        lp_coin_supply,
+        lp_coin_decimals_scalar: scalar<LpCoin>(coin_decimals).to_u256(),
+        n_coins,
+        fees: stable_fees::new(),
+        coins: bag::new(ctx),
+        admin_balances: bag::new(ctx)
+    }  
+  }
+
+  fun new_pool<LpCoin>(
+    coin_decimals: &CoinDecimals,  
+    initial_a: u256,
+    lp_coin_supply: Supply<LpCoin>,
+    coins: vector<TypeName>,
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, PoolAdmin) {
+    let state_v1 = new_state_v1(
+      coin_decimals,
+      initial_a,
+      lp_coin_supply,
+      coins.length(),
+      ctx
+    );
+
+    interest_pool::new<Stable>(
+      make_coins_vec_set_from_vector(coins),
+      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
+      ctx
+    )
+  }
+
   public(package) fun new_pool_with_hooks<LpCoin>(
     hooks_builder: HooksBuilder,
     coin_decimals: &CoinDecimals,  
@@ -1240,54 +1288,6 @@ module clamm::interest_clamm_stable {
       balance: balance::zero<CoinType>(),
       index
     });
-  }
-
-  fun new_pool<LpCoin>(
-    coin_decimals: &CoinDecimals,  
-    initial_a: u256,
-    lp_coin_supply: Supply<LpCoin>,
-    coins: vector<TypeName>,
-    ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin) {
-    let state_v1 = new_state_v1(
-      coin_decimals,
-      initial_a,
-      lp_coin_supply,
-      coins.length(),
-      ctx
-    );
-
-    interest_pool::new<Stable>(
-      make_coins_vec_set_from_vector(coins),
-      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
-      ctx
-    )
-  }
-
-  fun new_state_v1<LpCoin>(
-    coin_decimals: &CoinDecimals,  
-    initial_a: u256,
-    lp_coin_supply: Supply<LpCoin>,
-    n_coins: u64,
-    ctx: &mut TxContext    
-  ): StateV1<LpCoin> {
-    assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
-    assert!(decimals<LpCoin>(coin_decimals) == 9, errors::must_have_9_decimals());
-
-    StateV1 {
-        id: object::new(ctx),
-        balances: empty_vector(n_coins.to_u256()),
-        initial_a,
-        future_a: initial_a,
-        initial_a_time: 0,
-        future_a_time: 0,
-        lp_coin_supply,
-        lp_coin_decimals_scalar: scalar<LpCoin>(coin_decimals).to_u256(),
-        n_coins,
-        fees: stable_fees::new(),
-        coins: bag::new(ctx),
-        admin_balances: bag::new(ctx)
-    }  
   }
 
   fun virtual_price_impl<LpCoin>(state: &StateV1<LpCoin>, clock: &Clock): u256 {
