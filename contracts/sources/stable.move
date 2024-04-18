@@ -316,17 +316,6 @@ module clamm::interest_clamm_stable {
     )      
   }
 
-  public fun remove_one_coin_liquidity<CoinType, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    clock: &Clock,
-    lp_coin: Coin<LpCoin>,
-    min_amount: u64,
-    ctx: &mut TxContext    
-  ): Coin<CoinType> {
-    assert!(!pool.has_remove_liquidity_hook(), errors::this_pool_has_hooks());
-    remove_one_coin_liquidity_impl(pool, clock, lp_coin, min_amount, ctx)
-  }
-
   public fun remove_liquidity_2_pool<CoinA, CoinB, LpCoin>(
     pool: &mut InterestPool<Stable>, 
     clock: &Clock,
@@ -369,6 +358,17 @@ module clamm::interest_clamm_stable {
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
     assert!(!pool.has_remove_liquidity_hook(), errors::this_pool_has_hooks());
     remove_liquidity_5_pool_impl(pool, clock, lp_coin, min_amounts, ctx)       
+  }
+
+  public fun remove_one_coin_liquidity<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    clock: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amount: u64,
+    ctx: &mut TxContext    
+  ): Coin<CoinType> {
+    assert!(!pool.has_remove_liquidity_hook(), errors::this_pool_has_hooks());
+    remove_one_coin_liquidity_impl(pool, clock, lp_coin, min_amount, ctx)
   }
 
   // === Public-View Functions ===

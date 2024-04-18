@@ -29,7 +29,7 @@ module clamm::interest_clamm_volatile_hooks {
     fee_params: vector<u256>, 
     ctx: &mut TxContext
   ): (InterestPool<Volatile>, PoolAdmin, Coin<LpCoin>) {
-    let (pool, pool_admin) = interest_clamm_volatile::new_pool_with_hooks<LpCoin>(
+    let (mut pool, pool_admin) = interest_clamm_volatile::new_pool_with_hooks<LpCoin>(
       clock,
       hooks_builder,
       vector[type_name::get<CoinA>(), type_name::get<CoinB>()],

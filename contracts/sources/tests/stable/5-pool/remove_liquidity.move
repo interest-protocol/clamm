@@ -44,8 +44,8 @@ module clamm::stable_tuple_5pool_remove_liquidity_tests {
 
       let(coin_dai, coin_usdc, coin_usdt, coin_frax, coin_true_usd) = interest_clamm_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
         &mut pool,
-        mint<LP_COIN>(supply / 10, ctx(test)),
         &c,
+        mint<LP_COIN>(supply / 10, ctx(test)),
         vector[0, 0, 0, 0, 0],
         ctx(test)
       );
@@ -108,8 +108,8 @@ module clamm::stable_tuple_5pool_remove_liquidity_tests {
 
       let(coin_dai, coin_usdc, coin_usdt, coin_frax, coin_true_usd) = interest_clamm_stable::remove_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
         &mut pool,
-        mint<LP_COIN>(supply / 10, ctx(test)),
         &c,
+        mint<LP_COIN>(supply / 10, ctx(test)),
         vector[expected_dai_amount, expected_usdc_amount + 1, expected_usdt_amount, expected_frax_amount, expected_true_usd_amount + 1],
         ctx(test)
       );

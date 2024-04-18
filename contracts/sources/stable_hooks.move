@@ -279,28 +279,6 @@ module clamm::interest_clamm_stable_hooks {
     )    
   } 
 
-  public fun remove_one_coin_liquidity<CoinType, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    request: Request,  
-    clock: &Clock,
-    lp_coin: Coin<LpCoin>,
-    min_amount: u64,
-    ctx: &mut TxContext    
-  ): (Request, Coin<CoinType>) {
-    let request = hooks::finish_remove_liquidity(pool, request);
-
-    (
-      request,
-      interest_clamm_stable::remove_one_coin_liquidity_impl(
-        pool,
-        clock,
-        lp_coin,
-        min_amount, 
-        ctx
-      )
-    )
-  }  
-
   public fun remove_liquidity_2_pool<CoinA, CoinB, LpCoin>(
     pool: &mut InterestPool<Stable>, 
     request: Request,  
@@ -405,5 +383,27 @@ module clamm::interest_clamm_stable_hooks {
       coin_d,
       coin_e
     )    
-  }    
+  }
+
+  public fun remove_one_coin_liquidity<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    request: Request,  
+    clock: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amount: u64,
+    ctx: &mut TxContext    
+  ): (Request, Coin<CoinType>) {
+    let request = hooks::finish_remove_liquidity(pool, request);
+
+    (
+      request,
+      interest_clamm_stable::remove_one_coin_liquidity_impl(
+        pool,
+        clock,
+        lp_coin,
+        min_amount, 
+        ctx
+      )
+    )
+  }        
 }

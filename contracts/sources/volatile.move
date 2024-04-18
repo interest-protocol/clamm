@@ -131,7 +131,7 @@ module clamm::interest_clamm_volatile {
     fee_params: vector<u256>, 
     ctx: &mut TxContext
   ): (InterestPool<Volatile>, PoolAdmin, Coin<LpCoin>) {
-    let (pool, pool_admin) = new_pool<LpCoin>(
+    let (mut pool, pool_admin) = new_pool<LpCoin>(
       clock,
       vector[type_name::get<CoinA>(), type_name::get<CoinB>()],
       coin_decimals,
@@ -762,7 +762,7 @@ module clamm::interest_clamm_volatile {
   }
 
   public(package) fun register_2_pool<CoinA, CoinB, LpCoin>(
-    mut pool: &mut InterestPool<Volatile>,
+    pool: &mut InterestPool<Volatile>,
     clock: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
@@ -805,7 +805,7 @@ module clamm::interest_clamm_volatile {
   }
 
   public(package) fun register_3_pool<CoinA, CoinB, CoinC, LpCoin>(
-    mut pool: &mut InterestPool<Volatile>,
+    pool: &mut InterestPool<Volatile>,
     clock: &Clock,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,

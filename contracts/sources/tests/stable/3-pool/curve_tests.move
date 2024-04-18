@@ -90,8 +90,8 @@ module clamm::stable_tuple_3pool_curve_tests {
           
           let (a, b, c) = interest_clamm_stable::remove_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
             &mut pool,
-            mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
             &c,
+            mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
             vector[0, 0 ,0],
             ctx(test)
           );
