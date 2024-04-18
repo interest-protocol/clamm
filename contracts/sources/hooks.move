@@ -13,6 +13,7 @@ module clamm::hooks {
   // === Public Mutative Functions ===
 
   public fun start_swap<Curve>(pool: &InterestPool<Curve>): Request {
+    assert!(pool.has_swap_hook(), errors::this_pool_has_no_hooks());
     interest_pool::new_request(pool, interest_pool::start_swap().utf8())
   }
 
@@ -26,6 +27,7 @@ module clamm::hooks {
   }
 
   public fun start_add_liquidity<Curve>(pool: &InterestPool<Curve>): Request {
+    assert!(pool.has_add_liquidity_hook(), errors::this_pool_has_no_hooks());
     interest_pool::new_request(pool, interest_pool::start_add_liquidity().utf8())
   }
 
@@ -42,6 +44,7 @@ module clamm::hooks {
   }
 
   public fun start_remove_liquidity<Curve>(pool: &InterestPool<Curve>): Request {
+    assert!(pool.has_remove_liquidity_hook(), errors::this_pool_has_no_hooks());
     interest_pool::new_request(pool, interest_pool::start_remove_liquidity().utf8())
   }  
 
