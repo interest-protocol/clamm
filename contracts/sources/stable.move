@@ -581,28 +581,6 @@ module clamm::interest_clamm_stable {
     }  
   }
 
-  fun new_pool<LpCoin>(
-    coin_decimals: &CoinDecimals,  
-    initial_a: u256,
-    lp_coin_supply: Supply<LpCoin>,
-    coins: vector<TypeName>,
-    ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin) {
-    let state_v1 = new_state_v1(
-      coin_decimals,
-      initial_a,
-      lp_coin_supply,
-      coins.length(),
-      ctx
-    );
-
-    interest_pool::new<Stable>(
-      make_coins_vec_set_from_vector(coins),
-      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
-      ctx
-    )
-  }
-
   public(package) fun new_pool_with_hooks<LpCoin>(
     hooks_builder: HooksBuilder,
     coin_decimals: &CoinDecimals,  
@@ -1222,6 +1200,28 @@ module clamm::interest_clamm_stable {
   }
 
   // === Private Functions ===
+
+  fun new_pool<LpCoin>(
+    coin_decimals: &CoinDecimals,  
+    initial_a: u256,
+    lp_coin_supply: Supply<LpCoin>,
+    coins: vector<TypeName>,
+    ctx: &mut TxContext
+  ): (InterestPool<Stable>, PoolAdmin) {
+    let state_v1 = new_state_v1(
+      coin_decimals,
+      initial_a,
+      lp_coin_supply,
+      coins.length(),
+      ctx
+    );
+
+    interest_pool::new<Stable>(
+      make_coins_vec_set_from_vector(coins),
+      versioned::create(STATE_V1_VERSION, state_v1, ctx), 
+      ctx
+    )
+  }
 
   fun calculate_mint_amount<LpCoin>(state: &StateV1<LpCoin>, amp: u256, prev_k: u256, lp_coin_min_amount: u64): u64 {
     let new_k = invariant_(amp, state.balances);
