@@ -237,14 +237,14 @@ module clamm::interest_clamm_volatile {
     register_coin<CoinB, LpCoin>(
       state, 
       coin_decimals,
-      *vector::borrow(&price, 0),
+      price.head(),
       1
     );
 
     register_coin<CoinC, LpCoin>(
       state, 
       coin_decimals,
-      *vector::borrow(&price, 1),
+      *&price[1],
       2
     );
 
@@ -384,7 +384,7 @@ module clamm::interest_clamm_volatile {
   ): Coin<LpCoin> {
     assert!(coin_a.value() != 0 || coin_b.value() != 0, errors::must_supply_one_coin());
     // Make sure the second argument is in right order
-    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
+    assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
@@ -408,7 +408,7 @@ module clamm::interest_clamm_volatile {
   ): Coin<LpCoin> {
     assert!(coin_a.value() != 0 || coin_b.value() != 0 || coin_c.value() != 0, errors::must_supply_one_coin());
     // Make sure the second argument is in right order
-    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
+    assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
@@ -433,7 +433,7 @@ module clamm::interest_clamm_volatile {
     let pool_id = pool.addy();
 
     // Make sure the second argument is in right order
-    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
+    assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
     let state = load_mut<LpCoin>(pool.state_mut());
 
@@ -464,7 +464,7 @@ module clamm::interest_clamm_volatile {
 
     assert!(lp_coin.value() != 0, errors::no_zero_coin());
     // Make sure the second argument is in right order
-    assert!(interest_pool::are_coins_ordered(pool, vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
+    assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
     let pool_id = pool.addy();
 

@@ -183,9 +183,10 @@ module clamm::interest_clamm_stable_hooks {
   ): (Request, Coin<CoinOut>) {
     assert!(pool.has_swap_hook(), errors::this_pool_has_no_hooks());
     assert!(request.name().bytes() == interest_pool::start_swap(), errors::must_be_start_swap_request());
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_swap().utf8());
+    let request = pool.new_request(interest_pool::finish_swap().utf8());
 
     (
       request,
@@ -207,9 +208,10 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_add_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_add_liquidity().utf8());
 
     (
       request,
@@ -232,9 +234,10 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_add_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_add_liquidity().utf8());
 
     (
       request,
@@ -258,9 +261,10 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_add_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_add_liquidity().utf8());
 
     (
       request,
@@ -294,9 +298,10 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_add_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_add_liquidity().utf8());
 
     (
       request,
@@ -327,9 +332,10 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_remove_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_remove_liquidity().utf8());
 
     (
       request,
@@ -356,9 +362,11 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
+    
+    pool.confirm(request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_remove_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_remove_liquidity().utf8());
+
     let (coin_a, coin_b) = interest_clamm_stable::remove_liquidity_2_pool_impl(
       pool,
       clock,
@@ -387,9 +395,11 @@ module clamm::interest_clamm_stable_hooks {
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()
     );
-    interest_pool::confirm(pool, request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_remove_liquidity().utf8());
+    pool.confirm(request);
+
+    let request = pool.new_request(interest_pool::finish_remove_liquidity().utf8());
+
     let (coin_a, coin_b, coin_c) = interest_clamm_stable::remove_liquidity_3_pool_impl(
       pool,
       clock,
@@ -421,7 +431,8 @@ module clamm::interest_clamm_stable_hooks {
     );
     interest_pool::confirm(pool, request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_remove_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_remove_liquidity().utf8());
+
     let (coin_a, coin_b, coin_c, coin_d) = interest_clamm_stable::remove_liquidity_4_pool_impl(
       pool,
       clock,
@@ -454,7 +465,8 @@ module clamm::interest_clamm_stable_hooks {
     );
     interest_pool::confirm(pool, request);
 
-    let request = interest_pool::new_request(pool, interest_pool::finish_remove_liquidity().utf8());
+    let request = pool.new_request(interest_pool::finish_remove_liquidity().utf8());
+    
     let (coin_a, coin_b, coin_c, coin_d, coin_e) = interest_clamm_stable::remove_liquidity_5_pool_impl(
       pool,
       clock,
