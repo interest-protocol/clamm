@@ -185,4 +185,142 @@ module clamm::hooks_tests {
   
    test::end(scenario);         
  } 
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::MUST_BE_START_ADD_LIQUIDITY_REQUEST, location = clamm::hooks)]
+  fun test_finish_add_liquidity_wrong_name() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+
+   next_tx(test, alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_add_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity().utf8(), Action {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+    let request = hooks::start_remove_liquidity(&pool);
+
+    destroy(hooks::finish_add_liquidity(&pool, request));
+
+    pool.share();
+    transfer::public_transfer(pool_admin, alice);
+   };
+  
+   test::end(scenario);         
+ }  
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  fun test_start_remove_liquidity_has_no_hooks() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+
+   next_tx(test, alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_swap().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_swap().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_add_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity().utf8(), Action {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+    destroy(hooks::start_remove_liquidity(&pool));
+
+    pool.share();
+    transfer::public_transfer(pool_admin, alice);
+   };
+  
+   test::end(scenario);         
+ } 
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  fun test_finish_remove_liquidity_has_no_hooks() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+
+   next_tx(test, alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_swap().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_swap().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_add_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity().utf8(), Action {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+    let request = hooks::start_swap(&pool);
+
+    destroy(hooks::finish_remove_liquidity(&pool, request));
+
+    pool.share();
+    transfer::public_transfer(pool_admin, alice);
+   };
+  
+   test::end(scenario);         
+ } 
+
+   #[test]
+  #[expected_failure(abort_code = clamm::errors::MUST_BE_START_REMOVE_LIQUIDITY_REQUEST, location = clamm::hooks)]
+  fun test_finish_remove_liquidity_wrong_name() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+
+   next_tx(test, alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_add_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity().utf8(), Action {});
+    interest_pool::add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity().utf8(), Action {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+    let request = hooks::start_add_liquidity(&pool);
+
+    destroy(hooks::finish_remove_liquidity(&pool, request));
+
+    pool.share();
+    transfer::public_transfer(pool_admin, alice);
+   };
+  
+   test::end(scenario);         
+ } 
 }
