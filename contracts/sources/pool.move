@@ -227,10 +227,11 @@ module clamm::interest_pool {
     let hooks = self.hooks.borrow();
     let Request { name, pool_address, approvals } = request;
 
-    assert!(hooks.rules.contains(&name), errors::invalid_rule_name());
     assert!(self.addy() == pool_address, errors::wrong_request_pool_address());
 
     let rules = (*hooks.rules.get(&name)).into_keys();
+    assert!(!rules.is_empty(), errors::invalid_hook_name());
+
     let rules_len = rules.length();
     let mut i = 0;
 

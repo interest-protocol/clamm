@@ -33,6 +33,7 @@ module clamm::interest_pool_tests {
   public struct FinishAddLiquidityWitness has drop {}
   public struct StartRemoveLiquidityWitness has drop {}
   public struct FinishRemoveLiquidityWitness has drop {}
+  public struct Action has drop {}
 
   #[test]
   fun view_functions() {
@@ -418,6 +419,160 @@ module clamm::interest_pool_tests {
     };
 
     test::end(scenario);  
+  }
+
+  #[test]
+  fun test_request() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+     hooks_builder.add_rule(interest_pool::start_swap().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule(interest_pool::start_swap().utf8(), Action {});
+
+     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder,
+      ctx(test)
+     );
+
+     let mut request = pool.new_request(interest_pool::start_swap().utf8());
+
+     request.approve(StartSwapWitness {});
+     request.approve(Action {});
+
+     pool.confirm(request);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    test::end(scenario);      
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::RULE_NOT_APPROVED, location = clamm::interest_pool)]
+  fun test_request_missing_approval() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+     hooks_builder.add_rule(interest_pool::start_swap().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule(interest_pool::start_swap().utf8(), Action {});
+
+     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder,
+      ctx(test)
+     );
+
+     let mut request = pool.new_request(interest_pool::start_swap().utf8());
+
+     request.approve(StartSwapWitness {});
+
+     pool.confirm(request);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    test::end(scenario);      
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_HOOK_NAME, location = clamm::interest_pool)]
+  fun test_request_invalid_hook_name() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+     hooks_builder.add_rule(interest_pool::finish_swap().utf8(), Action {});
+
+     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder,
+      ctx(test)
+     );
+
+     let mut request = pool.new_request(interest_pool::start_swap().utf8());
+
+     request.approve(Action {});
+
+     pool.confirm(request);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    test::end(scenario);      
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::WRONG_REQUEST_POOL_ADDRESS, location = clamm::interest_pool)]
+  fun test_request_wrong_pool() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+     hooks_builder.add_rule(interest_pool::start_swap().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule(interest_pool::start_swap().utf8(), Action {});
+
+     let mut hooks_builder2 = interest_pool::new_hooks_builder(ctx(test));
+
+     hooks_builder2.add_rule(interest_pool::start_swap().utf8(), StartSwapWitness {});
+     hooks_builder2.add_rule(interest_pool::start_swap().utf8(), Action {});
+
+     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder,
+      ctx(test)
+     );
+
+    let (pool2, pool_admin2) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder2,
+      ctx(test)
+     );
+
+     let mut request = pool.new_request(interest_pool::start_swap().utf8());
+
+     request.approve(StartSwapWitness {});
+     request.approve(Action {});
+
+     pool2.confirm(request);
+
+     destroy(pool);
+     destroy(pool2);
+     destroy(pool_admin);
+     destroy(pool_admin2);     
+    };
+
+    test::end(scenario);      
   }
 
   #[test]

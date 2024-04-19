@@ -52,7 +52,7 @@ module clamm::errors {
   const WRONG_POOL_ID: u64 = 48;
   const INVALID_VERSION: u64 = 49;
   const INVALID_POOL_ADMIN: u64 = 50;
-  const INVALID_RULE_NAME: u64 = 51;
+  const INVALID_HOOK_NAME: u64 = 51;
   const RULE_NOT_ADDED: u64 = 52;
   const WRONG_REQUEST_POOL_ADDRESS: u64 = 53;
   const RULE_NOT_APPROVED: u64 = 54;
@@ -272,8 +272,8 @@ module clamm::errors {
     INVALID_POOL_ADMIN
   } 
 
-  public fun invalid_rule_name(): u64 {
-    INVALID_RULE_NAME
+  public fun invalid_hook_name(): u64 {
+    INVALID_HOOK_NAME
   }    
 
   public fun rule_not_added(): u64 {
@@ -324,6 +324,3 @@ module clamm::errors {
     MUST_BE_FINISH_REQUEST
   }  
 }
-  // const POOL_HAS_SWAP_HOOKS: u64 = 57;
-  // const POOL_HAS_NO_ADD_LIQUIDITY_HOOK: u64 = 58;
-  // const POOL_HAS_NO_REMOVE_LIQUIDITY_HOOK: u64 = 59;
