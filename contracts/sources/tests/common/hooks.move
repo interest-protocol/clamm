@@ -20,7 +20,7 @@ module clamm::hooks_tests {
   public struct Witness has drop {}
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_SWAP_HOOKS, location = clamm::hooks)]
   fun test_start_swap_has_no_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -53,7 +53,7 @@ module clamm::hooks_tests {
  }
 
  #[test]
- #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)] 
+ #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_SWAP_HOOKS, location = clamm::hooks)] 
  fun test_finish_swap_has_no_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -119,7 +119,7 @@ module clamm::hooks_tests {
  }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_ADD_LIQUIDITY_HOOKS, location = clamm::hooks)]
   fun test_start_add_liquidity_has_no_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -152,7 +152,7 @@ module clamm::hooks_tests {
  }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_ADD_LIQUIDITY_HOOKS, location = clamm::hooks)]
   fun test_finish_add_liquidity_has_no_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -224,7 +224,7 @@ module clamm::hooks_tests {
  }  
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_REMOVE_LIQUIDITY_HOOKS, location = clamm::hooks)]
   fun test_start_remove_liquidity_has_no_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -257,7 +257,7 @@ module clamm::hooks_tests {
  } 
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::THIS_POOL_HAS_NO_HOOKS, location = clamm::hooks)]
+  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_REMOVE_LIQUIDITY_HOOKS, location = clamm::hooks)]
   fun test_finish_remove_liquidity_has_no_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -291,7 +291,7 @@ module clamm::hooks_tests {
    test::end(scenario);         
  } 
 
-   #[test]
+  #[test]
   #[expected_failure(abort_code = clamm::errors::MUST_BE_START_REMOVE_LIQUIDITY_REQUEST, location = clamm::hooks)]
   fun test_finish_remove_liquidity_wrong_name() {
    let mut scenario = scenario();

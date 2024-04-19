@@ -206,7 +206,7 @@ module clamm::interest_clamm_volatile {
     mint_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
-    assert!(!pool.has_swap_hook(), errors::this_pool_has_hooks());
+    assert!(!pool.has_swap_hook(), errors::pool_has_hooks());
     swap_impl<CoinIn, CoinOut, LpCoin>(pool, clock, coin_in, mint_amount, ctx)
   }
 
@@ -218,7 +218,7 @@ module clamm::interest_clamm_volatile {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext      
   ): Coin<LpCoin> {
-    assert!(!pool.has_add_liquidity_hook(), errors::this_pool_has_hooks());
+    assert!(!pool.has_add_liquidity_hook(), errors::pool_has_hooks());
     add_liquidity_2_pool_impl(pool, clock, coin_a, coin_b, lp_coin_min_amount, ctx)
   }
 
@@ -231,7 +231,7 @@ module clamm::interest_clamm_volatile {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext      
   ): Coin<LpCoin> {
-    assert!(!pool.has_add_liquidity_hook(), errors::this_pool_has_hooks());
+    assert!(!pool.has_add_liquidity_hook(), errors::pool_has_hooks());
     add_liquidity_3_pool_impl(pool, clock, coin_a, coin_b, coin_c, lp_coin_min_amount, ctx)
   }
 
@@ -241,7 +241,7 @@ module clamm::interest_clamm_volatile {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>) {
-    assert!(!pool.has_remove_liquidity_hook(), errors::this_pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
     remove_liquidity_2_pool_impl(pool, lp_coin, min_amounts, ctx)
   }
 
@@ -251,7 +251,7 @@ module clamm::interest_clamm_volatile {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
-    assert!(!pool.has_remove_liquidity_hook(), errors::this_pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
     remove_liquidity_3_pool_impl(pool, lp_coin, min_amounts, ctx)
   }
 
@@ -262,7 +262,7 @@ module clamm::interest_clamm_volatile {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinOut> {
-    assert!(!pool.has_remove_liquidity_hook(), errors::this_pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
     remove_liquidity_one_coin_impl(pool, clock, lp_coin, min_amount, ctx)
   }
 
