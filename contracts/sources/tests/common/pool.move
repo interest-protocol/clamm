@@ -382,6 +382,45 @@ module clamm::interest_pool_tests {
   }
 
   #[test]
+  fun test_rule_config() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    hooks_builder.add_rule(interest_pool::start_swap().utf8(), StartSwapWitness {});
+    hooks_builder.add_rule_config<StartSwapWitness, u64>(StartSwapWitness {}, 0);
+
+    let (mut pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+     assert_eq(pool.has_rule_config<Stable, StartSwapWitness>(), true);
+     assert_eq(pool.has_rule_config<Stable, StartAddLiquidityWitness>(), false);
+
+     assert_eq(*pool.config<Stable, StartSwapWitness, u64>(), 0); 
+
+     let ref = pool.config_mut<Stable, StartSwapWitness, u64>(StartSwapWitness {});
+     *ref = 1;
+
+     assert_eq(*pool.config<Stable, StartSwapWitness, u64>(), 1); 
+
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    test::end(scenario);  
+  }
+
+  #[test]
   #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
   fun test_assert_pool_admin_error() {
    let mut scenario = scenario();
