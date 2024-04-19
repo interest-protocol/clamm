@@ -20,18 +20,18 @@ module clamm::utils {
     set
   }
 
+  public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
+    (
+      *&x[0],
+      *&x[1],
+    )
+  }
+
   public fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
     (
       *&x[0],
       *&x[1],
       *&x[2]
-    )
-  }
-
-  public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
-    (
-      *&x[0],
-      *&x[1],
     )
   }
 

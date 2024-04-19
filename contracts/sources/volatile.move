@@ -27,8 +27,6 @@ module clamm::interest_clamm_volatile {
   use clamm::interest_pool::{Self, HooksBuilder, InterestPool};
   use clamm::utils::{
     empty_vector,
-    vector_2_to_tuple,
-    vector_3_to_tuple,
     make_coins_vec_set_from_vector,
   };
 
@@ -37,6 +35,8 @@ module clamm::interest_clamm_volatile {
   use fun utils::to_u64 as u256.to_u64;
   use fun utils::to_u256 as u64.to_u256;
   use fun coin::from_balance as Balance.to_coin;  
+  use fun utils::vector_2_to_tuple as vector.to_2_tuple;
+  use fun utils::vector_3_to_tuple as vector.to_3_tuple;
 
   // === Constants ===
 
@@ -1170,9 +1170,9 @@ module clamm::interest_clamm_volatile {
     assert!(lp_coin_decimals == 9, errors::must_have_9_decimals());
 
     let timestamp = clock.timestamp_ms();
-    let (a, gamma) = vector_2_to_tuple(initial_a_gamma);
-    let (extra_profit, adjustment_step, ma_half_time) = vector_3_to_tuple(rebalancing_params);
-    let (mid_fee, out_fee, gamma_fee) = vector_3_to_tuple(fee_params);
+    let (a, gamma) = initial_a_gamma.to_2_tuple();
+    let (extra_profit, adjustment_step, ma_half_time) = rebalancing_params.to_3_tuple();
+    let (mid_fee, out_fee, gamma_fee) = fee_params.to_3_tuple();
 
     let n_coins = balances.length();
  
