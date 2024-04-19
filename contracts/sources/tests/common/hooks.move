@@ -200,6 +200,8 @@ module clamm::hooks_tests {
 
     add_rule(&mut hooks_builder, interest_pool::start_swap());
     add_rule(&mut hooks_builder, interest_pool::finish_swap());
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity());    
     add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity());
     add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity());
 
