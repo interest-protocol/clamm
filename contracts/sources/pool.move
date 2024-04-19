@@ -128,27 +128,27 @@ module clamm::interest_pool {
     self.hooks.is_some()
   }
 
-  public fun has_swap_hook<Curve>(self: &InterestPool<Curve>): bool {
+  public fun has_swap_hooks<Curve>(self: &InterestPool<Curve>): bool {
     has_hook(self, START_SWAP, FINISH_SWAP)
   }
 
-  public fun has_add_liquidity_hook<Curve>(self: &InterestPool<Curve>): bool {
+  public fun has_add_liquidity_hooks<Curve>(self: &InterestPool<Curve>): bool {
     has_hook(self, START_ADD_LIQUIDITY, FINISH_ADD_LIQUIDITY)
   }
 
-  public fun has_remove_liquidity_hook<Curve>(self: &InterestPool<Curve>): bool {
+  public fun has_remove_liquidity_hooks<Curve>(self: &InterestPool<Curve>): bool {
     has_hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
   }
 
-  public fun swap_hook<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+  public fun swap_hooks<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
     hook(self, START_SWAP, FINISH_SWAP)
   }
 
-  public fun add_liquidity_hook<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+  public fun add_liquidity_hooks<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
     hook(self, START_ADD_LIQUIDITY, FINISH_ADD_LIQUIDITY)
   }
 
-  public fun remove_liquidity_hook<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+  public fun remove_liquidity_hooks<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
     hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
   }
 

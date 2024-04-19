@@ -13,17 +13,17 @@ module clamm::hooks {
   // === Public Mutative Functions ===
 
   public fun start_swap<Curve>(pool: &InterestPool<Curve>): Request {
-    assert!(pool.has_swap_hook(), errors::pool_has_no_swap_hooks());
+    assert!(pool.has_swap_hooks(), errors::pool_has_no_swap_hooks());
     interest_pool::new_request(pool, interest_pool::start_swap().utf8())
   }
 
   public fun start_add_liquidity<Curve>(pool: &InterestPool<Curve>): Request {
-    assert!(pool.has_add_liquidity_hook(), errors::pool_has_no_add_liquidity_hooks());
+    assert!(pool.has_add_liquidity_hooks(), errors::pool_has_no_add_liquidity_hooks());
     interest_pool::new_request(pool, interest_pool::start_add_liquidity().utf8())
   }
 
   public fun start_remove_liquidity<Curve>(pool: &InterestPool<Curve>): Request {
-    assert!(pool.has_remove_liquidity_hook(), errors::pool_has_no_remove_liquidity_hooks());
+    assert!(pool.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
     interest_pool::new_request(pool, interest_pool::start_remove_liquidity().utf8())
   }  
 
@@ -38,7 +38,7 @@ module clamm::hooks {
   // === Public-Package Functions ===
 
   public(package) fun finish_swap<Curve>(pool: &InterestPool<Curve>, request: Request): Request {
-    assert!(pool.has_swap_hook(), errors::pool_has_no_swap_hooks());
+    assert!(pool.has_swap_hooks(), errors::pool_has_no_swap_hooks());
     assert!(request.name().bytes() == interest_pool::start_swap(), errors::must_be_start_swap_request());
     
     pool.confirm(request);
@@ -47,7 +47,7 @@ module clamm::hooks {
   }
 
   public(package) fun finish_add_liquidity<Curve>(pool: &InterestPool<Curve>, request: Request): Request {
-    assert!(pool.has_add_liquidity_hook(), errors::pool_has_no_add_liquidity_hooks());
+    assert!(pool.has_add_liquidity_hooks(), errors::pool_has_no_add_liquidity_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_add_liquidity(), 
       errors::must_be_start_add_liquidity_request()
@@ -59,7 +59,7 @@ module clamm::hooks {
   }
 
   public(package) fun finish_remove_liquidity<Curve>(pool: &InterestPool<Curve>, request: Request): Request {
-    assert!(pool.has_remove_liquidity_hook(), errors::pool_has_no_remove_liquidity_hooks());
+    assert!(pool.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
     assert!(
       request.name().bytes() == interest_pool::start_remove_liquidity(), 
       errors::must_be_start_remove_liquidity_request()

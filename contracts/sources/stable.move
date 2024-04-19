@@ -231,7 +231,7 @@ module clamm::interest_clamm_stable {
     min_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
-    assert!(!pool.has_swap_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_swap_hooks(), errors::pool_has_hooks());
     swap_impl<CoinIn, CoinOut, LpCoin>(pool, clock, coin_in, min_amount, ctx)
   }
 
@@ -243,7 +243,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    assert!(!pool.has_add_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_add_liquidity_hooks(), errors::pool_has_hooks());
     add_liquidity_2_pool_impl<CoinA, CoinB, LpCoin>(pool, clock, coin_a, coin_b, lp_coin_min_amount, ctx)
   }  
 
@@ -256,7 +256,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    assert!(!pool.has_add_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_add_liquidity_hooks(), errors::pool_has_hooks());
     add_liquidity_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
       pool, 
       clock, 
@@ -278,7 +278,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    assert!(!pool.has_add_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_add_liquidity_hooks(), errors::pool_has_hooks());
     add_liquidity_4_pool_impl<CoinA, CoinB, CoinC, CoinD, LpCoin>(
       pool, 
       clock, 
@@ -302,7 +302,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
-    assert!(!pool.has_add_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_add_liquidity_hooks(), errors::pool_has_hooks());
     add_liquidity_5_pool_impl<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
       pool, 
       clock, 
@@ -323,7 +323,7 @@ module clamm::interest_clamm_stable {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>) {
-    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hooks(), errors::pool_has_hooks());
     remove_liquidity_2_pool_impl(pool, clock, lp_coin, min_amounts, ctx)
   }
 
@@ -334,7 +334,7 @@ module clamm::interest_clamm_stable {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>) {
-    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hooks(), errors::pool_has_hooks());
     remove_liquidity_3_pool_impl(pool, clock, lp_coin, min_amounts, ctx)
   }
 
@@ -345,7 +345,7 @@ module clamm::interest_clamm_stable {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>) {
-    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hooks(), errors::pool_has_hooks());
     remove_liquidity_4_pool_impl(pool, clock, lp_coin, min_amounts, ctx)    
   }
 
@@ -356,7 +356,7 @@ module clamm::interest_clamm_stable {
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
-    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hooks(), errors::pool_has_hooks());
     remove_liquidity_5_pool_impl(pool, clock, lp_coin, min_amounts, ctx)       
   }
 
@@ -367,7 +367,7 @@ module clamm::interest_clamm_stable {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinType> {
-    assert!(!pool.has_remove_liquidity_hook(), errors::pool_has_hooks());
+    assert!(!pool.has_remove_liquidity_hooks(), errors::pool_has_hooks());
     remove_one_coin_liquidity_impl(pool, clock, lp_coin, min_amount, ctx)
   }
 
