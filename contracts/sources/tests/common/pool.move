@@ -338,6 +338,50 @@ module clamm::interest_pool_tests {
   }
 
   #[test]
+  fun test_read_hooks_data() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    hooks_builder.add_rule(interest_pool::start_swap().utf8(), StartSwapWitness {});
+    hooks_builder.add_rule(interest_pool::finish_swap().utf8(), FinishSwapWitness {});
+    hooks_builder.add_rule(interest_pool::start_add_liquidity().utf8(), StartAddLiquidityWitness {});
+    hooks_builder.add_rule(interest_pool::finish_add_liquidity().utf8(), FinishAddLiquidityWitness {});
+    hooks_builder.add_rule(interest_pool::start_remove_liquidity().utf8(), StartRemoveLiquidityWitness {});
+    hooks_builder.add_rule(interest_pool::finish_remove_liquidity().utf8(), FinishRemoveLiquidityWitness {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+     let (start_swap, finish_swap) = pool.swap_hooks();
+     assert_eq(start_swap, vector[type_name::get<StartSwapWitness>()]);
+     assert_eq(finish_swap, vector[type_name::get<FinishSwapWitness>()]);
+
+     let (start_add_liquidity, finish_add_liquidity) = pool.add_liquidity_hooks();
+     assert_eq(start_add_liquidity, vector[type_name::get<StartAddLiquidityWitness>()]);
+     assert_eq(finish_add_liquidity, vector[type_name::get<FinishAddLiquidityWitness>()]);
+
+     let (start_remove_liquidity, finish_remove_liquidity) = pool.remove_liquidity_hooks();
+     assert_eq(start_remove_liquidity, vector[type_name::get<StartRemoveLiquidityWitness>()]);
+     assert_eq(finish_remove_liquidity, vector[type_name::get<FinishRemoveLiquidityWitness>()]);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    test::end(scenario);  
+  }
+
+  #[test]
   #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
   fun test_assert_pool_admin_error() {
    let mut scenario = scenario();
