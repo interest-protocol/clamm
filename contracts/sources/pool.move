@@ -82,6 +82,29 @@ module clamm::interest_pool {
     }
   }
 
+  public fun start_swap<Curve>(self: &InterestPool<Curve>): Request {
+    assert!(self.has_swap_hooks(), errors::pool_has_no_swap_hooks());
+    new_request(self, START_SWAP.utf8())
+  }
+
+  public fun start_add_liquidity<Curve>(self: &InterestPool<Curve>): Request {
+    assert!(self.has_add_liquidity_hooks(), errors::pool_has_no_add_liquidity_hooks());
+    new_request(self, START_ADD_LIQUIDITY.utf8())
+  }
+
+  public fun start_remove_liquidity<Curve>(self: &InterestPool<Curve>): Request {
+    assert!(self.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
+    new_request(self, START_REMOVE_LIQUIDITY.utf8())
+  }  
+
+  public fun finish<Curve>(self: &InterestPool<Curve>, request: Request) {
+    assert!(
+      request.name().index_of(&b"F".utf8()) == 0, 
+      errors::must_be_finish_request()
+    );
+    confirm(self, request);      
+  }  
+
   // === Public-View Functions ===
 
   public fun addy<Curve>(self: &InterestPool<Curve>): address {
@@ -100,27 +123,27 @@ module clamm::interest_pool {
     eq(&compare(&self.coins(), &coins))
   }
 
-  public fun start_swap(): vector<u8> {
+  public fun start_swap_name(): vector<u8> {
     START_SWAP
   }
 
-  public fun finish_swap(): vector<u8> {
+  public fun finish_swap_name(): vector<u8> {
     FINISH_SWAP
   }
 
-  public fun start_add_liquidity(): vector<u8> {
+  public fun start_add_liquidity_name(): vector<u8> {
     START_ADD_LIQUIDITY
   }
 
-  public fun finish_add_liquidity(): vector<u8> {
+  public fun finish_add_liquidity_name(): vector<u8> {
     FINISH_ADD_LIQUIDITY
   }
 
-  public fun start_remove_liquidity(): vector<u8> {
+  public fun start_remove_liquidity_name(): vector<u8> {
     START_REMOVE_LIQUIDITY
   }
 
-  public fun finish_remove_liquidity(): vector<u8> {
+  public fun finish_remove_liquidity_name(): vector<u8> {
     FINISH_REMOVE_LIQUIDITY
   }
 
@@ -152,8 +175,8 @@ module clamm::interest_pool {
     hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
   }
 
-  public fun has_rule_config<Curve, Rule: drop>(pool: &InterestPool<Curve>): bool {
-    pool.hooks.borrow().config.contains(type_name::get<Rule>())
+  public fun has_rule_config<Curve, Rule: drop>(self: &InterestPool<Curve>): bool {
+    self.hooks.borrow().config.contains(type_name::get<Rule>())
   }
 
   public fun config<Curve, Rule: drop, Config: store>(self: &InterestPool<Curve>): &Config {
@@ -190,8 +213,8 @@ module clamm::interest_pool {
     hooks_builder.config.add(type_name::get<Rule>(), config)
   }
 
-  public fun config_mut<Curve, Rule: drop, Config: store>(pool: &mut InterestPool<Curve>, _: Rule): &mut Config {
-    pool.hooks.borrow_mut().config.borrow_mut(type_name::get<Rule>())
+  public fun config_mut<Curve, Rule: drop, Config: store>(self: &mut InterestPool<Curve>, _: Rule): &mut Config {
+    self.hooks.borrow_mut().config.borrow_mut(type_name::get<Rule>())
   }
 
   public fun approve<Rule: drop>(request: &mut Request, _: Rule) {
@@ -223,29 +246,10 @@ module clamm::interest_pool {
     }
   }
 
-  public(package) fun confirm<Curve>(self: &InterestPool<Curve>, request: Request) {
-    let hooks = self.hooks.borrow();
-    let Request { name, pool_address, approvals } = request;
-
-    assert!(self.addy() == pool_address, errors::wrong_request_pool_address());
-
-    let rules = (*hooks.rules.get(&name)).into_keys();
-    assert!(!rules.is_empty(), errors::invalid_hook_name());
-
-    let rules_len = rules.length();
-    let mut i = 0;
-
-    while (rules_len > i) {
-      let rule = &rules[i];
-      assert!(approvals.contains(rule), errors::rule_not_approved());
-      i = i + 1;
-    }
-  } 
-
   public(package) fun new<Curve>(coins: VecSet<TypeName>, state: Versioned, ctx: &mut TxContext): (InterestPool<Curve>, PoolAdmin)  {
     curves::assert_curve<Curve>();
     let pool_admin = pool_admin::new(ctx);
-    let pool = InterestPool {
+    let self = InterestPool {
       id: object::new(ctx),
       coins,
       state,
@@ -253,7 +257,7 @@ module clamm::interest_pool {
       hooks: option::none()
     };
 
-    (pool, pool_admin)
+    (self, pool_admin)
   }
 
   public(package) fun new_with_hooks<Curve>(
@@ -267,7 +271,7 @@ module clamm::interest_pool {
     let HooksBuilder { rules, config  } = hooks_builder;
 
     let pool_admin = pool_admin::new(ctx);
-    let pool = InterestPool {
+    let self = InterestPool {
       id: object::new(ctx),
       coins,
       state,
@@ -275,7 +279,40 @@ module clamm::interest_pool {
       hooks: option::some(Hooks { rules, config })
     };
 
-    (pool, pool_admin)
+    (self, pool_admin)
+  }  
+
+  public(package) fun finish_swap<Curve>(self: &InterestPool<Curve>, request: Request): Request {
+    assert!(self.has_swap_hooks(), errors::pool_has_no_swap_hooks());
+    assert!(request.name().bytes() == START_SWAP, errors::must_be_start_swap_request());
+    
+    self.confirm(request);
+
+    self.new_request(FINISH_SWAP.utf8())     
+  }
+
+  public(package) fun finish_add_liquidity<Curve>(self: &InterestPool<Curve>, request: Request): Request {
+    assert!(self.has_add_liquidity_hooks(), errors::pool_has_no_add_liquidity_hooks());
+    assert!(
+      request.name().bytes() == START_ADD_LIQUIDITY, 
+      errors::must_be_start_add_liquidity_request()
+    );
+    
+    self.confirm(request);
+
+    self.new_request(FINISH_ADD_LIQUIDITY.utf8())    
+  }
+
+  public(package) fun finish_remove_liquidity<Curve>(self: &InterestPool<Curve>, request: Request): Request {
+    assert!(self.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
+    assert!(
+      request.name().bytes() == START_REMOVE_LIQUIDITY, 
+      errors::must_be_start_remove_liquidity_request()
+    );
+    
+    self.confirm(request);
+
+    self.new_request(FINISH_REMOVE_LIQUIDITY.utf8())
   }  
 
   // === Private Functions ===  
@@ -301,5 +338,31 @@ module clamm::interest_pool {
       (*rules.get(&start.utf8())).into_keys(),
       (*rules.get(&finish.utf8())).into_keys(),
     )
+  }
+
+  fun confirm<Curve>(self: &InterestPool<Curve>, request: Request) {
+    let hooks = self.hooks.borrow();
+    let Request { name, pool_address, approvals } = request;
+
+    assert!(self.addy() == pool_address, errors::wrong_request_pool_address());
+
+    let rules = (*hooks.rules.get(&name)).into_keys();
+    assert!(!rules.is_empty(), errors::invalid_hook_name());
+
+    let rules_len = rules.length();
+    let mut i = 0;
+
+    while (rules_len > i) {
+      let rule = &rules[i];
+      assert!(approvals.contains(rule), errors::rule_not_approved());
+      i = i + 1;
+    }
+  }
+
+  // === Test-Only Functions ===  
+
+  #[test_only]
+  public fun confirm_for_testing<Curve>(self: &InterestPool<Curve>, request: Request) {
+    confirm(self, request)
   }
 }

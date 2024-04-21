@@ -10,7 +10,6 @@ module clamm::stable_hooks_tests {
 
   use suitears::coin_decimals::CoinDecimals;
 
-  use clamm::hooks;
   use clamm::eth::ETH;
   use clamm::dai::DAI;
   use clamm::frax::FRAX;
@@ -41,8 +40,8 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_swap());
-    add_rule(&mut hooks_builder, interest_pool::finish_swap()); 
+    add_rule(&mut hooks_builder, interest_pool::start_swap_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_swap_name()); 
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_2_pool<USDC, ETH, LP_COIN>(
       &c,
@@ -55,7 +54,7 @@ module clamm::stable_hooks_tests {
       test.ctx()
     ); 
 
-    let mut start_request = hooks::start_swap(&pool);
+    let mut start_request = pool.start_swap();
 
     start_request.approve(Witness {});
 
@@ -70,7 +69,7 @@ module clamm::stable_hooks_tests {
 
     finish_request.approve(Witness {});
 
-    hooks::finish(&pool, finish_request);
+    pool.finish(finish_request);
 
     destroy(c);     
     destroy(pool);
@@ -96,8 +95,8 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity()); 
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_2_pool<USDC, ETH, LP_COIN>(
       &c,
@@ -110,7 +109,7 @@ module clamm::stable_hooks_tests {
       test.ctx()
     ); 
 
-    let mut start_request = hooks::start_add_liquidity(&pool);
+    let mut start_request = pool.start_add_liquidity();
 
     start_request.approve(Witness {});
 
@@ -126,7 +125,7 @@ module clamm::stable_hooks_tests {
 
     finish_request.approve(Witness {});
 
-    hooks::finish(&pool, finish_request);
+    pool.finish(finish_request);
 
     assert_eq(pool.coins(), vector[type_name::get<USDC>(), type_name::get<ETH>()]);
 
@@ -154,8 +153,8 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity()); 
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_3_pool<USDC, ETH, USDT, LP_COIN>(
       &c,
@@ -169,7 +168,7 @@ module clamm::stable_hooks_tests {
       test.ctx()
     ); 
 
-    let mut start_request = hooks::start_add_liquidity(&pool);
+    let mut start_request = pool.start_add_liquidity();
 
     start_request.approve(Witness {});
 
@@ -186,7 +185,7 @@ module clamm::stable_hooks_tests {
 
     finish_request.approve(Witness {});
 
-    hooks::finish(&pool, finish_request);
+    pool.finish(finish_request);
 
     assert_eq(pool.coins(), vector[type_name::get<USDC>(), type_name::get<ETH>(), type_name::get<USDT>()]);
 
@@ -214,8 +213,8 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity()); 
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_4_pool<USDC, ETH, USDT, DAI, LP_COIN>(
       &c,
@@ -230,7 +229,7 @@ module clamm::stable_hooks_tests {
       test.ctx()
     ); 
 
-    let mut start_request = hooks::start_add_liquidity(&pool);
+    let mut start_request = pool.start_add_liquidity();
 
     start_request.approve(Witness {});
 
@@ -248,7 +247,7 @@ module clamm::stable_hooks_tests {
 
     finish_request.approve(Witness {});
 
-    hooks::finish(&pool, finish_request);
+    pool.finish(finish_request);
 
     assert_eq(pool.coins(), vector[type_name::get<USDC>(), type_name::get<ETH>(), type_name::get<USDT>(), type_name::get<DAI>()]);
 
@@ -276,8 +275,8 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity()); 
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_5_pool<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &c,
@@ -293,7 +292,7 @@ module clamm::stable_hooks_tests {
       test.ctx()
     ); 
 
-    let mut start_request = hooks::start_add_liquidity(&pool);
+    let mut start_request = pool.start_add_liquidity();
 
     start_request.approve(Witness {});
 
@@ -312,7 +311,7 @@ module clamm::stable_hooks_tests {
 
     finish_request.approve(Witness {});
 
-    hooks::finish(&pool, finish_request);
+    pool.finish(finish_request);
 
     assert_eq(pool.coins(), vector[type_name::get<USDC>(), type_name::get<ETH>(), type_name::get<USDT>(), type_name::get<DAI>(), type_name::get<FRAX>()]);
 
