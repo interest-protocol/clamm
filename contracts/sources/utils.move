@@ -5,10 +5,6 @@ module clamm::utils {
 
   use sui::vec_set::{Self, VecSet};
 
-  use suitears::comparator::{compare, eq};
-
-  use clamm::interest_pool::InterestPool;
-
   // === Public-Mutative Functions ===
 
   public fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
@@ -24,18 +20,18 @@ module clamm::utils {
     set
   }
 
+  public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
+    (
+      *&x[0],
+      *&x[1],
+    )
+  }
+
   public fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
     (
       *&x[0],
       *&x[1],
       *&x[2]
-    )
-  }
-
-  public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
-    (
-      *&x[0],
-      *&x[1],
     )
   }
 
@@ -52,10 +48,6 @@ module clamm::utils {
   }
 
   // === Public-View Functions ===
-
-  public fun are_coins_ordered<Curve>(pool: &InterestPool<Curve>, coins: vector<TypeName>): bool {
-    eq(&compare(&pool.coins(), &coins))
-  }
 
   public fun to_u8(x: u64): u8 {
     (x as u8)

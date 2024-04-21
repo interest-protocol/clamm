@@ -1,76 +1,63 @@
 #[test_only]
 module clamm::utils_tests {
-  // use std::type_name::get;
+  use std::type_name;
 
-  // use sui::vec_set;
-  // use sui::test_utils::assert_eq;
-  // use sui::test_scenario::{Self as test, next_tx};
+  use sui::vec_set;
+  use sui::test_utils::assert_eq;
 
-  // use clamm::utils;
-  // use clamm::dai::DAI;
-  // use clamm::usdc::USDC;
-  // use clamm::usdt::USDT;
-  // use clamm::curves::StableTuple;
-  // use clamm::interest_pool::Pool;
-  // use clamm::init_stable_tuple::setup_3pool;
-  // use clamm::test_utils::{people, scenario};
+  use clamm::utils;
+  use clamm::eth::ETH;
+  use clamm::usdc::USDC;
 
-  // #[test]
-  // fun correct_coins_order() {
-  //   let scenario = scenario();
-  //   let (alice, _) = people();
+  #[test]
+  fun test_make_coins_vec_set_from_vector() {
+    let mut set = vec_set::empty();
+    let eth = type_name::get<ETH>();
+    let usdc = type_name::get<USDC>();
 
-  //   let test = &mut scenario;
-    
-  //   setup_3pool(test, 100, 100, 100);
+    set.insert(usdc);
+    set.insert(eth);
 
-  //   next_tx(test, alice);
-  //   {
-  //     let pool = test::take_shared<Pool<StableTuple>>(test);
-      
-  //     assert_eq(utils::are_coins_ordered(&pool, vector[get<DAI>(), get<USDC>(), get<USDT>()]), true);
-  //     assert_eq(utils::are_coins_ordered(&pool, vector[get<USDC>(), get<DAI>(), get<USDT>()]), false);
+    assert_eq(
+      utils::make_coins_vec_set_from_vector(vector[usdc, eth]), 
+      set
+    );     
+  }
 
-  //     test::return_shared(pool);
-  //   };
-  //   test::end(scenario);      
-  // }
+  #[test]
+  fun test_vector_to_tuple() {
+    let vec1 = vector[0, 1];
+    let vec2 = vector[2, 3, 4];
 
-  // #[test]
-  // fun make_coins_set() {
-  //   let array = vector[get<USDC>(), get<DAI>(), get<USDT>()];
-  //   let set = utils::make_coins_from_vector(array);  
+    let (zero, one) = utils::vector_2_to_tuple(vec1); 
 
-  //   let set_keys = vec_set::into_keys(set);
+    assert_eq(zero, *&vec1[0]);
+    assert_eq(one, *&vec1[1]);
 
-  //   assert_eq(set_keys, array);
-  // }
+    let (two, three, four) = utils::vector_3_to_tuple(vec2); 
 
-  // #[test]
-  // fun vector_utils() {
-  //   let array = vector[0, 1];
+    assert_eq(two, *&vec2[0]);
+    assert_eq(three, *&vec2[1]);
+    assert_eq(four, *&vec2[2]);    
+  }
 
-  //   let (x, y) = utils::vector_2_to_tuple(array);
+  #[test]
+  fun test_empty_vector() {
+    assert_eq(utils::empty_vector(5), vector[0, 0, 0, 0, 0]);
+    assert_eq(utils::empty_vector(7), vector[0, 0, 0, 0, 0, 0, 0]);
+  }
 
-  //   assert_eq(x, 0);
-  //   assert_eq(y, 1);
+  #[test]
+  fun test_head() {
+    let vec = vector[2, 3, 4];
 
+    assert_eq(utils::head(vec), 2);
+  }
 
-  //   let array = vector[0, 1, 2];
-
-  //   let (x, y, z) = utils::vector_3_to_tuple(array);
-
-  //   assert_eq(x, 0);
-  //   assert_eq(y, 1);
-  //   assert_eq(z, 2);
-    
-  //   assert_eq(utils::empty_vector(5), vector[0, 0, 0, 0, 0]);
-  // }
-
-  // #[test]
-  // #[expected_failure]  
-  // fun fails_to_make_coin_set() {
-  //   // * will throw
-  //   utils::make_coins_from_vector(vector[get<USDC>(), get<DAI>(), get<USDT>(), get<USDT>()]);  
-  // }
+  #[test]
+  fun test_convert_uint() {
+    assert_eq(utils::to_u8(1), 1);
+    assert_eq(utils::to_u64(2), 2);
+    assert_eq(utils::to_u256(3), 3);
+  }
 }

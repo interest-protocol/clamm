@@ -1,6 +1,6 @@
-// * 4 InterestPool - DAI - USDC - USDT - FRAX
+// * 2 InterestPool - USDC - USDT
 #[test_only]
-module clamm::stable_tuple_4pool_curve_tests {
+module clamm::stable_tuple_2pool_curve_tests {
 
   use sui::clock::Clock;
   use sui::test_utils::assert_eq;
@@ -10,35 +10,29 @@ module clamm::stable_tuple_4pool_curve_tests {
   use suitears::math64::diff;
   use suitears::math256::diff as u256_diff;
 
-  use clamm::dai::DAI;
-  use clamm::frax::FRAX;
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
-  use clamm::interest_clamm_stable;
-  use clamm::lp_coin::LP_COIN;
   use clamm::curves::Stable;
+  use clamm::lp_coin::LP_COIN;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
-  use clamm::init_interest_amm_stable::setup_4pool;
+  use clamm::init_interest_amm_stable::setup_2pool;
   use clamm::stable_simulation::{Self as sim, State as SimState};
   use clamm::amm_test_utils::{people, scenario, mint, normalize_amount, add_decimals};
 
-  const DAI_DECIMALS: u8 = 9;
   const USDC_DECIMALS: u8 = 6; 
   const USDT_DECIMALS: u8 = 9;
-  const FRAX_DECIMALS: u8 = 9;
-  const USDC_DECIMALS_SCALAR: u256 = 1000000; 
+  const USDT_DECIMALS_SCALAR: u256 = 1_000_000_000; 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
-  const N_COINS: u64 = 4;
 
-  // * We p
   #[test]
   fun virtual_price_always_up() {
-   let mut scenario = scenario();
+    let mut scenario = scenario();
     let (alice, _) = people();
 
     let test = &mut scenario;
-
-    setup_4pool(test, 1000, 1000, 1000, 1000);
+    
+    setup_2pool(test, 1000, 1000);
 
     next_tx(test, alice);
     {
@@ -49,12 +43,12 @@ module clamm::stable_tuple_4pool_curve_tests {
 
       {
         let mut i = 0;
-        while (N_COINS > i) {
+        while (3 > i) {
           
-          burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+          burn(interest_clamm_stable::swap<USDC, USDT, LP_COIN>(
             &mut pool,
             &c,
-            mint<DAI>(300, DAI_DECIMALS, ctx(test)),
+            mint<USDC>(300, USDC_DECIMALS, ctx(test)),
             0,
             ctx(test)
           ));
@@ -67,15 +61,13 @@ module clamm::stable_tuple_4pool_curve_tests {
 
       {
         let mut i = 0;
-        while (N_COINS > i) {
+        while (3 > i) {
           
-          burn(interest_clamm_stable::add_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
+          burn(interest_clamm_stable::add_liquidity_2_pool<USDC, USDT, LP_COIN>(
             &mut pool,
             &c,
-            mint<DAI>(200, DAI_DECIMALS, ctx(test)),
             mint<USDC>(300, USDC_DECIMALS, ctx(test)),
             mint<USDT>(400, USDT_DECIMALS, ctx(test)),
-            mint<FRAX>(500, FRAX_DECIMALS, ctx(test)),
             0,
             ctx(test)
           ));
@@ -91,19 +83,17 @@ module clamm::stable_tuple_4pool_curve_tests {
 
         let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
 
-        while (N_COINS > i) {
+        while (3 > i) {
           
-          let (a, b, c, d) = interest_clamm_stable::remove_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
+          let (a, b) = interest_clamm_stable::remove_liquidity_2_pool<USDC, USDT, LP_COIN>(
             &mut pool,
             &c,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
-            vector[0, 0 ,0, 0],
+            vector[0, 0],
             ctx(test)
           );
           burn(a);
           burn(b);
-          burn(c);
-          burn(d);
           i = i + 1;
         }        
       }; 
@@ -113,11 +103,10 @@ module clamm::stable_tuple_4pool_curve_tests {
 
         {
         let mut i = 0;
-        while (N_COINS > i) {
-
+        while (3 > i) {
           let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
           
-          burn(interest_clamm_stable::remove_liquidity_one_coin<DAI, LP_COIN>(
+          burn(interest_clamm_stable::remove_liquidity_one_coin<USDC, LP_COIN>(
             &mut pool,
             &c,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),
@@ -145,7 +134,7 @@ module clamm::stable_tuple_4pool_curve_tests {
 
     let test = &mut scenario;
 
-    setup_4pool(test, 1000, 1000, 1000, 1000);
+    setup_2pool(test, 1000, 1000);
 
     next_tx(test, alice);
     {
@@ -155,10 +144,10 @@ module clamm::stable_tuple_4pool_curve_tests {
 
       let virtual_price = interest_clamm_stable::virtual_price<LP_COIN>(&mut pool, &c);
 
-      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_clamm_stable::swap<USDT, USDC, LP_COIN>(
         &mut pool,
         &c,
-        mint<DAI>(300, DAI_DECIMALS, ctx(test)),
+        mint<USDT>(300, USDT_DECIMALS, ctx(test)),
         0,
         ctx(test)
       ));
@@ -171,26 +160,9 @@ module clamm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_clamm_stable::swap<USDT, FRAX, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<USDT>(754, USDT_DECIMALS, ctx(test)),
-        0,
-        ctx(test)
-      ));
+      sim::swap(&mut sim_state, 1, 0, normalize_amount(300));
+      sim::swap(&mut sim_state, 0, 1, normalize_amount(450));
 
-      burn(interest_clamm_stable::swap<FRAX, DAI, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<FRAX>(666, FRAX_DECIMALS, ctx(test)),
-        0,
-        ctx(test)
-      ));
-
-      sim::swap(&mut sim_state, 0, 1, normalize_amount(300));
-      sim::swap(&mut sim_state, 1, 2, normalize_amount(450));
-      sim::swap(&mut sim_state, 2, 3, normalize_amount(754));
-      sim::swap(&mut sim_state, 3, 0, normalize_amount(666));
 
       let new_virtual_price = interest_clamm_stable::virtual_price<LP_COIN>(&mut pool, &c);
 
@@ -230,7 +202,7 @@ module clamm::stable_tuple_4pool_curve_tests {
     let test = &mut scenario;
 
     // Imbalanced set up
-    setup_4pool(test, 10000, 10, 10, 5);
+    setup_2pool(test, 10000, 10);
 
     next_tx(test, alice);
     {
@@ -239,14 +211,14 @@ module clamm::stable_tuple_4pool_curve_tests {
 
       {
         let mut i = 0;
-        while (N_COINS > i) {
+        while (3 > i) {
           assert_eq(
-              burn(interest_clamm_stable::swap<FRAX, DAI, LP_COIN>(
-                &mut pool,
-                &c,
-                mint<FRAX>(30, FRAX_DECIMALS, ctx(test)),
-                0,
-                ctx(test))) != 0,
+            burn(interest_clamm_stable::swap<USDT, USDC, LP_COIN>(
+              &mut pool,
+               &c,
+               mint<USDT>(25, USDT_DECIMALS, ctx(test)),
+               0,
+               ctx(test))) != 0,
                true
           );
           i = i + 1;
@@ -255,14 +227,14 @@ module clamm::stable_tuple_4pool_curve_tests {
 
       {
         let mut i = 0;
-        while (N_COINS > i) {
+        while (3 > i) {
           assert_eq(
-            burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
-              &mut pool,
-               &c,
-               mint<DAI>(25, DAI_DECIMALS, ctx(test)),
-               0,
-               ctx(test))) != 0,
+              burn(interest_clamm_stable::swap<USDC, USDT, LP_COIN>(
+                &mut pool,
+                &c,
+                mint<USDC>(30, USDC_DECIMALS, ctx(test)),
+                0,
+                ctx(test))) != 0,
                true
           );
           i = i + 1;
@@ -283,7 +255,7 @@ module clamm::stable_tuple_4pool_curve_tests {
 
     let test = &mut scenario;
 
-    setup_4pool(test, 100, 110, 121, 133);
+    setup_2pool(test, 100, 121);
 
     next_tx(test, alice);
     {
@@ -291,10 +263,10 @@ module clamm::stable_tuple_4pool_curve_tests {
       let c = test::take_shared<Clock>(test);
       let mut sim_state = test::take_shared<SimState>(test);
 
-      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+      burn(interest_clamm_stable::swap<USDT, USDC, LP_COIN>(
         &mut pool,
         &c,
-        mint<DAI>(25, DAI_DECIMALS, ctx(test)),
+        mint<USDT>(25, USDT_DECIMALS, ctx(test)),
         0,
         ctx(test)
       ));
@@ -307,35 +279,17 @@ module clamm::stable_tuple_4pool_curve_tests {
         ctx(test)
       ));
 
-      burn(interest_clamm_stable::swap<USDT, FRAX, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<USDT>(30, USDT_DECIMALS, ctx(test)),
-        0,
-        ctx(test)
-      ));
+      sim::swap(&mut sim_state, 1, 0, normalize_amount(25));
+      sim::swap(&mut sim_state, 0, 1, normalize_amount(30));
 
-      burn(interest_clamm_stable::swap<FRAX, DAI, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<FRAX>(35, FRAX_DECIMALS, ctx(test)),
-        0,
-        ctx(test)
-      ));
-
-      sim::swap(&mut sim_state, 0, 1, normalize_amount(25));
-      sim::swap(&mut sim_state, 1, 2, normalize_amount(30));
-      sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
-      sim::swap(&mut sim_state, 3, 0, normalize_amount(35));
-
-      let (pool_dy, _, _) = interest_clamm_stable::quote_swap<DAI, USDC, LP_COIN>(&mut pool, &c, add_decimals(10, DAI_DECIMALS));
+      let (pool_dy, _, _) = interest_clamm_stable::quote_swap<USDC, USDT, LP_COIN>(&mut pool, &c, add_decimals(10, USDC_DECIMALS));
 
       let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
-      let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
+      let sim_dy = ((sim_dy * USDT_DECIMALS_SCALAR / PRECISION) as u64);
 
       // Difference of 1 cent
       // happens because of fees rounding
-      assert_eq( (USDC_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
+      assert_eq((USDT_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
 
       test::return_shared(c);
       test::return_shared(pool);
