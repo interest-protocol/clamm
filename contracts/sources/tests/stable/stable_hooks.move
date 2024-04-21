@@ -16,7 +16,7 @@ module clamm::stable_hooks_tests {
   use clamm::usdc::USDC;
   use clamm::usdt::USDT;
   use clamm::lp_coin::LP_COIN;
-  use clamm::interest_clamm_stable_hooks;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::{Self, HooksBuilder};
   use clamm::amm_test_utils ::{people, scenario, setup_dependencies}; 
 
@@ -43,7 +43,7 @@ module clamm::stable_hooks_tests {
     add_rule(&mut hooks_builder, interest_pool::start_swap_name());
     add_rule(&mut hooks_builder, interest_pool::finish_swap_name()); 
 
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_2_pool<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       hooks_builder,
       INITIAL_A,
@@ -58,7 +58,7 @@ module clamm::stable_hooks_tests {
 
     start_request.approve(Witness {});
 
-    let (mut finish_request, coin_out) = interest_clamm_stable_hooks::swap<USDC, ETH, LP_COIN>(
+    let (mut finish_request, coin_out) = interest_clamm_stable::swap_with_hooks<USDC, ETH, LP_COIN>(
       &mut pool,
       start_request,
       &c,
@@ -98,7 +98,7 @@ module clamm::stable_hooks_tests {
     add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
     add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_2_pool<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       hooks_builder,
       INITIAL_A,
@@ -113,7 +113,7 @@ module clamm::stable_hooks_tests {
 
     start_request.approve(Witness {});
 
-    let (mut finish_request, coin_out) = interest_clamm_stable_hooks::add_liquidity_2_pool<USDC, ETH, LP_COIN>(
+    let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &mut pool,
       start_request,
       &c,
@@ -156,7 +156,7 @@ module clamm::stable_hooks_tests {
     add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
     add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_3_pool<USDC, ETH, USDT, LP_COIN>(
+    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
       hooks_builder,
       INITIAL_A,
@@ -172,7 +172,7 @@ module clamm::stable_hooks_tests {
 
     start_request.approve(Witness {});
 
-    let (mut finish_request, coin_out) = interest_clamm_stable_hooks::add_liquidity_3_pool<USDC, ETH, USDT, LP_COIN>(
+    let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &mut pool,
       start_request,
       &c,
@@ -216,7 +216,7 @@ module clamm::stable_hooks_tests {
     add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
     add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_4_pool<USDC, ETH, USDT, DAI, LP_COIN>(
+    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
       &c,
       hooks_builder,
       INITIAL_A,
@@ -233,7 +233,7 @@ module clamm::stable_hooks_tests {
 
     start_request.approve(Witness {});
 
-    let (mut finish_request, coin_out) = interest_clamm_stable_hooks::add_liquidity_4_pool<USDC, ETH, USDT, DAI, LP_COIN>(
+    let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
       &mut pool,
       start_request,
       &c,
@@ -278,7 +278,7 @@ module clamm::stable_hooks_tests {
     add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
     add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
 
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable_hooks::new_5_pool<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
+    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &c,
       hooks_builder,
       INITIAL_A,
@@ -296,7 +296,7 @@ module clamm::stable_hooks_tests {
 
     start_request.approve(Witness {});
 
-    let (mut finish_request, coin_out) = interest_clamm_stable_hooks::add_liquidity_5_pool<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
+    let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &mut pool,
       start_request,
       &c,
@@ -326,6 +326,6 @@ module clamm::stable_hooks_tests {
  }
 
  fun add_rule(hooks_builder: &mut HooksBuilder, name: vector<u8>) {
-  interest_pool::add_rule(hooks_builder, name.utf8(), Witness {});
+  hooks_builder.add_rule(name.utf8(), Witness {});
  }
 }
