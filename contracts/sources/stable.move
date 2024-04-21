@@ -638,8 +638,8 @@ module clamm::interest_clamm_stable {
   public fun remove_liquidity_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
     pool: &mut InterestPool<Stable>, 
     request: Request,  
-    lp_coin: Coin<LpCoin>,
     clock: &Clock,
+    lp_coin: Coin<LpCoin>,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Request, Coin<CoinA>, Coin<CoinB>) {
@@ -715,9 +715,9 @@ module clamm::interest_clamm_stable {
 
   public fun remove_liquidity_5_pool_with_hooks<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     pool: &mut InterestPool<Stable>, 
-    request: Request,         
+    request: Request,     
+    clock: &Clock,    
     lp_coin: Coin<LpCoin>,
-    clock: &Clock,
     min_amounts: vector<u64>,
     ctx: &mut TxContext
   ): (Request, Coin<CoinA>, Coin<CoinB>, Coin<CoinC>, Coin<CoinD>, Coin<CoinE>) {
