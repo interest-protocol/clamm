@@ -2,7 +2,6 @@ module clamm::hooks {
   // === Imports ===
 
   use std::string;
-
   use clamm::errors;
   use clamm::interest_pool::{Self, InterestPool, Request};
 
