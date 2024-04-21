@@ -360,7 +360,7 @@ module clamm::interest_clamm_stable {
     remove_liquidity_5_pool_impl(pool, clock, lp_coin, min_amounts, ctx)       
   }
 
-  public fun remove_one_coin_liquidity<CoinType, LpCoin>(
+  public fun remove_liquidity_one_coin<CoinType, LpCoin>(
     pool: &mut InterestPool<Stable>, 
     clock: &Clock,
     lp_coin: Coin<LpCoin>,
@@ -368,7 +368,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext    
   ): Coin<CoinType> {
     assert!(!pool.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
-    remove_one_coin_liquidity_impl(pool, clock, lp_coin, min_amount, ctx)
+    remove_liquidity_one_coin_impl(pool, clock, lp_coin, min_amount, ctx)
   }
 
   public fun new_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
@@ -741,7 +741,7 @@ module clamm::interest_clamm_stable {
     )    
   }
 
-  public fun remove_one_coin_liquidity_with_hooks<CoinType, LpCoin>(
+  public fun remove_liquidity_one_coin_with_hooks<CoinType, LpCoin>(
     pool: &mut InterestPool<Stable>, 
     request: Request,  
     clock: &Clock,
@@ -753,7 +753,7 @@ module clamm::interest_clamm_stable {
 
     (
       request,
-      remove_one_coin_liquidity_impl(
+      remove_liquidity_one_coin_impl(
         pool,
         clock,
         lp_coin,
@@ -1396,51 +1396,6 @@ module clamm::interest_clamm_stable {
     lp_coin
   }
 
-  fun remove_one_coin_liquidity_impl<CoinType, LpCoin>(
-    pool: &mut InterestPool<Stable>, 
-    clock: &Clock,
-    lp_coin: Coin<LpCoin>,
-    min_amount: u64,
-    ctx: &mut TxContext    
-  ): Coin<CoinType> {
-    let lp_coin_value = lp_coin.value();
-    assert!(lp_coin_value != 0, errors::no_zero_coin());
-
-    let pool_address = pool.addy();
-    let state = load_mut<LpCoin>(pool.state_mut());
-
-    let prev_invariant = virtual_price_impl(state, clock);
-
-    let (index, decimals) = coin_state_metadata<CoinType, LpCoin>(state);
-
-    let balances = state.balances;
-
-    let current_coin_balance = &mut state.balances[index]; 
-    let initial_coin_balance = *current_coin_balance;
-    
-    *current_coin_balance = y_lp(
-      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
-      index.to_u256(),
-      balances,
-      lp_coin_value.to_u256(),
-      state.lp_coin_supply.supply_value().to_u256(),
-    ) + 1; // give an edge to the protocol
-
-    let amount_to_take = ((initial_coin_balance - min(initial_coin_balance, *current_coin_balance)) * decimals / PRECISION).to_u64();
-
-    assert!(amount_to_take >= min_amount, errors::slippage());
-
-    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
-
-    events::emit_remove_liquidity<Stable, CoinType, LpCoin>(pool_address, amount_to_take, lp_coin_value);
-
-    let coin_out = coin_state_balance_mut<CoinType, LpCoin>(state).take(amount_to_take, ctx);
-
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
-
-    coin_out
-  }
-
   fun remove_liquidity_2_pool_impl<CoinA, CoinB, LpCoin>(
     pool: &mut InterestPool<Stable>, 
     clock: &Clock,
@@ -1625,6 +1580,51 @@ module clamm::interest_clamm_stable {
     assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
 
     mint_amount
+  }
+
+  fun remove_liquidity_one_coin_impl<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    clock: &Clock,
+    lp_coin: Coin<LpCoin>,
+    min_amount: u64,
+    ctx: &mut TxContext    
+  ): Coin<CoinType> {
+    let lp_coin_value = lp_coin.value();
+    assert!(lp_coin_value != 0, errors::no_zero_coin());
+
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let prev_invariant = virtual_price_impl(state, clock);
+
+    let (index, decimals) = coin_state_metadata<CoinType, LpCoin>(state);
+
+    let balances = state.balances;
+
+    let current_coin_balance = &mut state.balances[index]; 
+    let initial_coin_balance = *current_coin_balance;
+    
+    *current_coin_balance = y_lp(
+      get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
+      index.to_u256(),
+      balances,
+      lp_coin_value.to_u256(),
+      state.lp_coin_supply.supply_value().to_u256(),
+    ) + 1; // give an edge to the protocol
+
+    let amount_to_take = ((initial_coin_balance - min(initial_coin_balance, *current_coin_balance)) * decimals / PRECISION).to_u64();
+
+    assert!(amount_to_take >= min_amount, errors::slippage());
+
+    state.lp_coin_supply.decrease_supply(lp_coin.into_balance());
+
+    events::emit_remove_liquidity<Stable, CoinType, LpCoin>(pool_address, amount_to_take, lp_coin_value);
+
+    let coin_out = coin_state_balance_mut<CoinType, LpCoin>(state).take(amount_to_take, ctx);
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+
+    coin_out
   }
 
   fun deposit_coin<CoinType, LpCoin>(state: &mut StateV1<LpCoin>, coin_in: Coin<CoinType>): u64 {

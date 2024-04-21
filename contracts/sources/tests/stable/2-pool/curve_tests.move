@@ -104,10 +104,9 @@ module clamm::stable_tuple_2pool_curve_tests {
         {
         let mut i = 0;
         while (3 > i) {
-
           let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
           
-          burn(interest_clamm_stable::remove_one_coin_liquidity<USDC, LP_COIN>(
+          burn(interest_clamm_stable::remove_liquidity_one_coin<USDC, LP_COIN>(
             &mut pool,
             &c,
             mint_for_testing<LP_COIN>(supply / 10, ctx(test)),

@@ -437,7 +437,7 @@ module clamm::stable_no_hooks_tests {
      );
 
      let c = clock::create_for_testing(test.ctx());
-     destroy(interest_clamm_stable::remove_one_coin_liquidity<USDC, LP_COIN>(
+     destroy(interest_clamm_stable::remove_liquidity_one_coin<USDC, LP_COIN>(
        &mut pool,
        &c,
        mint<LP_COIN>(344, LP_COIN_DECIMALS, ctx(test)),
