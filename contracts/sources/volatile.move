@@ -118,9 +118,9 @@ module clamm::interest_clamm_volatile {
 
   public fun new_2_pool<CoinA, CoinB, LpCoin>(
     clock: &Clock,
+    coin_decimals: &CoinDecimals,     
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
-    coin_decimals: &CoinDecimals,     
     lp_coin_supply: Supply<LpCoin>,
     initial_a_gamma: vector<u256>,
     rebalancing_params: vector<u256>,
@@ -157,10 +157,10 @@ module clamm::interest_clamm_volatile {
 
   public fun new_3_pool<CoinA, CoinB, CoinC, LpCoin>(
     clock: &Clock,
+    coin_decimals: &CoinDecimals,   
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
-    coin_c: Coin<CoinC>,
-    coin_decimals: &CoinDecimals,     
+    coin_c: Coin<CoinC>,  
     lp_coin_supply: Supply<LpCoin>,
     initial_a_gamma: vector<u256>,
     rebalancing_params: vector<u256>,
@@ -288,10 +288,10 @@ module clamm::interest_clamm_volatile {
 
   public fun new_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
     clock: &Clock,
+    coin_decimals: &CoinDecimals,    
     hooks_builder: HooksBuilder,
     coin_a: Coin<CoinA>,
-    coin_b: Coin<CoinB>,
-    coin_decimals: &CoinDecimals,     
+    coin_b: Coin<CoinB>, 
     lp_coin_supply: Supply<LpCoin>,
     initial_a_gamma: vector<u256>,
     rebalancing_params: vector<u256>,
@@ -329,11 +329,11 @@ module clamm::interest_clamm_volatile {
 
   public fun new_3_pool_with_hooks<CoinA, CoinB, CoinC, LpCoin>(
     clock: &Clock,
+    coin_decimals: &CoinDecimals,   
     hooks_builder: HooksBuilder,    
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
-    coin_c: Coin<CoinC>,
-    coin_decimals: &CoinDecimals,     
+    coin_c: Coin<CoinC>,  
     lp_coin_supply: Supply<LpCoin>,
     initial_a_gamma: vector<u256>,
     rebalancing_params: vector<u256>,
@@ -372,8 +372,8 @@ module clamm::interest_clamm_volatile {
 
   public fun swap_with_hooks<CoinIn, CoinOut, LpCoin>(
     pool: &mut InterestPool<Volatile>,
-    request: Request,
     clock: &Clock,
+    request: Request,
     coin_in: Coin<CoinIn>,
     mint_amount: u64,
     ctx: &mut TxContext
@@ -387,9 +387,9 @@ module clamm::interest_clamm_volatile {
   }  
 
   public fun add_liquidity_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
-    pool: &mut InterestPool<Volatile>,
-    request: Request,    
+    pool: &mut InterestPool<Volatile>, 
     clock: &Clock,
+    request: Request,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     lp_coin_min_amount: u64,
@@ -405,8 +405,8 @@ module clamm::interest_clamm_volatile {
 
   public fun add_liquidity_3_pool_with_hooks<CoinA, CoinB, CoinC, LpCoin>(
     pool: &mut InterestPool<Volatile>,
-    request: Request,
     clock: &Clock,
+    request: Request,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
@@ -460,8 +460,8 @@ module clamm::interest_clamm_volatile {
 
   public fun remove_liquidity_one_coin_with_hooks<CoinOut, LpCoin>(
     pool: &mut InterestPool<Volatile>,
-    request: Request,
     clock: &Clock,
+    request: Request,
     lp_coin: Coin<LpCoin>,
     min_amount: u64,
     ctx: &mut TxContext    

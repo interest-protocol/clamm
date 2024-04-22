@@ -44,11 +44,11 @@ module clamm::init_interest_amm_stable {
 
       let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool(
         &c,
-        initial_a,
+        &coin_decimals,
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
         mint<USDT>(usdt_amount, USDT_DECIMALS, ctx(test)),
-        &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
+        initial_a,
         ctx(test)
       );
 
@@ -91,12 +91,12 @@ module clamm::init_interest_amm_stable {
 
       let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool(
         &c,
-        initial_a,
+        &coin_decimals,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
         mint<USDT>(usdt_amount, USDT_DECIMALS, ctx(test)),
-        &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
+        initial_a,
         ctx(test)
       );
 
@@ -145,13 +145,13 @@ module clamm::init_interest_amm_stable {
 
       let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool(
         &c,
-        initial_a,
+        &coin_decimals,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
         mint<USDT>(usdt_amount, USDT_DECIMALS, ctx(test)),
         mint<FRAX>(frax_amount, FRAX_DECIMALS, ctx(test)),
-        &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
+        initial_a,
         ctx(test)
       );
 
@@ -206,14 +206,14 @@ module clamm::init_interest_amm_stable {
 
       let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool(
         &c,
-        initial_a,
+        &coin_decimals,
         mint<DAI>(dai_amount, DAI_DECIMALS, ctx(test)),
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
         mint<USDT>(usdt_amount, USDT_DECIMALS, ctx(test)),
         mint<FRAX>(frax_amount, FRAX_DECIMALS, ctx(test)),
         mint<TRUE_USD>(true_usd_amount, TRUE_USD_DECIMALS, ctx(test)),
-        &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
+        initial_a,
         ctx(test)
       );
 

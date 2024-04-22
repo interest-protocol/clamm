@@ -51,12 +51,12 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -66,8 +66,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_out) = interest_clamm_stable::swap_with_hooks<USDC, ETH, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint(1, test.ctx()),
       0,
       test.ctx()
@@ -106,12 +106,12 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -121,8 +121,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint(1, test.ctx()),
       mint(2, test.ctx()),
       0,
@@ -164,13 +164,13 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -180,8 +180,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint(1, test.ctx()),
       mint(2, test.ctx()),
       mint(3, test.ctx()),
@@ -224,14 +224,14 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -241,8 +241,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint(1, test.ctx()),
       mint(2, test.ctx()),
       mint(3, test.ctx()),
@@ -286,15 +286,15 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -304,8 +304,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_out) = interest_clamm_stable::add_liquidity_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint(1, test.ctx()),
       mint(2, test.ctx()),
       mint(3, test.ctx()),
@@ -350,12 +350,12 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
-      hooks_builder,
-      INITIAL_A,
-      mint(1000, test.ctx()),
-      mint(1000, test.ctx()),
       &coin_decimals,
+      hooks_builder,
+      mint(1000, test.ctx()),
+      mint(1000, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -365,8 +365,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_a, coin_b) = interest_clamm_stable::remove_liquidity_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint<LP_COIN>(lp_coin.value() / 10, test.ctx()),
       vector[0, 0],
       test.ctx()
@@ -406,13 +406,13 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
-      hooks_builder,
-      INITIAL_A,
-      mint(1000, test.ctx()),
-      mint(1000, test.ctx()),
-      mint(1000, test.ctx()),
       &coin_decimals,
+      hooks_builder,
+      mint(1000, test.ctx()),
+      mint(1000, test.ctx()),
+      mint(1000, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -422,8 +422,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_a, coin_b, coin_c) = interest_clamm_stable::remove_liquidity_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint<LP_COIN>(lp_coin.value() / 10, test.ctx()),
       vector[0, 0, 0],
       test.ctx()
@@ -464,14 +464,14 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, FRAX, LP_COIN>(
       &c,
-      hooks_builder,
-      INITIAL_A,
-      mint(1000, test.ctx()),
-      mint(1000, test.ctx()),
-      mint(1000, test.ctx()),
-      mint(1000, test.ctx()),
       &coin_decimals,
+      hooks_builder,
+      mint(1000, test.ctx()),
+      mint(1000, test.ctx()),
+      mint(1000, test.ctx()),
+      mint(1000, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -481,8 +481,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_a, coin_b, coin_c, coin_d) = interest_clamm_stable::remove_liquidity_4_pool_with_hooks<USDC, ETH, USDT, FRAX, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint<LP_COIN>(lp_coin.value() / 10, test.ctx()),
       vector[0, 0, 0, 0],
       test.ctx()
@@ -524,15 +524,15 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, TRUE_USD, USDT, FRAX, DAI, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(1000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(1000 * TRUE_USD_DECIMALS_SCALAR, test.ctx()),
       mint(1000 * USDT_DECIMALS_SCALAR, test.ctx()),
       mint(1000 * FRAX_DECIMALS_SCALAR, test.ctx()),
       mint(1000 * DAI_DECIMALS_SCALAR, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -542,8 +542,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_a, coin_b, coin_c, coin_d, coin_e) = interest_clamm_stable::remove_liquidity_5_pool_with_hooks<USDC, TRUE_USD, USDT, FRAX, DAI, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint<LP_COIN>(lp_coin.value() / 10, test.ctx()),
       vector[0, 0, 0, 0, 0],
       test.ctx()
@@ -586,12 +586,12 @@ module clamm::stable_hooks_tests {
 
     let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
+      &coin_decimals,
       hooks_builder,
-      INITIAL_A,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
-      &coin_decimals,
       create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
       test.ctx()
     ); 
 
@@ -601,8 +601,8 @@ module clamm::stable_hooks_tests {
 
     let (mut finish_request, coin_out) = interest_clamm_stable::remove_liquidity_one_coin_with_hooks<USDC, LP_COIN>(
       &mut pool,
-      start_request,
       &c,
+      start_request,
       mint<LP_COIN>(lp_coin.value() / 10, test.ctx()),
       0, 
       test.ctx()

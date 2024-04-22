@@ -42,9 +42,9 @@ module clamm::init_interest_amm_volatile {
 
       let (pool, pool_admin, lp_coin) = interest_clamm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
         &c,
+        &coin_decimals,
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
         mint<ETH>(eth_amount, ETH_DECIMALS, ctx(test)),
-        &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
         vector[A, GAMMA],
         vector[ALLOWED_EXTRA_PROFIT, ADJUSTMENT_STEP, MA_TIME],
@@ -75,10 +75,10 @@ module clamm::init_interest_amm_volatile {
 
       let (pool, pool_admin, lp_coin) = interest_clamm_volatile::new_3_pool<USDC, BTC, ETH, LP_COIN>(
         &c,
+        &coin_decimals,
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
         mint<BTC>(btc_amount, BTC_DECIMALS, ctx(test)),
         mint<ETH>(eth_amount, ETH_DECIMALS, ctx(test)),
-        &coin_decimals,
         coin::treasury_into_supply(lp_coin_cap),
         vector[A, GAMMA],
         vector[ALLOWED_EXTRA_PROFIT, ADJUSTMENT_STEP, MA_TIME],
