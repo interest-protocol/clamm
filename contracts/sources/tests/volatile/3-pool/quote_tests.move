@@ -1,3 +1,4 @@
+#[test_only]
 module clamm::volatile_3pool_quote_tests {
 
   use sui::clock;

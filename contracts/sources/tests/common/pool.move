@@ -1,3 +1,4 @@
+#[test_only]
 module clamm::interest_pool_tests {
 
   use std::string;
