@@ -28,8 +28,10 @@ Make sure you have the latest version of the Sui binaries installed on your mach
 
 ## Repo Structure
 
+- **assets:** Brand assets.
 - **contracts:** CLAMM Move code.
 - **hardhat-volatile** Curve contracts to run tests.
+- **scripts** TS publish scripts.
 
 ## Functionality
 
