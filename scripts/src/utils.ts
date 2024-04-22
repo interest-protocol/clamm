@@ -31,11 +31,11 @@ export const createCoinDecimals = (txb: TransactionBlock) => {
 
 export const getId = (type: string): string | undefined => {
   try {
-    const rawData = fs.readFileSync('./clamm.json', 'utf8');
+    const rawData = fs.readFileSync('../clamm.json', 'utf8');
     const parsedData: IObjectInfo[] = JSON.parse(rawData);
     const typeToId = new Map(parsedData.map((item) => [item.type, item.id]));
     return typeToId.get(type);
   } catch (error) {
-    console.error('Error reading the Su file:', error);
+    console.error('Error reading the CLAMM file:', error);
   }
 };

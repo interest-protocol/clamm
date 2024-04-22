@@ -1,0 +1,14 @@
+[
+  {
+    "type": "package",
+    "id": "0x2491c03b69f5e49a8efc332532f49e5c778d3bc874984e8179e5b14e34f84353"
+  },
+  {
+    "type": "UpgradeCap",
+    "id": "0xdaf4e127e88fb53dd39c889013cce1e623127fc9fb6399eb1f96408f2058baeb"
+  },
+  {
+    "type": "coin_decimals::CoinDecimals",
+    "id": "0xddd0793d9b8d468024f24c449ee2e1d53be1aae4107c19891ca390a975f7c3f7"
+  }
+]

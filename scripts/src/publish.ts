@@ -2,7 +2,7 @@ import { OwnedObjectRef } from '@mysten/sui.js/client';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import * as fs from 'fs';
 
-import { client, getId, IObjectInfo, keypair } from './utils';
+import { client, getId, IObjectInfo, keypair, createCoinDecimals } from './utils';
 
 (async () => {
   console.log('building package...');
@@ -20,6 +20,8 @@ import { client, getId, IObjectInfo, keypair } from './utils';
     const tx = new TransactionBlock();
     const [upgradeCap] = tx.publish({ modules, dependencies });
     tx.transferObjects([upgradeCap], keypair.getPublicKey().toSuiAddress());
+
+    await createCoinDecimals(tx);
 
     const result = await client.signAndExecuteTransactionBlock({
       signer: keypair,
@@ -62,7 +64,7 @@ import { client, getId, IObjectInfo, keypair } from './utils';
       }
     });
 
-    fs.writeFileSync('./su.json', JSON.stringify(objects, null, 2));
+    fs.writeFileSync('../clamm.json', JSON.stringify(objects, null, 2));
   } catch (e) {
     console.log(e);
   } finally {
