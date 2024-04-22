@@ -3,6 +3,7 @@ module clamm::amm_test_utils {
 
   use sui::math;
   use sui::clock;
+  use sui::test_utils::destroy;
   use sui::coin::{mint_for_testing, Coin, CoinMetadata};
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
@@ -50,7 +51,10 @@ module clamm::amm_test_utils {
       frax::init_for_testing(ctx(test));
       true_usd::init_for_testing(ctx(test));
 
-      transfer::public_share_object(coin_decimals::new(ctx(test)));
+      let mut cap = coin_decimals::new_cap(ctx(test));
+
+      transfer::public_share_object(coin_decimals::new(&mut cap, ctx(test)));
+      destroy(cap);
     };    
 
     next_tx(test, alice);

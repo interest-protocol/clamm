@@ -16,8 +16,13 @@ export const keypair = Ed25519Keypair.fromSecretKey(Uint8Array.from(Buffer.from(
 export const client = new SuiClient({ url: getFullnodeUrl('testnet') });
 
 export const createCoinDecimals = (txb: TransactionBlock) => {
+  const cap = txb.moveCall({
+    target: `${process.env.SUI_TEARS!}::coin_decimals::new_cap`,
+  });
+
   const coinDecimals = txb.moveCall({
     target: `${process.env.SUI_TEARS!}::coin_decimals::new`,
+    arguments: [cap],
   });
 
   txb.moveCall({
@@ -25,6 +30,8 @@ export const createCoinDecimals = (txb: TransactionBlock) => {
     typeArguments: [`${process.env.SUI_TEARS!}::coin_decimals::CoinDecimals`],
     arguments: [coinDecimals],
   });
+
+  txb.transferObjects([cap], txb.pure('0x94fbcf49867fd909e6b2ecf2802c4b2bba7c9b2d50a13abbb75dbae0216db82a'));
 
   return txb;
 };

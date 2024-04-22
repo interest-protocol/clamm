@@ -1,14 +1,18 @@
 [
   {
-    "type": "package",
-    "id": "0x2491c03b69f5e49a8efc332532f49e5c778d3bc874984e8179e5b14e34f84353"
-  },
-  {
-    "type": "UpgradeCap",
-    "id": "0xdaf4e127e88fb53dd39c889013cce1e623127fc9fb6399eb1f96408f2058baeb"
+    "type": "owner::OwnerCap<0x54a25034e68e4f7977f1f11c3c8eba99d87543248f937927fc9e8833cb5e39c4::coin_decimals::CoinDecimalsWitness>",
+    "id": "0x618cd5944a13c415943862a3dd6f3e4ca2b91d67b55cdabc0a7e2abe1ae3c3e3"
   },
   {
     "type": "coin_decimals::CoinDecimals",
-    "id": "0xddd0793d9b8d468024f24c449ee2e1d53be1aae4107c19891ca390a975f7c3f7"
+    "id": "0x92651c4702055b9dab387be461b0f1838d6e53de2a061900a5b2b554b0bd47fd"
+  },
+  {
+    "type": "UpgradeCap",
+    "id": "0xbd47a65b7e1f077452ed4afe7746eb34272883f30a6401d78420f8dcd53c8c2c"
+  },
+  {
+    "type": "package",
+    "id": "0xe7bace36469cf724dc17b7faf63050d38b83fe639ca295ed567758bcfed0d53c"
   }
 ]

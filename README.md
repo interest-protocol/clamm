@@ -46,7 +46,7 @@ subdir = "contracts"
 rev = "testnet/1.0.0-alpha"
 
 [addresses]
-clamm = "0x2491c03b69f5e49a8efc332532f49e5c778d3bc874984e8179e5b14e34f84353"
+clamm = "0xe7bace36469cf724dc17b7faf63050d38b83fe639ca295ed567758bcfed0d53c"
 ```
 
 Please find all objectIds under this [JSON file](./clamm.json).

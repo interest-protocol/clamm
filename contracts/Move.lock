@@ -2,7 +2,7 @@
 
 [move]
 version = 0
-manifest_digest = "21D529E716DF7204E3928858F48D4A3742A716EAB7512FCCB1A58218C5103B62"
+manifest_digest = "7BB2D1651921B04FF62E8865165C1C3187917FB86F08CA8EF545E580AD4F254D"
 deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
 
 dependencies = [
@@ -25,7 +25,7 @@ dependencies = [
 
 [[move.package]]
 name = "SuiTears"
-source = { git = "https://github.com/interest-protocol/suitears.git", rev = "testnet", subdir = "contracts" }
+source = { git = "https://github.com/interest-protocol/suitears.git", rev = "testnet-1.0.0-beta", subdir = "contracts" }
 
 dependencies = [
   { name = "MoveStdlib" },
