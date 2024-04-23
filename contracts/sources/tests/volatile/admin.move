@@ -39,8 +39,8 @@ module clamm::volatile_admin_tests {
 
       let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
 
-      interest_clamm_volatile::read_balance<LP_COIN, USDC>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<LP_COIN, ETH>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);
 
       interest_clamm_volatile::update_parameters<LP_COIN>(
         &mut pool,
@@ -77,8 +77,8 @@ module clamm::volatile_admin_tests {
 
       let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
 
-      interest_clamm_volatile::read_balance<LP_COIN, USDC>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<LP_COIN, ETH>(&mut pool, &mut request);      
+      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);      
 
       interest_clamm_volatile::update_parameters<LP_COIN>(
         &mut pool,
@@ -208,8 +208,8 @@ module clamm::volatile_admin_tests {
 
       let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
 
-      interest_clamm_volatile::read_balance<LP_COIN, USDC>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<LP_COIN, ETH>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);
 
       interest_clamm_volatile::update_parameters<LP_COIN>(
         &mut pool,

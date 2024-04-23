@@ -63,11 +63,11 @@ module clamm::volatile_2pool_swap_tests {
         vector[12000 * POW_10_18, 1106310976911120041]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         12000 * USDC_DECIMALS_SCALAR
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         1106310979
       );
      assert_eq(
@@ -146,11 +146,11 @@ module clamm::volatile_2pool_swap_tests {
         vector[731977559577057813005, 18000000000000000000]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         731977562
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         18000000000
       );
      assert_eq(
@@ -247,11 +247,11 @@ module clamm::volatile_2pool_swap_tests {
         vector[15731977559577057813005, 861434413817268225]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         15731977562
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         861434417
       );
      assert_eq(
@@ -476,8 +476,8 @@ module clamm::volatile_2pool_swap_tests {
 
       let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
 
-      interest_clamm_volatile::read_balance<LP_COIN, USDC>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<LP_COIN, ETH>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);
 
       burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, &c, request, ctx(test)));
 
@@ -487,11 +487,11 @@ module clamm::volatile_2pool_swap_tests {
         vector[32419468392000000000000, 19568523115000000000]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         32419468392
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         19568523115
       );
      assert_eq(

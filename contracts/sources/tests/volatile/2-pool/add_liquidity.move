@@ -47,11 +47,11 @@ module clamm::volatile_2pool_add_liquidity_tests {
         vector[4500 * POW_10_18, 3 * POW_10_18]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         4500 * USDC_DECIMALS_SCALAR
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         3 * ETH_DECIMALS_SCALAR
       );
      assert_eq(
@@ -108,11 +108,11 @@ module clamm::volatile_2pool_add_liquidity_tests {
         vector[10500 * POW_10_18, 8 * POW_10_18]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         10500 * USDC_DECIMALS_SCALAR
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         8 * ETH_DECIMALS_SCALAR
       );
      assert_eq(
@@ -169,11 +169,11 @@ module clamm::volatile_2pool_add_liquidity_tests {
         vector[14055 * POW_10_18, 8 * POW_10_18]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         14055 * USDC_DECIMALS_SCALAR
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         8 * ETH_DECIMALS_SCALAR
       );
      assert_eq(
@@ -259,11 +259,11 @@ module clamm::volatile_2pool_add_liquidity_tests {
         vector[13000 * POW_10_18, 4567622127595462229]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         13000 * USDC_DECIMALS_SCALAR
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         4567622131
       );
      assert_eq(
@@ -314,12 +314,12 @@ module clamm::volatile_2pool_add_liquidity_tests {
       );
 
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         13000 * USDC_DECIMALS_SCALAR
       );
 
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         11567622131
       );
 
@@ -422,11 +422,11 @@ module clamm::volatile_2pool_add_liquidity_tests {
         vector[13000 * POW_10_18, 4567622127595462229]
       );
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         13000 * USDC_DECIMALS_SCALAR
       );
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         4567622131
       );
      assert_eq(
@@ -479,12 +479,12 @@ module clamm::volatile_2pool_add_liquidity_tests {
       );
 
       assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, USDC>(&mut pool),
+        interest_clamm_volatile::coin_balance<USDC, LP_COIN>(&mut pool),
         13000 * USDC_DECIMALS_SCALAR
       );
 
      assert_eq(
-        interest_clamm_volatile::coin_balance<LP_COIN, ETH>(&mut pool),
+        interest_clamm_volatile::coin_balance<ETH, LP_COIN>(&mut pool),
         11567622131
       );
 

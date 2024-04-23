@@ -282,7 +282,7 @@ module clamm::interest_clamm_volatile {
     }
   }
 
-  public fun read_balance<LpCoin, CoinType>(pool: &mut InterestPool<Volatile>, request: &mut BalancesRequest) {
+  public fun read_balance<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>, request: &mut BalancesRequest) {
     let state = load<LpCoin>(pool.state_mut()); 
     let state_id = object::id_address(state);
 
@@ -641,7 +641,7 @@ module clamm::interest_clamm_volatile {
     coin_state<CoinType, LpCoin>(state).type_name
   }  
 
-  public fun coin_balance<LpCoin, CoinType>(pool: &mut InterestPool<Volatile>): u64 {
+  public fun coin_balance<CoinType, LpCoin>(pool: &mut InterestPool<Volatile>): u64 {
     let state = load<LpCoin>(pool.state_mut()); 
     coin_balance_impl<CoinType, LpCoin>(state).value()
   }          
