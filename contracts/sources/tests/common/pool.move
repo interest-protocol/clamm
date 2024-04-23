@@ -28,12 +28,17 @@ module clamm::interest_pool_tests {
   const START_REMOVE_LIQUIDITY: vector<u8> = b"START_REMOVE_LIQUIDITY";
   const FINISH_REMOVE_LIQUIDITY: vector<u8> = b"FINISH_REMOVE_LIQUIDITY";
 
+  const START_DONATE: vector<u8> = b"START_DONATE";
+  const FINISH_DONATE: vector<u8> = b"FINISH_DONATE";  
+
   public struct StartSwapWitness has drop {}
   public struct FinishSwapWitness has drop {}
   public struct StartAddLiquidityWitness has drop {}
   public struct FinishAddLiquidityWitness has drop {}
   public struct StartRemoveLiquidityWitness has drop {}
   public struct FinishRemoveLiquidityWitness has drop {}
+  public struct StartDonateWitness has drop {}
+  public struct FinishDonateWitness has drop {}  
   public struct Action has drop {}
 
   #[test]
@@ -58,6 +63,8 @@ module clamm::interest_pool_tests {
       assert_eq(interest_pool::finish_add_liquidity_name(), FINISH_ADD_LIQUIDITY);
       assert_eq(interest_pool::start_remove_liquidity_name(), START_REMOVE_LIQUIDITY);
       assert_eq(interest_pool::finish_remove_liquidity_name(), FINISH_REMOVE_LIQUIDITY);
+      assert_eq(interest_pool::start_donate_name(), START_DONATE);
+      assert_eq(interest_pool::finish_donate_name(), FINISH_DONATE);
 
       // Will not throw
       pool.assert_pool_admin(&pool_admin_cap);
@@ -273,6 +280,73 @@ module clamm::interest_pool_tests {
   }
 
   #[test]
+  fun test_has_donate_hooks() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    next_tx(test, alice);
+    {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    hooks_builder.add_rule(interest_pool::start_donate_name().utf8(), StartDonateWitness {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+     assert_eq(pool.has_donate_hooks(), true);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    next_tx(test, alice);
+    {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    hooks_builder.add_rule(interest_pool::finish_donate_name().utf8(), FinishDonateWitness {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+     assert_eq(pool.has_donate_hooks(), true);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    next_tx(test, alice);
+    {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+     assert_eq(pool.has_donate_hooks(), false);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    test::end(scenario);      
+  }
+
+  #[test]
   fun test_has_remove_liquidity_hooks() {
     let mut scenario = scenario();
     let (alice, _) = people();
@@ -356,6 +430,8 @@ module clamm::interest_pool_tests {
     hooks_builder.add_rule(interest_pool::finish_add_liquidity_name().utf8(), FinishAddLiquidityWitness {});
     hooks_builder.add_rule(interest_pool::start_remove_liquidity_name().utf8(), StartRemoveLiquidityWitness {});
     hooks_builder.add_rule(interest_pool::finish_remove_liquidity_name().utf8(), FinishRemoveLiquidityWitness {});
+    hooks_builder.add_rule(interest_pool::start_donate_name().utf8(), StartDonateWitness {});
+    hooks_builder.add_rule(interest_pool::finish_donate_name().utf8(), FinishDonateWitness {});
 
     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
@@ -375,6 +451,10 @@ module clamm::interest_pool_tests {
      let (start_remove_liquidity, finish_remove_liquidity) = pool.remove_liquidity_hooks();
      assert_eq(start_remove_liquidity, vector[type_name::get<StartRemoveLiquidityWitness>()]);
      assert_eq(finish_remove_liquidity, vector[type_name::get<FinishRemoveLiquidityWitness>()]);
+
+     let (start_donate, finish_donate) = pool.donate_hooks();
+     assert_eq(start_donate, vector[type_name::get<StartDonateWitness>()]);
+     assert_eq(finish_donate, vector[type_name::get<FinishDonateWitness>()]);
 
      destroy(pool);
      destroy(pool_admin);
@@ -623,5 +703,4 @@ module clamm::interest_pool_tests {
     };
     test::end(scenario);      
   }
-
 }

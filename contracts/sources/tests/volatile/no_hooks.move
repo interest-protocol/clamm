@@ -153,6 +153,40 @@ module clamm::volatile_no_hooks_tests {
  }
 
  #[test]
+ #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_DONATE_HOOKS, location = clamm::interest_clamm_volatile)]
+ fun test_donate_has_hook_error() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_2pool(test, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+     add_rule(&mut hooks_builder, interest_pool::start_donate_name());
+
+     let c = clock::create_for_testing(test.ctx());
+
+     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder,
+      ctx(test)
+     );
+
+     interest_clamm_volatile::donate<ETH, LP_COIN>(&mut pool, &c, mint<ETH>(344, ETH_DECIMALS, ctx(test)));
+
+     destroy(pool);
+     destroy(c);
+     destroy(pool_admin);
+    };
+    test::end(scenario); 
+ }
+
+ #[test]
  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_REMOVE_LIQUIDITY_HOOKS, location = clamm::interest_clamm_volatile)]
  fun test_remove_liquidity_2_pool_has_hook_error() {
    let mut scenario = scenario();
