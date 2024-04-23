@@ -93,6 +93,43 @@ module clamm::hooks_tests {
   }
 
   #[test]
+  fun test_donate_hooks_flow() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+
+   next_tx(test, alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    add_rule(&mut hooks_builder, interest_pool::start_donate_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_donate_name()); 
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+    let mut start_request = pool.start_donate();
+
+    start_request.approve(Witness {});
+
+    let mut finish_request = pool.finish_donate(start_request);
+
+    finish_request.approve(Witness {});
+
+    pool.finish(finish_request);
+
+    destroy(pool);
+    destroy(pool_admin);    
+   };
+   test::end(scenario);   
+  }
+
+  #[test]
   fun test_remove_liquidity_hooks_flow() {
    let mut scenario = scenario();
    let (alice, _) = people();
@@ -489,6 +526,37 @@ module clamm::hooks_tests {
     );
 
     let start_request = pool.start_add_liquidity();
+
+    pool.finish(start_request);
+
+    destroy(pool);
+    destroy(pool_admin);    
+   };
+   test::end(scenario);   
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::MUST_BE_FINISH_REQUEST, location = clamm::interest_pool)]
+  fun test_finish_start_donate_error() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+
+   next_tx(test, alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+    add_rule(&mut hooks_builder, interest_pool::start_donate_name());
+
+    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     hooks_builder,
+     ctx(test)
+    );
+
+    let start_request = pool.start_donate();
 
     pool.finish(start_request);
 

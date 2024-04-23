@@ -104,7 +104,7 @@ module clamm::interest_pool {
   }  
 
   public fun start_donate<Curve>(self: &InterestPool<Curve>): Request {
-    assert!(self.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
+    assert!(self.has_donate_hooks(), errors::pool_has_no_donate_hooks());
     new_request(self, START_DONATE.utf8())
   }  
 
