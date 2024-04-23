@@ -244,6 +244,43 @@ module clamm::stable_no_hooks_tests {
  }
 
  #[test]
+ #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_DONATE_HOOKS, location = clamm::interest_clamm_stable)]
+ fun test_donate_has_hook_error() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_2pool(test, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+
+     add_rule(&mut hooks_builder, interest_pool::start_donate_name());
+
+     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
+      versioned::create(0, 0, ctx(test)),
+      hooks_builder,
+      ctx(test)
+     );
+
+     let c = clock::create_for_testing(test.ctx());
+
+     interest_clamm_stable::donate<USDC, LP_COIN>(
+       &mut pool,
+       mint<USDC>(344, USDC_DECIMALS, ctx(test)),
+      );
+
+      destroy(c);
+      destroy(pool);
+      destroy(pool_admin);
+    };
+    test::end(scenario); 
+ }
+
+ #[test]
  #[expected_failure(abort_code = clamm::errors::POOL_HAS_NO_REMOVE_LIQUIDITY_HOOKS, location = clamm::interest_clamm_stable)]
  fun test_remove_liquidity_2_pool_has_hook_error() {
    let mut scenario = scenario();

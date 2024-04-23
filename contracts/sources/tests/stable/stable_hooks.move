@@ -332,6 +332,57 @@ module clamm::stable_hooks_tests {
  }
 
  #[test]
+ fun test_donate_with_hooks() {
+   let mut scenario = scenario();
+   let (alice, _) = people();
+
+   let test = &mut scenario;
+   setup_dependencies(test);
+
+   test.next_tx(alice);
+   {
+    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
+    let c = clock::create_for_testing(test.ctx());
+    let coin_decimals = test.take_shared<CoinDecimals>();
+
+    add_rule(&mut hooks_builder, interest_pool::start_donate_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_donate_name()); 
+
+    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+      &c,
+      &coin_decimals,
+      hooks_builder,
+      mint(2, test.ctx()),
+      mint(3, test.ctx()),
+      create_supply_for_testing<LP_COIN>(),
+      INITIAL_A,
+      test.ctx()
+    ); 
+
+    let mut start_request = pool.start_donate();
+
+    start_request.approve(Witness {});
+
+    let mut finish_request = interest_clamm_stable::donate_with_hooks<USDC, LP_COIN>(
+      &mut pool,
+      start_request,
+      mint(1, test.ctx()),
+    );
+
+    finish_request.approve(Witness {});
+
+    pool.finish(finish_request);
+
+    destroy(c);     
+    destroy(pool);
+    destroy(lp_coin); 
+    destroy(pool_admin);
+    destroy(coin_decimals);
+   };
+   scenario.end();    
+ }
+
+ #[test]
  fun test_remove_liquidity_2_pool_with_hooks() {
    let mut scenario = scenario();
    let (alice, _) = people();
