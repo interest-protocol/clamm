@@ -79,6 +79,9 @@ module clamm::interest_pool {
     rules.insert(START_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
     rules.insert(FINISH_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
 
+    rules.insert(START_DONATE.utf8(), vec_set::empty());
+    rules.insert(FINISH_DONATE.utf8(), vec_set::empty());
+
     HooksBuilder {
       rules,
       config: bag::new(ctx)

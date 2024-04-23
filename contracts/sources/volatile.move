@@ -232,6 +232,15 @@ module clamm::interest_clamm_volatile {
     add_liquidity_3_pool_impl(pool, clock, coin_a, coin_b, coin_c, lp_coin_min_amount, ctx)
   }
 
+  public fun donate<CoinIn, LpCoin>(
+    pool: &mut InterestPool<Volatile>,
+    clock: &Clock,
+    coin_in: Coin<CoinIn>,    
+  ) {
+    assert!(!pool.has_donate_hooks(), errors::pool_has_no_donate_hooks());
+    donate_impl<CoinIn, LpCoin>(pool, clock, coin_in);
+  }  
+
   public fun remove_liquidity_2_pool<CoinA, CoinB, LpCoin>(
     pool: &mut InterestPool<Volatile>,
     lp_coin: Coin<LpCoin>,
@@ -419,6 +428,18 @@ module clamm::interest_clamm_volatile {
      request,
      add_liquidity_3_pool_impl(pool, clock, coin_a, coin_b, coin_c, lp_coin_min_amount, ctx)
    )
+  }  
+
+  public fun donate_with_hooks<CoinIn, LpCoin>(
+    pool: &mut InterestPool<Volatile>,
+    request: Request,
+    clock: &Clock,
+    coin_in: Coin<CoinIn>,    
+  ): Request {
+    let request = pool.finish_donate(request);
+    donate_impl<CoinIn, LpCoin>(pool, clock, coin_in);
+
+    request
   }  
 
   public fun remove_liquidity_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
@@ -1295,6 +1316,28 @@ module clamm::interest_clamm_volatile {
     add_liquidity(state, clock, coin_states, old_balances, lp_coin_min_amount, ctx)
   }
 
+  fun donate_impl<CoinIn, LpCoin>(
+    pool: &mut InterestPool<Volatile>,
+    clock: &Clock,
+    coin_in: Coin<CoinIn>,    
+  ) {
+    let coin_in_value = coin_in.value();
+    assert!(coin_in_value != 0, errors::no_zero_coin());
+    
+    let pool_id = pool.addy();
+
+    let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
+
+    let old_balances = state.balances;
+
+    // Update Balances
+    deposit_coin<CoinIn, LpCoin>(state, coin_in);
+
+    events::emit_donate<Volatile, CoinIn, LpCoin>(pool_id, coin_in_value);
+
+    add_liquidity_impl(state, clock, coin_states, old_balances);
+  }
+
   fun remove_liquidity_2_pool_impl<CoinA, CoinB, LpCoin>(
     pool: &mut InterestPool<Volatile>,
     lp_coin: Coin<LpCoin>,
@@ -1368,14 +1411,12 @@ module clamm::interest_clamm_volatile {
     (coin_a, coin_b, coin_c)
   }
 
-  fun add_liquidity<LpCoin>(
+  fun add_liquidity_impl<LpCoin>(
     state: &mut StateV1<LpCoin>,
     clock: &Clock,
     coin_states: vector<CoinState>,
-    mut old_balances_price: vector<u256>,
-    lp_coin_min_amount: u64,
-    ctx: &mut TxContext
-  ): Coin<LpCoin> {
+    mut old_balances_price: vector<u256>
+  ): u64 {
     let mut amounts = vector[];
     let mut amounts_p = empty_vector(state.n_coins);
     let timestamp = clock.timestamp_ms();
@@ -1511,11 +1552,22 @@ module clamm::interest_clamm_volatile {
     // Bring back to 1e9 scalar
     let d_token_scale_down = (d_token / ROLL).to_u64();
 
-    assert!(d_token_scale_down >= lp_coin_min_amount, errors::slippage());
-
     increment_version(state);
 
-    state.lp_coin_supply.increase_supply(d_token_scale_down).to_coin(ctx)
+    d_token_scale_down
+  }
+
+  fun add_liquidity<LpCoin>(
+    state: &mut StateV1<LpCoin>,
+    clock: &Clock,
+    coin_states: vector<CoinState>,
+    old_balances_price: vector<u256>,
+    lp_coin_min_amount: u64,
+    ctx: &mut TxContext
+  ): Coin<LpCoin> {
+    let mint_amount = add_liquidity_impl(state, clock, coin_states, old_balances_price);
+    assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
+    state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx)
   }
 
   fun remove_liquidity_one_coin_impl<CoinOut, LpCoin>(
