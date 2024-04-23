@@ -371,6 +371,15 @@ module clamm::interest_clamm_stable {
     remove_liquidity_one_coin_impl(pool, clock, lp_coin, min_amount, ctx)
   }
 
+  public fun donate<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    clock: &Clock,
+    coin_in: Coin<CoinType>,    
+  ): u64 {
+    assert!(!pool.has_donate_hooks(), errors::pool_has_no_donate_hooks());
+    donate_impl<CoinType, LpCoin>(pool, clock, coin_in)
+  } 
+
   public fun new_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
     clock: &Clock,
     coin_decimals: &CoinDecimals,  
@@ -760,6 +769,19 @@ module clamm::interest_clamm_stable {
         min_amount, 
         ctx
       )
+    )
+  } 
+
+  public fun donate_with_hooks<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    clock: &Clock,
+    request: Request,
+    coin_in: Coin<CoinType>,    
+  ): (Request, u64) {
+    let request = pool.finish_donate(request);
+    (
+      request,
+      donate_impl<CoinType, LpCoin>(pool, clock, coin_in)
     )
   } 
 
@@ -1394,6 +1416,22 @@ module clamm::interest_clamm_stable {
     assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
 
     lp_coin
+  }
+
+  fun donate_impl<CoinType, LpCoin>(
+    pool: &mut InterestPool<Stable>,
+    clock: &Clock,
+    coin_in: Coin<CoinType>
+  ): u64 {
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+
+    let coin_in_value = deposit_coin<CoinType, LpCoin>(state, coin_in);
+    assert!(coin_in_value != 0, errors::no_zero_coin());  
+
+    events::emit_donate<Stable, CoinType, LpCoin>(pool_address, coin_in_value);
+
+    coin_in_value
   }
 
   fun remove_liquidity_2_pool_impl<CoinA, CoinB, LpCoin>(

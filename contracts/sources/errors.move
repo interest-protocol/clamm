@@ -61,10 +61,12 @@ module clamm::errors {
   const POOL_HAS_NO_SWAP_HOOKS: u64 = 57;
   const POOL_HAS_NO_ADD_LIQUIDITY_HOOKS: u64 = 58;
   const POOL_HAS_NO_REMOVE_LIQUIDITY_HOOKS: u64 = 59;
-  const MUST_BE_START_SWAP_REQUEST: u64 = 60;
-  const MUST_BE_START_ADD_LIQUIDITY_REQUEST: u64 = 61;
-  const MUST_BE_START_REMOVE_LIQUIDITY_REQUEST: u64 = 62;
-  const MUST_BE_FINISH_REQUEST: u64 = 63;
+  const POOL_HAS_NO_DONATE_HOOKS: u64 = 60;
+  const MUST_BE_START_SWAP_REQUEST: u64 = 61;
+  const MUST_BE_START_ADD_LIQUIDITY_REQUEST: u64 = 62;
+  const MUST_BE_START_REMOVE_LIQUIDITY_REQUEST: u64 = 63;
+  const MUST_BE_START_DONATE_REQUEST: u64 = 64;
+  const MUST_BE_FINISH_REQUEST: u64 = 65;
 
   // === Public-View Functions ===
 
@@ -308,6 +310,10 @@ module clamm::errors {
     POOL_HAS_NO_REMOVE_LIQUIDITY_HOOKS
   }
 
+  public fun pool_has_no_donate_hooks(): u64 {
+    POOL_HAS_NO_DONATE_HOOKS
+  }
+
   public fun must_be_start_swap_request(): u64 {
     MUST_BE_START_SWAP_REQUEST
   }  
@@ -319,6 +325,10 @@ module clamm::errors {
   public fun must_be_start_remove_liquidity_request(): u64 {
     MUST_BE_START_REMOVE_LIQUIDITY_REQUEST
   }
+
+  public fun must_be_start_donate_request(): u64 {
+    MUST_BE_START_DONATE_REQUEST
+  }  
 
   public fun must_be_finish_request(): u64 {
     MUST_BE_FINISH_REQUEST

@@ -28,6 +28,9 @@ module clamm::interest_pool {
   const START_REMOVE_LIQUIDITY: vector<u8> = b"START_REMOVE_LIQUIDITY";
   const FINISH_REMOVE_LIQUIDITY: vector<u8> = b"FINISH_REMOVE_LIQUIDITY";
 
+  const START_DONATE: vector<u8> = b"START_DONATE";
+  const FINISH_DONATE: vector<u8> = b"FINISH_DONATE";
+
   // === Structs ===
 
   public struct InterestPool<phantom Curve> has key {
@@ -97,6 +100,11 @@ module clamm::interest_pool {
     new_request(self, START_REMOVE_LIQUIDITY.utf8())
   }  
 
+  public fun start_donate<Curve>(self: &InterestPool<Curve>): Request {
+    assert!(self.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
+    new_request(self, START_DONATE.utf8())
+  }  
+
   public fun finish<Curve>(self: &InterestPool<Curve>, request: Request) {
     assert!(
       request.name().index_of(&b"F".utf8()) == 0, 
@@ -147,6 +155,14 @@ module clamm::interest_pool {
     FINISH_REMOVE_LIQUIDITY
   }
 
+  public fun start_donate_name(): vector<u8> {
+    START_DONATE
+  }
+
+  public fun finish_donate_name(): vector<u8> {
+    FINISH_DONATE
+  }
+
   public fun has_hooks<Curve>(self: &InterestPool<Curve>): bool {
     self.hooks.is_some()
   }
@@ -163,6 +179,10 @@ module clamm::interest_pool {
     has_hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
   }
 
+  public fun has_donate_hooks<Curve>(self: &InterestPool<Curve>): bool {
+    has_hook(self, START_DONATE, FINISH_DONATE)
+  }
+
   public fun swap_hooks<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
     hook(self, START_SWAP, FINISH_SWAP)
   }
@@ -173,6 +193,10 @@ module clamm::interest_pool {
 
   public fun remove_liquidity_hooks<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
     hook(self, START_REMOVE_LIQUIDITY, FINISH_REMOVE_LIQUIDITY)
+  }
+
+  public fun donate_hooks<Curve>(self: &InterestPool<Curve>): (vector<TypeName>, vector<TypeName>) {
+    hook(self, START_DONATE, FINISH_DONATE)
   }
 
   public fun has_rule_config<Curve, Rule: drop>(self: &InterestPool<Curve>): bool {
@@ -314,6 +338,15 @@ module clamm::interest_pool {
 
     self.new_request(FINISH_REMOVE_LIQUIDITY.utf8())
   }  
+
+  public(package) fun finish_donate<Curve>(self: &InterestPool<Curve>, request: Request): Request {
+    assert!(self.has_donate_hooks(), errors::pool_has_no_donate_hooks());
+    assert!(request.name().bytes() == START_DONATE, errors::must_be_start_donate_request());
+    
+    self.confirm(request);
+
+    self.new_request(FINISH_DONATE.utf8())     
+  }
 
   // === Private Functions ===  
 
