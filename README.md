@@ -35,7 +35,7 @@ Make sure you have the latest version of the Sui binaries installed on your mach
 
 ## Package
 
-The CLAMM is deployed on Sui's testnet using under the branch `framework/testnet`.
+The CLAMM is deployed on Sui's testnet using under the branch `framework/mainnet`.
 
 To include on your package please use add the code below on your Move.toml:
 
@@ -43,10 +43,10 @@ To include on your package please use add the code below on your Move.toml:
 [dependencies.CLAMM]
 git = "https://github.com/interest-protocol/clamm.git"
 subdir = "contracts"
-rev = "testnet/1.0.0-alpha"
+rev = "mainnet/1.1.1-alpha"
 
 [addresses]
-clamm = "0xe7bace36469cf724dc17b7faf63050d38b83fe639ca295ed567758bcfed0d53c"
+clamm = "0x548268236e9cf7ed3ede3a5e0a0d62d50e9a5d0b07389822bb424dae927684e6"
 ```
 
 Please find all objectIds under this [JSON file](./clamm.json).
