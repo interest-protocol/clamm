@@ -384,14 +384,14 @@ module clamm::interest_clamm_volatile {
     clock: &Clock,
     request: Request,
     coin_in: Coin<CoinIn>,
-    mint_amount: u64,
+    min_amount: u64,
     ctx: &mut TxContext
   ): (Request, Coin<CoinOut>) {
     let request = pool.finish_swap(request);
 
     (
      request,
-     swap_impl<CoinIn, CoinOut, LpCoin>(pool, clock, coin_in, mint_amount, ctx)
+     swap_impl<CoinIn, CoinOut, LpCoin>(pool, clock, coin_in, min_amount, ctx)
     )
   }  
 
