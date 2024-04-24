@@ -33,23 +33,9 @@ Make sure you have the latest version of the Sui binaries installed on your mach
 - **hardhat-volatile** Curve contracts to run tests.
 - **scripts** TS publish scripts.
 
-## Package
+## Integration
 
-The CLAMM is deployed on Sui's testnet using under the branch `framework/mainnet`.
-
-To include on your package please use add the code below on your Move.toml:
-
-```toml
-[dependencies.CLAMM]
-git = "https://github.com/interest-protocol/clamm.git"
-subdir = "contracts"
-rev = "mainnet/1.1.1-alpha"
-
-[addresses]
-clamm = "0x548268236e9cf7ed3ede3a5e0a0d62d50e9a5d0b07389822bb424dae927684e6"
-```
-
-Please find all objectIds under this [JSON file](./clamm.json).
+Please check the available testnet and mainnet branches in this repo for further instructions.
 
 ## Functionality
 
