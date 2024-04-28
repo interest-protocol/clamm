@@ -9,7 +9,6 @@ module clamm::interest_clamm_volatile {
   use sui::clock::Clock;
   use sui::bag::{Self, Bag};
   use sui::coin::{Self, Coin};
-  use sui::table::{Self, Table};
   use sui::vec_map::{Self, VecMap};
   use sui::versioned::{Self, Versioned};
   use sui::balance::{Self, Supply, Balance};
@@ -103,7 +102,7 @@ module clamm::interest_clamm_volatile {
     max_a: u256,
     not_adjusted: bool,
     version: u256,
-    coin_states: Table<TypeName, CoinState>,
+    coin_states: VecMap<TypeName, CoinState>,
     coin_balances: Bag,
     admin_balance: Balance<LpCoin>
   }
@@ -994,7 +993,7 @@ module clamm::interest_clamm_volatile {
       max_a: volatile_math::max_a(n_coins),
       not_adjusted: false,
       version: 0,
-      coin_states: table::new(ctx),
+      coin_states: vec_map::empty(),
       coin_balances: bag::new(ctx),
       admin_balance: balance::zero()
     }    
@@ -1745,7 +1744,7 @@ module clamm::interest_clamm_volatile {
   ) {
     let coin_name = type_name::get<CoinType>();
 
-    state.coin_states.add(coin_name, CoinState {
+    state.coin_states.insert(coin_name, CoinState {
       index,
       price,
       price_oracle: price,
@@ -2064,7 +2063,7 @@ module clamm::interest_clamm_volatile {
     
     while (n_coins > i) {
       let new_state = vector::borrow(&new_coin_states, i);
-      let current_state = coin_state_with_key_mut(state, new_state.type_name);
+      let current_state = coin_state_with_key_mut(state, &new_state.type_name);
       current_state.last_price = new_state.last_price;
       current_state.price = new_state.price;
       current_state.price_oracle = new_state.price_oracle;
@@ -2079,7 +2078,7 @@ module clamm::interest_clamm_volatile {
     
     while (n_coins > i) {
         let coin_key = *&coins[i];
-        data.push_back(*coin_state_with_key(state, coin_key));
+        data.push_back(*coin_state_with_key(state, &coin_key));
         i = i + 1;
     };
     data
@@ -2090,7 +2089,7 @@ module clamm::interest_clamm_volatile {
   }
 
   fun coin_state<CoinType, LpCoin>(state: &StateV1<LpCoin>): CoinState {
-    *coin_state_with_key(state, type_name::get<CoinType>())
+    *coin_state_with_key(state, &type_name::get<CoinType>())
   }
 
   fun coin_balance_impl<CoinType, LpCoin>(state: &StateV1<LpCoin>): &Balance<CoinType>  {
@@ -2101,12 +2100,12 @@ module clamm::interest_clamm_volatile {
     state.coin_balances.borrow_mut(type_name::get<CoinType>())
   }
 
-  fun coin_state_with_key<LpCoin>(state: &StateV1<LpCoin>, type_name: TypeName): &CoinState {
-    state.coin_states.borrow(type_name)
+  fun coin_state_with_key<LpCoin>(state: &StateV1<LpCoin>, type_name: &TypeName): &CoinState {
+    state.coin_states.get(type_name)
   }
 
-  fun coin_state_with_key_mut<LpCoin>(state: &mut StateV1<LpCoin>, type_name: TypeName): &mut CoinState {
-    state.coin_states.borrow_mut(type_name)
+  fun coin_state_with_key_mut<LpCoin>(state: &mut StateV1<LpCoin>, type_name: &TypeName): &mut CoinState {
+    state.coin_states.get_mut(type_name)
   }
 
   fun load<LpCoin>(versioned: &mut Versioned): &StateV1<LpCoin> {
