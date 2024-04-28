@@ -662,8 +662,8 @@ module clamm::interest_clamm_volatile {
     ROLL * xcp_impl(state, coin_states, state.d) / supply.to_u256()
   }
 
-  public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &mut InterestPool<Volatile>, clock: &Clock, amount: u64): u64 {
-    if (amount == 0) return 0;
+  public fun quote_swap<CoinIn, CoinOut, LpCoin>(pool: &mut InterestPool<Volatile>, clock: &Clock, amount: u64): (u64, u64) {
+    if (amount == 0) return (0, 0);
     let (state, coin_states) = state_and_coin_states<LpCoin>(pool);
     let coin_in_state = coin_state<CoinIn, LpCoin>(state);
     let coin_out_state = coin_state<CoinOut, LpCoin>(state);
@@ -696,9 +696,11 @@ module clamm::interest_clamm_volatile {
 
    if (coin_out_state.index != 0) coin_out_amount = div_down(coin_out_amount, coin_out_state.price);
 
-   coin_out_amount = coin_out_amount - fee_impl(state, balances_price) * coin_out_amount / 10000000000;
+   let fee = fee_impl(state, balances_price) * coin_out_amount / 10000000000;
 
-   mul_down(coin_out_amount, coin_out_state.decimals_scalar).to_u64()
+   coin_out_amount = coin_out_amount - fee;
+
+   (mul_down(coin_out_amount, coin_out_state.decimals_scalar).to_u64(), fee.to_u64())
   }   
 
   public fun quote_add_liquidity<LpCoin>(pool: &mut InterestPool<Volatile>, clock: &Clock, amounts: vector<u64>): u64 {

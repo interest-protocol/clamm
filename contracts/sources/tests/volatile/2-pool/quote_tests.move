@@ -32,7 +32,7 @@ module clamm::volatile_2pool_quote_tests {
     {
       let mut pool = test::take_shared<InterestPool<Volatile>>(test);
 
-      let expected_amount = interest_clamm_volatile::quote_swap<USDC, ETH, LP_COIN>(
+      let (expected_amount, _) = interest_clamm_volatile::quote_swap<USDC, ETH, LP_COIN>(
         &mut pool,
         &c,
         add_decimals(1499, 6)
@@ -48,7 +48,7 @@ module clamm::volatile_2pool_quote_tests {
 
       assert_eq(burn(coin_out), expected_amount);
 
-      let expected_amount = interest_clamm_volatile::quote_swap<ETH, USDC, LP_COIN>(
+      let (expected_amount, _) = interest_clamm_volatile::quote_swap<ETH, USDC, LP_COIN>(
         &mut pool,
         &c,
         add_decimals(25, 8)
