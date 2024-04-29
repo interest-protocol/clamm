@@ -914,13 +914,7 @@ module clamm::interest_clamm_volatile {
     let adjustment_step = option::destroy_with_default(*&values[5], state.rebalancing_params.adjustment_step);
     let ma_half_time = option::destroy_with_default(*&values[6], state.rebalancing_params.ma_half_time); 
 
-    assert!(MAX_FEE >= out_fee && out_fee >= MIN_FEE, errors::out_fee_out_of_range());
-    assert!(MAX_FEE >= mid_fee && MIN_FEE >= MIN_FEE, errors::mid_fee_out_of_range());
-    assert!(MAX_ADMIN_FEE > admin_fee, errors::admin_fee_is_too_big());
-    assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::gamma_fee_out_of_range());
-    assert!(PRECISION > allowed_extra_profit, errors::extra_profit_is_too_big());
-    assert!(PRECISION > adjustment_step, errors::adjustment_step_is_too_big());
-    assert!(ma_half_time >= 1000 && ONE_WEEK >= ma_half_time, errors::ma_half_time_out_of_range());
+    assert_parameters_values(mid_fee, out_fee, gamma_fee, admin_fee, allowed_extra_profit, adjustment_step, ma_half_time);
 
     state.fees.admin_fee = admin_fee;
     state.fees.out_fee = out_fee;
@@ -961,6 +955,7 @@ module clamm::interest_clamm_volatile {
     let (mid_fee, out_fee, gamma_fee) = fee_params.to_3_tuple();
 
     let n_coins = balances.length();
+    assert_parameters_values(mid_fee, out_fee, gamma_fee, ADMIN_FEE, extra_profit, adjustment_step, ma_half_time);
  
     StateV1 {
       id: object::new(ctx),
@@ -2044,6 +2039,24 @@ module clamm::interest_clamm_volatile {
   }  
 
   // * Borrow State Functions
+
+  fun assert_parameters_values(
+    mid_fee: u256,
+    out_fee: u256,
+    gamma_fee: u256,
+    admin_fee: u256,
+    allowed_extra_profit: u256,
+    adjustment_step: u256,
+    ma_half_time: u256
+  ) {
+    assert!(MAX_FEE >= out_fee && out_fee >= MIN_FEE, errors::out_fee_out_of_range());
+    assert!(MAX_FEE >= mid_fee && MIN_FEE >= MIN_FEE, errors::mid_fee_out_of_range());
+    assert!(MAX_ADMIN_FEE > admin_fee, errors::admin_fee_is_too_big());
+    assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::gamma_fee_out_of_range());
+    assert!(PRECISION > allowed_extra_profit, errors::extra_profit_is_too_big());
+    assert!(PRECISION > adjustment_step, errors::adjustment_step_is_too_big());
+    assert!(ma_half_time >= 1000 && ONE_WEEK >= ma_half_time, errors::ma_half_time_out_of_range());
+  }
 
   fun state_and_coin_states<LpCoin>(pool: &mut InterestPool<Volatile>): (&StateV1<LpCoin>, vector<CoinState>) {
     let coins = pool.coins();    
