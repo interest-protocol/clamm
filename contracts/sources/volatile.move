@@ -2050,7 +2050,7 @@ module clamm::interest_clamm_volatile {
     ma_half_time: u256
   ) {
     assert!(MAX_FEE >= out_fee && out_fee >= MIN_FEE, errors::out_fee_out_of_range());
-    assert!(MAX_FEE >= mid_fee && MIN_FEE >= MIN_FEE, errors::mid_fee_out_of_range());
+    assert!(MAX_FEE >= mid_fee && mid_fee >= MIN_FEE, errors::mid_fee_out_of_range());
     assert!(MAX_ADMIN_FEE > admin_fee, errors::admin_fee_is_too_big());
     assert!(gamma_fee != 0 && PRECISION >= gamma_fee, errors::gamma_fee_out_of_range());
     assert!(PRECISION > allowed_extra_profit, errors::extra_profit_is_too_big());
