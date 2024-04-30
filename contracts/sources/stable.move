@@ -1043,6 +1043,7 @@ module clamm::interest_clamm_stable {
   ): StateV1<LpCoin> {
     assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
     assert!(decimals<LpCoin>(coin_decimals) == 9, errors::must_have_9_decimals());
+    assert!(initial_a != 0 && initial_a < MAX_A, errors::invalid_amplifier());
 
     StateV1 {
         id: object::new(ctx),
