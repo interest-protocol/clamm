@@ -698,9 +698,10 @@ module clamm::interest_clamm_volatile {
 
    let fee = fee_impl(state, balances_price) * coin_out_amount / 10000000000;
 
-   coin_out_amount = coin_out_amount - fee;
-
-   (mul_down(coin_out_amount, coin_out_state.decimals_scalar).to_u64(), fee.to_u64())
+   (
+    mul_down(coin_out_amount - fee, coin_out_state.decimals_scalar).to_u64(), 
+    mul_down(fee, coin_out_state.decimals_scalar).to_u64()
+   )
   }   
 
   public fun quote_add_liquidity<LpCoin>(pool: &mut InterestPool<Volatile>, clock: &Clock, amounts: vector<u64>): u64 {
