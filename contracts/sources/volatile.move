@@ -149,7 +149,10 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool.addy());
+    let pool_address = pool.addy();
+    let state_address = load<LpCoin>(pool.state_mut()).id.to_address();
+
+    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool_address, state_address);
 
     (pool, pool_admin, lp_coin)
   }
@@ -190,7 +193,10 @@ module clamm::interest_clamm_volatile {
       ctx
     );    
 
-    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
+    let pool_address = pool.addy();
+    let state_address = load<LpCoin>(pool.state_mut()).id.to_address();
+
+    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool_address, state_address);
 
     (pool, pool_admin, lp_coin)
   }
@@ -330,7 +336,11 @@ module clamm::interest_clamm_volatile {
       ctx
     );
 
-    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool.addy());
+
+    let pool_address = pool.addy();
+    let state_address = load<LpCoin>(pool.state_mut()).id.to_address();
+
+    events::emit_new_2_pool<Volatile, CoinA, CoinB, LpCoin>(pool_address, state_address);
 
     (pool, pool_admin, lp_coin)   
   }  
@@ -373,7 +383,10 @@ module clamm::interest_clamm_volatile {
       ctx
     );    
 
-    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
+    let pool_address = pool.addy();
+    let state_address = load<LpCoin>(pool.state_mut()).id.to_address();
+
+    events::emit_new_3_pool<Volatile, CoinA, CoinB, CoinC, LpCoin>(pool_address, state_address);
 
     (pool, pool_admin, lp_coin)
   }  

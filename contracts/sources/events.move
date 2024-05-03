@@ -8,19 +8,23 @@ module clamm::pool_events {
   // === Structs ===
 
   public struct New2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has drop, copy {
-    pool: address
+    pool: address,
+    state: address
   }
 
   public struct New3Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom CoinC, phantom LpCoin> has copy, drop {
-    pool: address
+    pool: address,
+    state: address
   }
 
   public struct New4Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom CoinC, phantom CoinD, phantom LpCoin> has copy, drop {
-    pool: address
+    pool: address,
+    state: address
   }
 
   public struct New5Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom CoinC, phantom CoinD, phantom CoinE, phantom LpCoin> has copy, drop {
-    pool: address
+    pool: address,
+    state: address
   }
 
   public struct AddLiquidity2Pool<phantom Curve, phantom CoinA, phantom CoinB, phantom LpCoin> has copy, drop {
@@ -168,20 +172,20 @@ module clamm::pool_events {
 
   // === Public-Package Functions ===
 
-  public(package) fun emit_new_2_pool<Curve, CoinA, CoinB, LpCoin>(id: address) {
-    emit(New2Pool<Curve, CoinA, CoinB, LpCoin> { pool: id });
+  public(package) fun emit_new_2_pool<Curve, CoinA, CoinB, LpCoin>(pool: address, state: address) {
+    emit(New2Pool<Curve, CoinA, CoinB, LpCoin> { pool, state });
   }
 
-  public(package) fun emit_new_3_pool<Curve, CoinA, CoinB, CoinC, LpCoin>(id: address) {
-    emit(New3Pool<Curve, CoinA, CoinB, CoinC, LpCoin> { pool: id });
+  public(package) fun emit_new_3_pool<Curve, CoinA, CoinB, CoinC, LpCoin>(pool: address, state: address) {
+    emit(New3Pool<Curve, CoinA, CoinB, CoinC, LpCoin> { pool, state });
   }
 
-  public(package) fun emit_new_4_pool<Curve, CoinA, CoinB, CoinC, CoinD, LpCoin>(id: address) {
-    emit(New4Pool<Curve, CoinA, CoinB, CoinC, CoinD, LpCoin> { pool: id });
+  public(package) fun emit_new_4_pool<Curve, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool: address, state: address) {
+    emit(New4Pool<Curve, CoinA, CoinB, CoinC, CoinD, LpCoin> { pool, state });
   }
 
-  public(package) fun emit_new_5_pool<Curve, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(id: address) {
-    emit(New5Pool<Curve, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin> { pool: id });
+  public(package) fun emit_new_5_pool<Curve, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool: address, state: address) {
+    emit(New5Pool<Curve, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin> { pool, state });
   }
 
   public(package) fun emit_swap<Curve, CoinIn, CoinOut, LpCoin>(pool: address, amount_in: u64, amount_out: u64) {

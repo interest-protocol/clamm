@@ -1118,7 +1118,9 @@ module clamm::interest_clamm_stable {
   ): (InterestPool<Stable>, Coin<LpCoin>)  {
     assert!(coin_a.value() != 0 && coin_b.value() != 0, errors::no_zero_liquidity_amounts());
 
-    let state = load_mut<LpCoin>(pool.state_mut());      
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+    let state_address = state.id.to_address();     
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -1126,7 +1128,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_2_pool_impl(&mut pool, clock, coin_a, coin_b, 0, ctx);
 
-    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool.addy());
+    events::emit_new_2_pool<Stable, CoinA, CoinB, LpCoin>(pool_address, state_address);
 
     (pool, lp_coin)
   }
@@ -1142,7 +1144,9 @@ module clamm::interest_clamm_stable {
   ): (InterestPool<Stable>, Coin<LpCoin>) {
     assert!(coin_a.value() != 0 && coin_b.value() != 0 && coin_c.value() != 0, errors::no_zero_liquidity_amounts());
 
-    let state = load_mut<LpCoin>(pool.state_mut());      
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+    let state_address = state.id.to_address();  
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -1151,7 +1155,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_3_pool_impl(&mut pool, clock, coin_a, coin_b, coin_c, 0, ctx);
 
-    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool.addy());
+    events::emit_new_3_pool<Stable, CoinA, CoinB, CoinC, LpCoin>(pool_address, state_address);
 
     (pool, lp_coin)
   }
@@ -1174,7 +1178,9 @@ module clamm::interest_clamm_stable {
       errors::no_zero_liquidity_amounts()
     );
 
-    let state = load_mut<LpCoin>(pool.state_mut());    
+    let pool_address = pool.addy();
+    let state = load_mut<LpCoin>(pool.state_mut());
+    let state_address = state.id.to_address();
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -1184,7 +1190,7 @@ module clamm::interest_clamm_stable {
 
     let lp_coin = add_liquidity_4_pool_impl(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, 0, ctx);
 
-    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool.addy());
+    events::emit_new_4_pool<Stable, CoinA, CoinB, CoinC, CoinD, LpCoin>(pool_address, state_address);
 
     (pool, lp_coin)
   }
@@ -1209,7 +1215,9 @@ module clamm::interest_clamm_stable {
       errors::no_zero_liquidity_amounts()
     );
 
+    let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
+    let state_address = state.id.to_address();
 
     // * IMPORTANT Make sure the indexes and CoinTypes match the make_coins vector and they are in the correct order
     add_coin<CoinA, LpCoin>(state, coin_decimals, 0);
@@ -1218,10 +1226,10 @@ module clamm::interest_clamm_stable {
     add_coin<CoinD, LpCoin>(state, coin_decimals, 3);
     add_coin<CoinE, LpCoin>(state, coin_decimals, 4);
 
+
     let lp_coin = add_liquidity_5_pool_impl(&mut pool, clock, coin_a, coin_b, coin_c, coin_d, coin_e, 0, ctx);
 
-    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool.addy());
-
+    events::emit_new_5_pool<Stable, CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(pool_address, state_address);
 
     (pool, lp_coin)
   }
