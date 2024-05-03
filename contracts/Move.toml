@@ -3,7 +3,7 @@ name = "CLAMM"
 edition = "2024.beta"
 license = "MIT"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
-version = "2.1.1-alpha"
+version = "3.0.0-alpha"
 
 [dependencies]
 MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/mainnet" }
