@@ -74,7 +74,7 @@ module clamm::stable_math {
 
       let mut j = 0;
       while(j < n_coins) {
-        d_p = d_p * d / (*&balances[j] * n_coins_u256);
+        d_p = d_p * d / (balances[j] * n_coins_u256);
         j = j + 1;
       };
 
@@ -123,7 +123,7 @@ module clamm::stable_math {
         s = s + new_balance_in;
         c = c * d / (new_balance_in * n_coins);
       } else if (i != coin_out_index) {
-        let x = *&balances[i.to_u64()]; 
+        let x = balances[i.to_u64()]; 
         s = s + x;
         c = c * d / (x * n_coins);
       };
@@ -199,7 +199,7 @@ module clamm::stable_math {
 
     while (n_coins > i) {
       if (i != coin_index) {
-        let x = *&balances[i.to_u64()];
+        let x = balances[i.to_u64()];
         s = s + x;
         c = c * _invariant / (x * n_coins);
       };

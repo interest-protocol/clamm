@@ -872,11 +872,11 @@ module clamm::interest_clamm_stable {
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
       coin_in_index.to_u256(),
       coin_out_index.to_u256(),
-      *&state.balances[coin_in_index] + normalized_value,
+      state.balances[coin_in_index] + normalized_value,
       state.balances
     );
 
-    let amount_out = *&state.balances[coin_out_index] - new_out_balance;
+    let amount_out = state.balances[coin_out_index] - new_out_balance;
     let amount_out = (amount_out * coin_out_decimals / PRECISION).to_u64();
 
     let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
@@ -898,7 +898,7 @@ module clamm::interest_clamm_stable {
 
     while (num_of_coins > i) {
       let coin_metadata = state.coin_metadatas.get(&coins[i]);
-      let normalized_value = (*&amounts[i]).to_u256() * PRECISION / coin_metadata.decimals;
+      let normalized_value = (amounts[i]).to_u256() * PRECISION / coin_metadata.decimals;
       let ref = &mut balances[i];
       *ref = *ref + normalized_value;
 
@@ -1268,11 +1268,11 @@ module clamm::interest_clamm_stable {
       amp,
       coin_in_index.to_u256(),
       coin_out_index.to_u256(),
-      *&state.balances[coin_in_index] + normalized_value,
+      state.balances[coin_in_index] + normalized_value,
       state.balances
     );
 
-    let normalized_amount_out = *&state.balances[coin_out_index] - new_out_balance;
+    let normalized_amount_out = state.balances[coin_out_index] - new_out_balance;
     let amount_out = (normalized_amount_out * coin_out_decimals / PRECISION).to_u64();
     
     let fee_out = stable_fees::calculate_fee_out_amount(&state.fees, amount_out);
@@ -1768,7 +1768,7 @@ module clamm::interest_clamm_stable {
 
     let balance_to_remove = denormalized_value * lp_coin_value.to_u256() / state.lp_coin_supply.supply_value().to_u256();
 
-    assert!(balance_to_remove.to_u64() >= *&min_amounts[index], errors::slippage());
+    assert!(balance_to_remove.to_u64() >= min_amounts[index], errors::slippage());
 
     *current_balance = *current_balance - (balance_to_remove * PRECISION / decimals);
 

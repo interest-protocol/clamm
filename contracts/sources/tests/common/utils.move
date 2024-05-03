@@ -31,14 +31,14 @@ module clamm::utils_tests {
 
     let (zero, one) = utils::vector_2_to_tuple(vec1); 
 
-    assert_eq(zero, *&vec1[0]);
-    assert_eq(one, *&vec1[1]);
+    assert_eq(zero, vec1[0]);
+    assert_eq(one, vec1[1]);
 
     let (two, three, four) = utils::vector_3_to_tuple(vec2); 
 
-    assert_eq(two, *&vec2[0]);
-    assert_eq(three, *&vec2[1]);
-    assert_eq(four, *&vec2[2]);    
+    assert_eq(two, vec2[0]);
+    assert_eq(three, vec2[1]);
+    assert_eq(four, vec2[2]);    
   }
 
   #[test]

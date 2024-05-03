@@ -80,7 +80,7 @@ module clamm::volatile_math {
 
       let mut i = 0;
       while (len > i) {
-        temp = temp * *&balances[i] / d;  
+        temp = temp * balances[i] / d;  
         i = i + 1;
       };
       d = d * ((len.to_u256() - 1) * PRECISION + temp) / (len.to_u256() * PRECISION);
@@ -106,7 +106,7 @@ module clamm::volatile_math {
     let mut k = PRECISION;
 
     while(i < n_coins) {
-      k = k * n_coins.to_u256() * *&x[i] / s;
+      k = k * n_coins.to_u256() * x[i] / s;
       i = i + 1;
     };
 
@@ -142,7 +142,7 @@ module clamm::volatile_math {
 
     let mut i = 1;
     while (n_coins > i) {
-      let frac = *&x[i] * PRECISION / fst;
+      let frac = x[i] * PRECISION / fst;
       assert!(frac >= POW_10_11, errors::unsafe_value());
       i = i + 1;
     };
@@ -157,7 +157,7 @@ module clamm::volatile_math {
 
       let mut i = 0;
       while (i < n_coins) {
-        k0 = k0 * *&x[i] * n_coins_u256 / d;
+        k0 = k0 * x[i] * n_coins_u256 / d;
         i = i + 1;
       };
 
@@ -182,7 +182,7 @@ module clamm::volatile_math {
     
     let mut i = 0;
     while (n_coins > i) {
-      let frac = *&x[i] * PRECISION / d;
+      let frac = x[i] * PRECISION / d;
       assert_balance_is_within_range(frac);
       i = i + 1;
     };
@@ -213,7 +213,7 @@ module clamm::volatile_math {
     let mut j = 0;
     while (n_coins > j) {
       if (j != coin_out_index) {
-        let frac = *&balances[j] * PRECISION / d;
+        let frac = balances[j] * PRECISION / d;
         assert_balance_is_within_range(frac);
       };
       j = j + 1;
@@ -232,7 +232,7 @@ module clamm::volatile_math {
 
     let mut j = 2;
     while (j < n_coins + 1) {
-      let x = *&x_sorted[n_coins - j];
+      let x = x_sorted[n_coins - j];
       y = y * d / (x * n_coins_u256);
       s_i = s_i + x;
       j = j + 1;
@@ -240,7 +240,7 @@ module clamm::volatile_math {
 
     let mut j = 0;
     while (j < n_coins - 1) {
-      k0_i = k0_i * *&x_sorted[j] * n_coins_u256 / d;
+      k0_i = k0_i * x_sorted[j] * n_coins_u256 / d;
       j = j + 1;
     };
 
