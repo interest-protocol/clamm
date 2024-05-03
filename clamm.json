@@ -1,18 +1,18 @@
 [
   {
+    "type": "owner::OwnerCap<0x7ba65fa88ed4026304b7f95ee86f96f8169170efe84b56d465b4fe305e2486cb::coin_decimals::CoinDecimalsWitness>",
+    "id": "0x473b1a3b34cacf0ae300966e53c376bbf894f3038af4999cf05d004adb4701ad"
+  },
+  {
     "type": "coin_decimals::CoinDecimals",
-    "id": "0x66575cf6ebc15f44b89836ba72d1720a34fa964650daa26a892f2f54ec21bd43"
+    "id": "0x76b2ae24b64c6e8a8895e338508a5ef014c72433235e3b4d117482393a351675"
   },
   {
     "type": "",
-    "id": "0x6e3dcd91b506c20288be8ccce48f7131d514fa73e616ad60182154aa943f32e6"
+    "id": "0xbc5107c7348cdd8c2ecdf44de21a52a90f1bf804322162083bd364546284732f"
   },
   {
     "type": "package",
-    "id": "0x9641311c4442a1464941ed2898b8466820a6313082f271906fb1d0cb3be18c65"
-  },
-  {
-    "type": "owner::OwnerCap<0x7ba65fa88ed4026304b7f95ee86f96f8169170efe84b56d465b4fe305e2486cb::coin_decimals::CoinDecimalsWitness>",
-    "id": "0xad2c2f3711c51677db265c4cf155adb8ce9e15ac9c1579a6408bd96c220b3b17"
+    "id": "0xc410eced6542f6c8deb033eb49a54b4c7511770605069b79d646149488dc8933"
   }
 ]
