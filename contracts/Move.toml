@@ -3,7 +3,7 @@ name = "CLAMM"
 edition = "2024.beta"
 license = "MIT"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
-version = "3.0.0-alpha"
+version = "4.0.0-alpha"
 published-at = "0xc410eced6542f6c8deb033eb49a54b4c7511770605069b79d646149488dc8933"
 
 [dependencies]
