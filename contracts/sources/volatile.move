@@ -152,7 +152,7 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let coins = pool.coins();
 
-    events::new_pool<Volatile, LpCoin>(pool_address, coins);
+    events::new_pool(pool_address, coins, type_name::get<LpCoin>(), false);
 
     (pool, pool_admin, lp_coin)
   }
@@ -196,7 +196,7 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let coins = pool.coins();
 
-    events::new_pool<Volatile, LpCoin>(pool_address, coins);
+    events::new_pool(pool_address, coins, type_name::get<LpCoin>(), false);
 
     (pool, pool_admin, lp_coin)
   }
@@ -340,7 +340,7 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let coins = pool.coins();
 
-    events::new_pool<Volatile, LpCoin>(pool_address, coins);
+    events::new_pool(pool_address, coins, type_name::get<LpCoin>(), false);
 
     (pool, pool_admin, lp_coin)   
   }  
@@ -386,7 +386,7 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let coins = pool.coins();
 
-    events::new_pool<Volatile, LpCoin>(pool_address, coins);
+    events::new_pool(pool_address, coins, type_name::get<LpCoin>(), false);
 
     (pool, pool_admin, lp_coin)
   }  
@@ -826,6 +826,7 @@ module clamm::interest_clamm_volatile {
     ctx: &mut TxContext
   ): Coin<LpCoin> {
     pool.assert_pool_admin(pool_admin);
+    let pool_address = pool.addy();
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
     claim_admin_fees_impl(state, clock, request, coin_states);
@@ -834,7 +835,7 @@ module clamm::interest_clamm_volatile {
 
     let value = state.admin_balance.value();
 
-    events::claim_admin_fees<LpCoin>(value);
+    events::claim_admin_fees(pool_address, type_name::get<LpCoin>(), value);
 
     state.admin_balance.take(value, ctx)
   }
@@ -880,7 +881,7 @@ module clamm::interest_clamm_volatile {
 
     increment_version(state);
 
-    events::ramp_a_gamma<LpCoin>(pool_address, a, gamma, timestamp, future_a, future_gamma, future_time);
+    events::ramp_a_gamma(pool_address, a, gamma, timestamp, future_a, future_gamma, future_time);
   }
 
   public fun stop_ramp<LpCoin>(
@@ -904,7 +905,7 @@ module clamm::interest_clamm_volatile {
 
     increment_version(state);
 
-    events::stop_ramp_a_gamma<LpCoin>(pool_address, a, gamma, timestamp);
+    events::stop_ramp_a_gamma(pool_address, a, gamma, timestamp);
   }
 
   public fun update_parameters<LpCoin>(
@@ -940,7 +941,7 @@ module clamm::interest_clamm_volatile {
 
     increment_version(state);
 
-    events::update_parameters<LpCoin>(pool_address, admin_fee, out_fee, mid_fee, gamma_fee, allowed_extra_profit, adjustment_step, ma_half_time);
+    events::update_parameters(pool_address, admin_fee, out_fee, mid_fee, gamma_fee, allowed_extra_profit, adjustment_step, ma_half_time);
   }
 
   // === Private Functions ===
@@ -1271,7 +1272,7 @@ module clamm::interest_clamm_volatile {
       lp_supply * ROLL
     ); 
 
-    events::swap<Volatile, CoinIn, CoinOut, LpCoin>(pool_address, coin_in_value, amount_out);
+    events::swap(pool_address, type_name::get<CoinIn>(), type_name::get<CoinOut>(), coin_in_value, amount_out);
 
     increment_version(state);
 
@@ -1290,15 +1291,28 @@ module clamm::interest_clamm_volatile {
     // Make sure the second argument is in right order
     assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
+    let pool_address = pool.addy();
+    let coins = pool.coins();
+
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
     let old_balances = state.balances;
 
     // Update Balances
-    deposit_coin<CoinA, LpCoin>(state, coin_a);
-    deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
 
-    add_liquidity(state, clock, coin_states, old_balances, lp_coin_min_amount, ctx)
+    add_liquidity(
+      pool_address, 
+      coins, 
+      state, 
+      clock, 
+      coin_states, 
+      vector[coin_a_value, coin_b_value], 
+      old_balances, 
+      lp_coin_min_amount, 
+      ctx
+    )
   }
 
   fun add_liquidity_3_pool_impl<CoinA, CoinB, CoinC, LpCoin>(
@@ -1314,16 +1328,29 @@ module clamm::interest_clamm_volatile {
     // Make sure the second argument is in right order
     assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
+    let pool_address = pool.addy();
+    let coins = pool.coins();
+
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
 
     let old_balances = state.balances;
 
     // Update Balances
-    deposit_coin<CoinA, LpCoin>(state, coin_a);
-    deposit_coin<CoinB, LpCoin>(state, coin_b);
-    deposit_coin<CoinC, LpCoin>(state, coin_c);
+    let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
+    let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
+    let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
 
-    add_liquidity(state, clock, coin_states, old_balances, lp_coin_min_amount, ctx)
+    add_liquidity(
+      pool_address, 
+      coins, 
+      state, 
+      clock, 
+      coin_states, 
+      vector[coin_a_value, coin_b_value, coin_c_value], 
+      old_balances, 
+      lp_coin_min_amount, 
+      ctx
+    )
   }
 
   fun donate_impl<CoinIn, LpCoin>(
@@ -1343,7 +1370,7 @@ module clamm::interest_clamm_volatile {
     // Update Balances
     deposit_coin<CoinIn, LpCoin>(state, coin_in);
 
-    events::donate<Volatile, CoinIn, LpCoin>(pool_address, coin_in_value);
+    events::donate(pool_address, type_name::get<CoinIn>(), coin_in_value);
 
     add_liquidity_impl(state, clock, coin_states, old_balances);
   }
@@ -1375,7 +1402,7 @@ module clamm::interest_clamm_volatile {
       withdraw_coin<CoinB, LpCoin>(state, lp_coin_amount, min_amounts[1], total_supply, ctx),
     );
 
-    events::remove_liquidity<Volatile, LpCoin>(
+    events::remove_liquidity(
       pool_address, 
       coins, 
       vector[coin_a.value(), coin_b.value()], 
@@ -1415,7 +1442,7 @@ module clamm::interest_clamm_volatile {
       withdraw_coin<CoinC, LpCoin>(state, lp_coin_amount, min_amounts[2], total_supply, ctx),
     );
 
-    events::remove_liquidity<Volatile, LpCoin>(
+    events::remove_liquidity(
       pool_address,
       coins,
       vector[coin_a.value(), coin_b.value(), coin_c.value()],
@@ -1574,15 +1601,19 @@ module clamm::interest_clamm_volatile {
   }
 
   fun add_liquidity<LpCoin>(
+    pool_address: address,
+    coins: vector<TypeName>,
     state: &mut StateV1<LpCoin>,
     clock: &Clock,
     coin_states: vector<CoinState>,
+    amounts: vector<u64>,
     old_balances_price: vector<u256>,
     lp_coin_min_amount: u64,
     ctx: &mut TxContext
   ): Coin<LpCoin> {
     let mint_amount = add_liquidity_impl(state, clock, coin_states, old_balances_price);
     assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
+    events::add_liquidity(pool_address, coins, amounts, mint_amount);
     state.lp_coin_supply.increase_supply(mint_amount).to_coin(ctx)
   }
 
@@ -1639,7 +1670,7 @@ module clamm::interest_clamm_volatile {
     let remove_amount = mul_down(amount_out, coin_states[index_out].decimals_scalar).to_u64();
     assert!(remove_amount >= min_amount, errors::slippage());
 
-    events::remove_liquidity<Volatile, LpCoin>(
+    events::remove_liquidity(
       pool_address, 
       vector[type_name::get<CoinOut>()], 
       vector[remove_amount], 
@@ -1720,21 +1751,22 @@ module clamm::interest_clamm_volatile {
     (dy, p, d, xp, index_out)
   } 
 
-  fun deposit_coin<CoinType, LpCoin>(state: &mut StateV1<LpCoin>, coin_in: Coin<CoinType>) {
-    let coin_value = coin_in.value().to_u256();
+  fun deposit_coin<CoinType, LpCoin>(state: &mut StateV1<LpCoin>, coin_in: Coin<CoinType>): u64 {
+    let coin_value = coin_in.value();
 
     if (coin_value == 0) {
       coin_in.destroy_zero();
-      return
+      return 0
     };
 
     let coin_state = coin_state<CoinType, LpCoin>(state);
 
     // Update the balance for the coin
     let current_balance = &mut state.balances[coin_state.index];
-    *current_balance = *current_balance + div_down(coin_value, coin_state.decimals_scalar);
+    *current_balance = *current_balance + div_down(coin_value.to_u256(), coin_state.decimals_scalar);
 
     coin_balance_mut(state).join(coin_in.into_balance());
+    coin_value
   }
 
   fun withdraw_coin<CoinType, LpCoin>(

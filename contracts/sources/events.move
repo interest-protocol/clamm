@@ -4,48 +4,51 @@ module clamm::pool_events {
 
   use sui::event::emit;
 
-  use clamm::curves::Volatile;
-
   // === Structs ===
 
-  public struct NewPool<phantom Curve, phantom LpCoin> has drop, copy {
+  public struct NewPool has drop, copy {
     pool: address,
-    coins: vector<TypeName>
+    coins: vector<TypeName>,
+    lpCoin: TypeName,
+    isStable: bool
   }
 
-  public struct AddLiquidity<phantom Curve, phantom LpCoin> has copy, drop {
+  public struct Swap has drop, copy {
+    pool: address, 
+    coinIn: TypeName,
+    coinOut: TypeName,    
+    amount_in: u64, 
+    amount_out: u64,
+  }
+
+  public struct AddLiquidity has copy, drop {
+    pool: address,
+    coins: vector<TypeName>,  
+    amounts: vector<u64>,
+    shares: u64
+  }
+
+  public struct RemoveLiquidity has copy, drop {
     pool: address,
     coins: vector<TypeName>,
     amounts: vector<u64>,
     shares: u64
   }
 
-  public struct Swap<phantom Curve, phantom CoinIn, phantom CoinOut, phantom LpCoin> has drop, copy {
-    pool: address,
-    amount_in: u64,
-    amount_out: u64
-  }
-
-  public struct RemoveLiquidity<phantom Curve, phantom LpCoin> has copy, drop {
-    pool: address,
-    coins: vector<TypeName>,
-    amounts: vector<u64>,
-    shares: u64
-  }
-
-  public struct UpdateFee<phantom Curve, phantom LpCoin> has copy, drop {
+  public struct UpdateFee has copy, drop {
     pool: address,
     fee_in_percent: u256,
     fee_out_percent: u256, 
     admin_fee_percent: u256,     
   }
 
-  public struct TakeFee<phantom Curve, phantom CoinType, phantom LpCoin> has copy, drop {
+  public struct TakeFee has copy, drop {
     pool: address,
+    coin: TypeName,
     amount: u64
   }
 
-  public struct RampA<phantom LpCoin> has drop, copy {
+  public struct RampA has drop, copy {
     pool: address,
     initial_a: u256,
     future_a: u256,
@@ -53,13 +56,13 @@ module clamm::pool_events {
     timestamp: u64,
   }
 
-  public struct StopRampA<phantom LpCoin> has drop, copy {
+  public struct StopRampA has drop, copy {
     pool: address,
     a: u256,
     timestamp: u64
   }
 
-  public struct RampAGamma<phantom LpCoin> has drop, copy {
+  public struct RampAGamma has drop, copy {
     pool: address,
     a: u256,
     gamma: u256,
@@ -69,14 +72,14 @@ module clamm::pool_events {
     future_time: u64
   }
 
-  public struct StopRampAGamma<phantom LpCoin> has drop, copy {
+  public struct StopRampAGamma has drop, copy {
     pool: address,
     a: u256,
     gamma: u256,
     timestamp: u64,
   }
 
-  public struct UpdateParameters<phantom LpCoin> has drop, copy {
+  public struct UpdateParameters has drop, copy {
     pool: address,
     admin_fee: u256,
     out_fee: u256,
@@ -87,75 +90,89 @@ module clamm::pool_events {
     ma_half_time: u256
   }
 
-  public struct ClaimAdminFees<phantom Curve, phantom LpCoin> has drop, copy {
+  public struct ClaimAdminFees has drop, copy {
+    pool: address,
+    coin: TypeName,
     amount: u64
   }  
 
-  public struct Donate<phantom Curve, phantom CoinType, phantom LpCoin> has copy, drop {
+  public struct Donate has copy, drop {
     pool: address,
+    coin: TypeName,
     amount: u64
   }
 
   // === Public-Package Functions ===
 
-  public(package) fun new_pool<Curve, LpCoin>(pool: address, coins: vector<TypeName>) {
-    emit(NewPool<Curve, LpCoin> { pool, coins });
-  }
-
-  public(package) fun swap<Curve, CoinIn, CoinOut, LpCoin>(pool: address, amount_in: u64, amount_out: u64) {
-    emit(Swap<Curve, CoinIn, CoinOut, LpCoin>{ pool, amount_in, amount_out });
-  }
-
-  public(package) fun add_liquidity<Curve, LpCoin>(
-    pool: address,
+  public(package) fun new_pool(
+    pool: address, 
     coins: vector<TypeName>,
+    lpCoin: TypeName,
+    isStable: bool
+  ) {
+    emit(NewPool { pool, coins, lpCoin, isStable });
+  }
+
+  public(package) fun swap(
+    pool: address, 
+    coinIn: TypeName,
+    coinOut: TypeName,    
+    amount_in: u64, 
+    amount_out: u64
+  ) {
+    emit(Swap { pool, coinIn, coinOut, amount_in, amount_out });
+  }
+
+  public(package) fun add_liquidity(
+    pool: address,
+    coins: vector<TypeName>,  
     amounts: vector<u64>,
     shares: u64
   ) {
-    emit(AddLiquidity<Curve, LpCoin> { pool, coins, amounts, shares });
+    emit(AddLiquidity { pool, coins, amounts, shares });
   }  
 
-  public(package) fun remove_liquidity<Curve, LpCoin>(
+  public(package) fun remove_liquidity(
     pool: address,
     coins: vector<TypeName>,
     amounts: vector<u64>,
     shares: u64    
   ) {
-    emit(RemoveLiquidity<Curve, LpCoin> { pool, coins, amounts, shares });
+    emit(RemoveLiquidity { pool, coins, amounts, shares });
   }
 
-  public(package) fun update_stable_fee<Curve, LpCoin>(
+  public(package) fun update_stable_fee(
     pool: address, 
     fee_in_percent: u256,
     fee_out_percent: u256, 
     admin_fee_percent: u256,     
   ) {
-    emit(UpdateFee<Curve, LpCoin> { pool, fee_in_percent, fee_out_percent, admin_fee_percent });
+    emit(UpdateFee { pool, fee_in_percent, fee_out_percent, admin_fee_percent });
   }
 
-  public(package) fun take_fees<Curve, CoinType, LpCoin>(pool: address, amount: u64) {
-    emit(TakeFee<Curve, CoinType, LpCoin> { pool, amount });
+  public(package) fun take_fees(pool: address, coin: TypeName, amount: u64) {
+    emit(TakeFee { pool, coin, amount });
   }
 
-  public(package) fun claim_admin_fees<LpCoin>(amount: u64) {
-    emit(ClaimAdminFees<Volatile, LpCoin> {  amount });
+  public(package) fun claim_admin_fees( pool: address, coin: TypeName, amount: u64) {
+    emit(ClaimAdminFees{ pool, coin, amount });
   }
 
-  public(package) fun ramp_a<LpCoin>(
+  public(package) fun ramp_a(
     pool: address,
     initial_a: u256,
     future_a: u256,
     future_a_time: u256,
     timestamp: u64,
   ) {
-    emit(RampA<LpCoin> {  pool, initial_a, future_a, future_a_time, timestamp });
+    emit(RampA {  pool, initial_a, future_a, future_a_time, timestamp });
   }
 
-  public(package) fun stop_ramp_a<LpCoin>(pool: address, a: u256, timestamp: u64) {
-    emit(StopRampA<LpCoin> {  pool, a, timestamp });
+  public(package) fun stop_ramp_a(pool: address, a: u256, timestamp: u64) {
+    emit(StopRampA {  pool, a, timestamp });
   }
 
-  public(package) fun ramp_a_gamma<LpCoin>(
+  public(package) fun ramp_a_gamma(
     pool: address,
     a: u256,
     gamma: u256,
@@ -164,19 +181,19 @@ module clamm::pool_events {
     future_gamma: u256,
     future_time: u64,
   ) {
-    emit(RampAGamma<LpCoin> { pool, a, gamma, initial_time, future_a, future_gamma, future_time });
+    emit(RampAGamma { pool, a, gamma, initial_time, future_a, future_gamma, future_time });
   }
 
-  public(package) fun stop_ramp_a_gamma<LpCoin>(
+  public(package) fun stop_ramp_a_gamma(
     pool: address,
     a: u256,
     gamma: u256,
     timestamp: u64
   ) {
-    emit(StopRampAGamma<LpCoin> { pool, a, gamma, timestamp });
+    emit(StopRampAGamma { pool, a, gamma, timestamp });
   }
 
-  public(package) fun update_parameters<LpCoin>(
+  public(package) fun update_parameters(
     pool: address,
     admin_fee: u256,
     out_fee: u256,
@@ -186,7 +203,7 @@ module clamm::pool_events {
     adjustment_step: u256,
     ma_half_time: u256    
   ) {
-    emit(UpdateParameters<LpCoin> { 
+    emit(UpdateParameters { 
       pool,
       admin_fee,
       out_fee,
@@ -198,7 +215,7 @@ module clamm::pool_events {
     });
   }
 
-  public(package) fun donate<Curve, CoinType, LpCoin>(pool: address, amount: u64) {
-    emit(Donate<Curve, CoinType, LpCoin> { pool, amount });
+  public(package) fun donate(pool: address, coin: TypeName, amount: u64) {
+    emit(Donate { pool, coin, amount });
   }
 } 
