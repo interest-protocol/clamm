@@ -42,23 +42,23 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_swap_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_swap_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_swap_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_swap_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_swap();
 
@@ -97,23 +97,23 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_add_liquidity();
 
@@ -155,17 +155,12 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
@@ -173,6 +168,11 @@ module clamm::stable_hooks_tests {
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_add_liquidity();
 
@@ -215,17 +215,12 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
@@ -234,6 +229,11 @@ module clamm::stable_hooks_tests {
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_add_liquidity();
 
@@ -277,17 +277,12 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       mint(3, test.ctx()),
@@ -297,6 +292,11 @@ module clamm::stable_hooks_tests {
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_add_liquidity();
 
@@ -341,23 +341,23 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_donate_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_donate_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_donate_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_donate_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_donate();
 
@@ -392,23 +392,24 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(1000, test.ctx()),
       mint(1000, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
-    ); 
+    );     
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
+
 
     let mut start_request = pool.start_remove_liquidity();
 
@@ -448,17 +449,12 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(1000, test.ctx()),
       mint(1000, test.ctx()),
       mint(1000, test.ctx()),
@@ -466,6 +462,11 @@ module clamm::stable_hooks_tests {
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 
@@ -506,17 +507,13 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
+
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, FRAX, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, FRAX, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(1000, test.ctx()),
       mint(1000, test.ctx()),
       mint(1000, test.ctx()),
@@ -525,6 +522,11 @@ module clamm::stable_hooks_tests {
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 
@@ -566,17 +568,12 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, TRUE_USD, USDT, FRAX, DAI, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, TRUE_USD, USDT, FRAX, DAI, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(1000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(1000 * TRUE_USD_DECIMALS_SCALAR, test.ctx()),
       mint(1000 * USDT_DECIMALS_SCALAR, test.ctx()),
@@ -585,7 +582,12 @@ module clamm::stable_hooks_tests {
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
-    ); 
+    );
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 
@@ -628,23 +630,23 @@ module clamm::stable_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(2, test.ctx()),
       mint(3, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 
