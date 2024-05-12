@@ -67,27 +67,6 @@ module clamm::interest_pool {
     assert!(self.pool_admin_address == pool_admin.addy(), errors::invalid_pool_admin());
   }
 
-  public fun new_hooks_builder(ctx: &mut TxContext): HooksBuilder {
-    let mut rules = vec_map::empty();
-
-    rules.insert(START_SWAP.utf8(), vec_set::empty());
-    rules.insert(FINISH_SWAP.utf8(), vec_set::empty());
-    
-    rules.insert(START_ADD_LIQUIDITY.utf8(), vec_set::empty());
-    rules.insert(FINISH_ADD_LIQUIDITY.utf8(), vec_set::empty());
-    
-    rules.insert(START_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
-    rules.insert(FINISH_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
-
-    rules.insert(START_DONATE.utf8(), vec_set::empty());
-    rules.insert(FINISH_DONATE.utf8(), vec_set::empty());
-
-    HooksBuilder {
-      rules,
-      config: bag::new(ctx)
-    }
-  }
-
   public fun start_swap<Curve>(self: &InterestPool<Curve>): Request {
     assert!(self.has_swap_hooks(), errors::pool_has_no_swap_hooks());
     new_request(self, START_SWAP.utf8())
@@ -224,6 +203,14 @@ module clamm::interest_pool {
 
   // === Witness Functions ===
 
+  public fun add_hooks<Curve>(pool: &mut InterestPool<Curve>, hooks_builder: HooksBuilder) {
+    curves::assert_curve<Curve>();
+
+    let HooksBuilder { rules, config  } = hooks_builder;
+
+    pool.hooks.fill(Hooks { rules, config });
+  }
+
   public fun add_rule<Rule: drop>(
     hooks_builder: &mut HooksBuilder, 
     name: String,
@@ -289,13 +276,10 @@ module clamm::interest_pool {
 
   public(package) fun new_with_hooks<Curve>(
     coins: VecSet<TypeName>, 
-    state: Versioned, 
-    hooks_builder: HooksBuilder,
-     ctx: &mut TxContext
-  ): (InterestPool<Curve>, PoolAdmin)  {
+    state: Versioned,
+    ctx: &mut TxContext
+  ): (InterestPool<Curve>, PoolAdmin, HooksBuilder)  {
     curves::assert_curve<Curve>();
-
-    let HooksBuilder { rules, config  } = hooks_builder;
 
     let pool_admin = pool_admin::new(ctx);
     let self = InterestPool {
@@ -303,10 +287,10 @@ module clamm::interest_pool {
       coins,
       state,
       pool_admin_address: pool_admin.addy(),
-      hooks: option::some(Hooks { rules, config })
+      hooks: option::none()
     };
 
-    (self, pool_admin)
+    (self, pool_admin, new_hooks_builder(ctx))
   }  
 
   public(package) fun finish_swap<Curve>(self: &InterestPool<Curve>, request: Request): Request {
@@ -352,6 +336,27 @@ module clamm::interest_pool {
   }
 
   // === Private Functions ===  
+
+  fun new_hooks_builder(ctx: &mut TxContext): HooksBuilder {
+    let mut rules = vec_map::empty();
+
+    rules.insert(START_SWAP.utf8(), vec_set::empty());
+    rules.insert(FINISH_SWAP.utf8(), vec_set::empty());
+    
+    rules.insert(START_ADD_LIQUIDITY.utf8(), vec_set::empty());
+    rules.insert(FINISH_ADD_LIQUIDITY.utf8(), vec_set::empty());
+    
+    rules.insert(START_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
+    rules.insert(FINISH_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
+
+    rules.insert(START_DONATE.utf8(), vec_set::empty());
+    rules.insert(FINISH_DONATE.utf8(), vec_set::empty());
+
+    HooksBuilder {
+      rules,
+      config: bag::new(ctx)
+    }
+  }
 
   fun has_hook<Curve>(self: &InterestPool<Curve>, start: vector<u8>, finish: vector<u8>): bool {
     if (!has_hooks(self)) return false;
