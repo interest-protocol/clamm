@@ -206,6 +206,14 @@ module clamm::interest_pool {
     hooks_builder.pool_address
   }
 
+  public fun rules(hooks_builder: &HooksBuilder): &VecMap<String, VecSet<TypeName>> {
+    &hooks_builder.rules
+  }
+
+  public fun config_(hooks_builder: &HooksBuilder): &Bag {
+    &hooks_builder.config
+  }
+
   // === Witness Functions ===
 
   public fun add_hooks<Curve>(pool: &mut InterestPool<Curve>, hooks_builder: HooksBuilder) {
