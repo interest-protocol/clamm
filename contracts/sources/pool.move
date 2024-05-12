@@ -47,6 +47,7 @@ module clamm::interest_pool {
   }
 
   public struct HooksBuilder {
+    pool_address: address,
     rules: VecMap<String, VecSet<TypeName>>,
     config: Bag
   }
@@ -201,12 +202,18 @@ module clamm::interest_pool {
     request.approvals
   }
 
+  public fun pool_address_(hooks_builder: &HooksBuilder): address {
+    hooks_builder.pool_address
+  }
+
   // === Witness Functions ===
 
   public fun add_hooks<Curve>(pool: &mut InterestPool<Curve>, hooks_builder: HooksBuilder) {
     curves::assert_curve<Curve>();
 
-    let HooksBuilder { rules, config  } = hooks_builder;
+    let HooksBuilder { rules, config, pool_address  } = hooks_builder;
+
+    assert!(pool.addy() == pool_address, errors::wrong_hooks_builder_pool());
 
     pool.hooks.fill(Hooks { rules, config });
   }
@@ -290,7 +297,9 @@ module clamm::interest_pool {
       hooks: option::none()
     };
 
-    (self, pool_admin, new_hooks_builder(ctx))
+    let hooks_builder = new_hooks_builder(self.addy(), ctx);
+
+    (self, pool_admin, hooks_builder)
   }  
 
   public(package) fun finish_swap<Curve>(self: &InterestPool<Curve>, request: Request): Request {
@@ -337,7 +346,7 @@ module clamm::interest_pool {
 
   // === Private Functions ===  
 
-  fun new_hooks_builder(ctx: &mut TxContext): HooksBuilder {
+  fun new_hooks_builder(pool_address: address, ctx: &mut TxContext): HooksBuilder {
     let mut rules = vec_map::empty();
 
     rules.insert(START_SWAP.utf8(), vec_set::empty());
@@ -353,6 +362,7 @@ module clamm::interest_pool {
     rules.insert(FINISH_DONATE.utf8(), vec_set::empty());
 
     HooksBuilder {
+      pool_address,
       rules,
       config: bag::new(ctx)
     }

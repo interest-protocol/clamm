@@ -67,6 +67,7 @@ module clamm::errors {
   const MUST_BE_START_REMOVE_LIQUIDITY_REQUEST: u64 = 63;
   const MUST_BE_START_DONATE_REQUEST: u64 = 64;
   const MUST_BE_FINISH_REQUEST: u64 = 65;
+  const WRONG_HOOKS_BUILDER_POOL: u64 = 66;
 
   // === Public-View Functions ===
 
@@ -333,4 +334,8 @@ module clamm::errors {
   public fun must_be_finish_request(): u64 {
     MUST_BE_FINISH_REQUEST
   }  
+
+  public fun wrong_hooks_builder_pool(): u64 {
+    WRONG_HOOKS_BUILDER_POOL
+  }    
 }
