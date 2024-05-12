@@ -41,16 +41,15 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_swap_name());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let c = clock::create_for_testing(test.ctx());
 
@@ -81,16 +80,15 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let c = clock::create_for_testing(test.ctx());
 
@@ -122,16 +120,15 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let c = clock::create_for_testing(test.ctx());
 
@@ -164,18 +161,17 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_donate_name());
 
      let c = clock::create_for_testing(test.ctx());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      interest_clamm_volatile::donate<ETH, LP_COIN>(&mut pool, &c, mint<ETH>(344, ETH_DECIMALS, ctx(test)));
 
@@ -198,16 +194,15 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let (coin_a, coin_b) = interest_clamm_volatile::remove_liquidity_2_pool<USDC, ETH, LP_COIN>(
        &mut pool,
@@ -236,16 +231,15 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let (coin_a, coin_b, coin_c) = interest_clamm_volatile::remove_liquidity_3_pool<USDC, ETH, USDT, LP_COIN>(
        &mut pool,
@@ -275,16 +269,15 @@ module clamm::volatile_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Volatile>(
+      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
 
-     let (mut pool, pool_admin) = interest_pool::new_with_hooks<Volatile>(
-      utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let c = clock::create_for_testing(test.ctx());
      destroy(interest_clamm_volatile::remove_liquidity_one_coin<USDC, LP_COIN>(

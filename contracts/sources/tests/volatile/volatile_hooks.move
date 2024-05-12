@@ -46,17 +46,12 @@ module clamm::volatile_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_swap_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_swap_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+   let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(20 * ETH_DECIMALS_SCALAR, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
@@ -66,6 +61,11 @@ module clamm::volatile_hooks_tests {
       vector[MID_FEE, OUT_FEE, GAMMA_FEE],
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_swap_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_swap_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_swap();
 
@@ -104,17 +104,12 @@ module clamm::volatile_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(20 * ETH_DECIMALS_SCALAR, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
@@ -124,6 +119,11 @@ module clamm::volatile_hooks_tests {
       vector[MID_FEE, OUT_FEE, GAMMA_FEE],
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_add_liquidity();
 
@@ -165,17 +165,12 @@ module clamm::volatile_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
-
-    let (mut pool, pool_admin, lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(30_000 * FRAX_DECIMALS_SCALAR, test.ctx()),
       mint(20 * ETH_DECIMALS_SCALAR, test.ctx()),
@@ -186,6 +181,11 @@ module clamm::volatile_hooks_tests {
       vector[MID_FEE, OUT_FEE, GAMMA_FEE],
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_add_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_add_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_add_liquidity();
 
@@ -228,17 +228,12 @@ module clamm::volatile_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(20 * ETH_DECIMALS_SCALAR, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
@@ -248,6 +243,11 @@ module clamm::volatile_hooks_tests {
       vector[MID_FEE, OUT_FEE, GAMMA_FEE],
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 
@@ -288,17 +288,12 @@ module clamm::volatile_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, mut lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(30_000 * FRAX_DECIMALS_SCALAR, test.ctx()),
       mint(20 * ETH_DECIMALS_SCALAR, test.ctx()),
@@ -309,6 +304,11 @@ module clamm::volatile_hooks_tests {
       vector[MID_FEE, OUT_FEE, GAMMA_FEE],
       test.ctx()
     );
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 
@@ -350,17 +350,12 @@ module clamm::volatile_hooks_tests {
 
    test.next_tx(alice);
    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(test.ctx());
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
-    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
-
-    let (mut pool, pool_admin, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      hooks_builder,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
       mint(20 * ETH_DECIMALS_SCALAR, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
@@ -370,6 +365,11 @@ module clamm::volatile_hooks_tests {
       vector[MID_FEE, OUT_FEE, GAMMA_FEE],
       test.ctx()
     ); 
+
+    add_rule(&mut hooks_builder, interest_pool::start_remove_liquidity_name());
+    add_rule(&mut hooks_builder, interest_pool::finish_remove_liquidity_name()); 
+
+    pool.add_hooks(hooks_builder);
 
     let mut start_request = pool.start_remove_liquidity();
 

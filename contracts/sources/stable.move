@@ -382,17 +382,15 @@ module clamm::interest_clamm_stable {
   public fun new_2_pool_with_hooks<CoinA, CoinB, LpCoin>(
     clock: &Clock,
     coin_decimals: &CoinDecimals,  
-    hooks_builder: HooksBuilder,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,   
     lp_coin_supply: Supply<LpCoin>,
     initial_a: u256,
     ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>)  {
+  ): (InterestPool<Stable>, PoolAdmin, HooksBuilder, Coin<LpCoin>)  {
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>()];
 
-    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
-      hooks_builder,
+    let (pool, pool_admin, hooks_builder) = new_pool_with_hooks<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -409,24 +407,22 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    (pool, pool_admin, lp_coin)
+    (pool, pool_admin, hooks_builder, lp_coin)
   }
 
   public fun new_3_pool_with_hooks<CoinA, CoinB, CoinC, LpCoin>(
     clock: &Clock,
     coin_decimals: &CoinDecimals,    
-    hooks_builder: HooksBuilder,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>, 
     lp_coin_supply: Supply<LpCoin>,
     initial_a: u256,
     ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
+  ): (InterestPool<Stable>, PoolAdmin, HooksBuilder, Coin<LpCoin>) {
     let coins = vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()];
 
-    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
-      hooks_builder,
+    let (pool, pool_admin, hooks_builder) = new_pool_with_hooks<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -444,13 +440,12 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    (pool, pool_admin, lp_coin)        
+    (pool, pool_admin, hooks_builder, lp_coin)        
   }
 
   public fun new_4_pool_with_hooks<CoinA, CoinB, CoinC, CoinD, LpCoin>(
     clock: &Clock,
     coin_decimals: &CoinDecimals,  
-    hooks_builder: HooksBuilder,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
@@ -458,7 +453,7 @@ module clamm::interest_clamm_stable {
     lp_coin_supply: Supply<LpCoin>,
     initial_a: u256,
     ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
+  ): (InterestPool<Stable>, PoolAdmin, HooksBuilder, Coin<LpCoin>) {
     let coins = vector[
       type_name::get<CoinA>(), 
       type_name::get<CoinB>(), 
@@ -466,8 +461,7 @@ module clamm::interest_clamm_stable {
       type_name::get<CoinD>()
     ];
 
-    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
-      hooks_builder,
+    let (pool, pool_admin, hooks_builder) = new_pool_with_hooks<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -486,13 +480,12 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    (pool, pool_admin, lp_coin)      
+    (pool, pool_admin, hooks_builder, lp_coin)      
   }
 
   public fun new_5_pool_with_hooks<CoinA, CoinB, CoinC, CoinD, CoinE, LpCoin>(
     clock: &Clock,
     coin_decimals: &CoinDecimals,   
-    hooks_builder: HooksBuilder,
     coin_a: Coin<CoinA>,
     coin_b: Coin<CoinB>,
     coin_c: Coin<CoinC>,
@@ -501,7 +494,7 @@ module clamm::interest_clamm_stable {
     lp_coin_supply: Supply<LpCoin>,
     initial_a: u256,
     ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin, Coin<LpCoin>) {
+  ): (InterestPool<Stable>, PoolAdmin, HooksBuilder, Coin<LpCoin>) {
     let coins = vector[
       type_name::get<CoinA>(), 
       type_name::get<CoinB>(), 
@@ -510,8 +503,7 @@ module clamm::interest_clamm_stable {
       type_name::get<CoinE>()
     ];
 
-    let (pool, pool_admin) = new_pool_with_hooks<LpCoin>( 
-      hooks_builder,
+    let (pool, pool_admin, hooks_builder) = new_pool_with_hooks<LpCoin>( 
       coin_decimals,
       initial_a, 
       lp_coin_supply, 
@@ -531,7 +523,7 @@ module clamm::interest_clamm_stable {
       ctx
     );
 
-    (pool, pool_admin, lp_coin)   
+    (pool, pool_admin, hooks_builder, lp_coin)   
   }
 
   public fun swap_with_hooks<CoinIn, CoinOut, LpCoin>(
@@ -1085,13 +1077,12 @@ module clamm::interest_clamm_stable {
   }
 
   fun new_pool_with_hooks<LpCoin>(
-    hooks_builder: HooksBuilder,
     coin_decimals: &CoinDecimals,  
     initial_a: u256,
     lp_coin_supply: Supply<LpCoin>,
     coins: vector<TypeName>,
     ctx: &mut TxContext
-  ): (InterestPool<Stable>, PoolAdmin) {
+  ): (InterestPool<Stable>, PoolAdmin, HooksBuilder) {
     let state_v1 = new_state_v1(
       coin_decimals,
       initial_a,
@@ -1103,7 +1094,6 @@ module clamm::interest_clamm_stable {
     interest_pool::new_with_hooks<Stable>(
       make_coins_vec_set_from_vector(coins),
       versioned::create(STATE_V1_VERSION, state_v1, ctx), 
-      hooks_builder,
       ctx
     )
   }

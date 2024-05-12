@@ -87,7 +87,7 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let (pool, pool_admin) = interest_pool::new<Stable>(
+     let (mut pool, pool_admin) = interest_pool::new<Stable>(
       make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -111,7 +111,7 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let (pool, pool_admin) = interest_pool::new<Stable>(
+     let (mut pool, pool_admin) = interest_pool::new<Stable>(
       make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -125,16 +125,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+     versioned::create(0, 0, ctx(test)),
+     ctx(test)
+    );
 
     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+    pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_hooks(), true);
 
@@ -154,16 +153,16 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_add_liquidity_name().utf8(), StartAddLiquidityWitness {});
-
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     hooks_builder.add_rule(interest_pool::start_add_liquidity_name().utf8(), StartAddLiquidityWitness {});
+     
+     pool.add_hooks(hooks_builder);
+    
 
      assert_eq(pool.has_swap_hooks(), false);
 
@@ -173,16 +172,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
-
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+     
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_swap_hooks(), true);
 
@@ -192,16 +190,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::finish_swap_name().utf8(), FinishSwapWitness {});
+     hooks_builder.add_rule(interest_pool::finish_swap_name().utf8(), FinishSwapWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_swap_hooks(), true);
 
@@ -221,35 +218,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_add_liquidity_name().utf8(), StartAddLiquidityWitness {});
+     hooks_builder.add_rule(interest_pool::start_add_liquidity_name().utf8(), StartAddLiquidityWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
-
-     assert_eq(pool.has_add_liquidity_hooks(), true);
-
-     destroy(pool);
-     destroy(pool_admin);
-    };
-
-    next_tx(test, alice);
-    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
-
-    hooks_builder.add_rule(interest_pool::finish_add_liquidity_name().utf8(), FinishAddLiquidityWitness {});
-
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_add_liquidity_hooks(), true);
 
@@ -259,16 +236,33 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule(interest_pool::finish_add_liquidity_name().utf8(), FinishAddLiquidityWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
+
+     assert_eq(pool.has_add_liquidity_hooks(), true);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    next_tx(test, alice);
+    {
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
+     
+     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+    
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_add_liquidity_hooks(), false);
 
@@ -288,35 +282,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_donate_name().utf8(), StartDonateWitness {});
-
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
-
-     assert_eq(pool.has_donate_hooks(), true);
-
-     destroy(pool);
-     destroy(pool_admin);
-    };
-
-    next_tx(test, alice);
-    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
-
-    hooks_builder.add_rule(interest_pool::finish_donate_name().utf8(), FinishDonateWitness {});
-
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     hooks_builder.add_rule(interest_pool::start_donate_name().utf8(), StartDonateWitness {});
+     
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_donate_hooks(), true);
 
@@ -326,16 +300,33 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule(interest_pool::finish_donate_name().utf8(), FinishDonateWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
+
+     assert_eq(pool.has_donate_hooks(), true);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    next_tx(test, alice);
+    {
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
+
+     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_donate_hooks(), false);
 
@@ -355,35 +346,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_remove_liquidity_name().utf8(), StartRemoveLiquidityWitness {});
+     hooks_builder.add_rule(interest_pool::start_remove_liquidity_name().utf8(), StartRemoveLiquidityWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
-
-     assert_eq(pool.has_remove_liquidity_hooks(), true);
-
-     destroy(pool);
-     destroy(pool_admin);
-    };
-
-    next_tx(test, alice);
-    {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
-
-    hooks_builder.add_rule(interest_pool::finish_remove_liquidity_name().utf8(), FinishRemoveLiquidityWitness {});
-
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_remove_liquidity_hooks(), true);
 
@@ -393,16 +364,33 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule(interest_pool::finish_remove_liquidity_name().utf8(), FinishRemoveLiquidityWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
+
+     assert_eq(pool.has_remove_liquidity_hooks(), true);
+
+     destroy(pool);
+     destroy(pool_admin);
+    };
+
+    next_tx(test, alice);
+    {
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
+
+     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_remove_liquidity_hooks(), false);
 
@@ -422,7 +410,11 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
     hooks_builder.add_rule(interest_pool::finish_swap_name().utf8(), FinishSwapWitness {});
@@ -433,12 +425,7 @@ module clamm::interest_pool_tests {
     hooks_builder.add_rule(interest_pool::start_donate_name().utf8(), StartDonateWitness {});
     hooks_builder.add_rule(interest_pool::finish_donate_name().utf8(), FinishDonateWitness {});
 
-    let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+    pool.add_hooks(hooks_builder);
 
      let (start_swap, finish_swap) = pool.swap_hooks();
      assert_eq(start_swap, vector[type_name::get<StartSwapWitness>()]);
@@ -472,17 +459,16 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-    let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
-    hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
-    hooks_builder.add_rule_config<StartSwapWitness, u64>(StartSwapWitness {}, 0);
+     hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
+     hooks_builder.add_rule_config<StartSwapWitness, u64>(StartSwapWitness {}, 0);
 
-    let (mut pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-     make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-     versioned::create(0, 0, ctx(test)),
-     hooks_builder,
-     ctx(test)
-    );
+     pool.add_hooks(hooks_builder);
 
      assert_eq(pool.has_rule_config<Stable, StartSwapWitness>(), true);
      assert_eq(pool.has_rule_config<Stable, StartAddLiquidityWitness>(), false);
@@ -511,18 +497,16 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
      hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), Action {});
 
-     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
-
+     pool.add_hooks(hooks_builder);
      let mut request = pool.new_request(interest_pool::start_swap_name().utf8());
 
      request.approve(StartSwapWitness {});
@@ -547,17 +531,16 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
      hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), Action {});
 
-     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let mut request = pool.new_request(interest_pool::start_swap_name().utf8());
 
@@ -582,16 +565,15 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      hooks_builder.add_rule(interest_pool::finish_swap_name().utf8(), Action {});
 
-     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
+     pool.add_hooks(hooks_builder);
 
      let mut request = pool.new_request(interest_pool::start_swap_name().utf8());
 
@@ -616,29 +598,27 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let mut hooks_builder = interest_pool::new_hooks_builder(ctx(test));
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
      hooks_builder.add_rule(interest_pool::start_swap_name().utf8(), Action {});
 
-     let mut hooks_builder2 = interest_pool::new_hooks_builder(ctx(test));
+     pool.add_hooks(hooks_builder);
+
+    let (mut pool2, pool_admin2, mut hooks_builder2) = interest_pool::new_with_hooks<Stable>(
+      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
+      versioned::create(0, 0, ctx(test)),
+      ctx(test)
+     );
 
      hooks_builder2.add_rule(interest_pool::start_swap_name().utf8(), StartSwapWitness {});
      hooks_builder2.add_rule(interest_pool::start_swap_name().utf8(), Action {});
 
-     let (pool, pool_admin) = interest_pool::new_with_hooks<Stable>(
-      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder,
-      ctx(test)
-     );
-
-    let (pool2, pool_admin2) = interest_pool::new_with_hooks<Stable>(
-      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      hooks_builder2,
-      ctx(test)
-     );
+     pool2.add_hooks(hooks_builder2);
 
      let mut request = pool.new_request(interest_pool::start_swap_name().utf8());
 
