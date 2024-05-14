@@ -556,39 +556,6 @@ module clamm::interest_pool_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::INVALID_HOOK_NAME, location = clamm::interest_pool)]
-  fun test_request_invalid_hook_name() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-
-    next_tx(test, alice);
-    {
-    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
-      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-      versioned::create(0, 0, ctx(test)),
-      ctx(test)
-     );
-
-     hooks_builder.add_rule(interest_pool::finish_swap_name().utf8(), Action {});
-
-     pool.add_hooks(hooks_builder);
-
-     let mut request = pool.new_request(interest_pool::start_swap_name().utf8());
-
-     request.approve(Action {});
-
-     pool.confirm_for_testing(request);
-
-     destroy(pool);
-     destroy(pool_admin);
-    };
-
-    test::end(scenario);      
-  }
-
-  #[test]
   #[expected_failure(abort_code = clamm::errors::WRONG_REQUEST_POOL_ADDRESS, location = clamm::interest_pool)]
   fun test_request_wrong_pool() {
     let mut scenario = scenario();

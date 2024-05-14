@@ -186,7 +186,7 @@ module clamm::stable_ramp_tests {
 
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::FUTURE_TAMP_TIME_IS_TOO_SHORT, location = clamm::interest_clamm_stable)]
+  #[expected_failure(abort_code = clamm::errors::FUTURE_RAMP_TIME_IS_TOO_SHORT, location = clamm::interest_clamm_stable)]
   fun ramp_future_time_too_short() {
     let mut scenario = scenario();
     let (alice, _) = people();

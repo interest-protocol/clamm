@@ -52,7 +52,7 @@ module clamm::errors {
   const WRONG_POOL_ID: u64 = 48;
   const INVALID_VERSION: u64 = 49;
   const INVALID_POOL_ADMIN: u64 = 50;
-  const INVALID_HOOK_NAME: u64 = 51;
+  const WRONG_HOOKS_BUILDER_POOL: u64 = 51;
   const RULE_NOT_ADDED: u64 = 52;
   const WRONG_REQUEST_POOL_ADDRESS: u64 = 53;
   const RULE_NOT_APPROVED: u64 = 54;
@@ -67,7 +67,6 @@ module clamm::errors {
   const MUST_BE_START_REMOVE_LIQUIDITY_REQUEST: u64 = 63;
   const MUST_BE_START_DONATE_REQUEST: u64 = 64;
   const MUST_BE_FINISH_REQUEST: u64 = 65;
-  const WRONG_HOOKS_BUILDER_POOL: u64 = 66;
 
   // === Public-View Functions ===
 
@@ -274,10 +273,6 @@ module clamm::errors {
   public fun invalid_pool_admin(): u64 {
     INVALID_POOL_ADMIN
   } 
-
-  public fun invalid_hook_name(): u64 {
-    INVALID_HOOK_NAME
-  }    
 
   public fun rule_not_added(): u64 {
     RULE_NOT_ADDED
