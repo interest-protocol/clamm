@@ -31,7 +31,7 @@ module clamm::errors {
   const VALUE_OUT_OF_RANGE: u64 = 27;
   const MUST_SUPPLY_ONE_COIN: u64 = 28;
   const CANNOT_SWAP_SAME_COIN: u64 = 29;
-  const FUTURE_TAMP_TIME_IS_TOO_SHORT: u64 = 30;
+  const FUTURE_RAMP_TIME_IS_TOO_SHORT: u64 = 30;
   const FUTURE_A_IS_TOO_SMALL: u64 = 31;
   const FUTURE_A_IS_TOO_BIG: u64 = 32;
   const FUTURE_GAMMA_IS_TOO_SMALL: u64 = 33;
@@ -192,7 +192,7 @@ module clamm::errors {
   }
 
   public fun future_ramp_time_is_too_short(): u64 {
-    FUTURE_TAMP_TIME_IS_TOO_SHORT
+    FUTURE_RAMP_TIME_IS_TOO_SHORT
   }
 
   public fun future_a_is_too_small(): u64 {
