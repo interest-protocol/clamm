@@ -1,8 +1,8 @@
-# [Interest Protocol CLAMM](https://www.interestprotocol.com/)
+# [Interest Protocol CLAMM🐚](https://www.interestprotocol.com/)
 
  <p> <img width="50px"height="50px" src="./asset/logo.png" /></p> 
  
- CLAMM🐚 DEX on [Sui](https://sui.io/) Network.  
+ CLAMM DEX on [Sui](https://sui.io/) Network.  
   
 ## Quick start  
   
