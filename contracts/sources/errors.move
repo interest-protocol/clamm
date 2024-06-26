@@ -67,6 +67,7 @@ module clamm::errors {
   const MUST_BE_START_REMOVE_LIQUIDITY_REQUEST: u64 = 63;
   const MUST_BE_START_DONATE_REQUEST: u64 = 64;
   const MUST_BE_FINISH_REQUEST: u64 = 65;
+  const MUST_WAIT_TO_UPDATE_FEES: u64 = 66;
 
   // === Public-View Functions ===
 
@@ -332,5 +333,11 @@ module clamm::errors {
 
   public fun wrong_hooks_builder_pool(): u64 {
     WRONG_HOOKS_BUILDER_POOL
+  }  
+
+  public fun must_wait_update_fees(): u64 {
+    MUST_WAIT_TO_UPDATE_FEES
   }    
 }
+
+

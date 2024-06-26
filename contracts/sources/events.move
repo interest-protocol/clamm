@@ -35,11 +35,16 @@ module clamm::pool_events {
     shares: u64
   }
 
+  public struct CommitFee has copy, drop {
+    pool: address,
+    future_fee: Option<u256>,
+    future_admin_fee: Option<u256>,     
+  }
+
   public struct UpdateFee has copy, drop {
     pool: address,
-    fee_in_percent: u256,
-    fee_out_percent: u256, 
-    admin_fee_percent: u256,     
+    fee: u256,
+    admin_fee: u256,     
   }
 
   public struct TakeFee has copy, drop {
@@ -141,13 +146,20 @@ module clamm::pool_events {
     emit(RemoveLiquidity { pool, coins, amounts, shares });
   }
 
+  public(package) fun commit_stable_fee(
+    pool: address,
+    future_fee: Option<u256>,
+    future_admin_fee: Option<u256>
+  ) {
+    emit(CommitFee { pool, future_fee, future_admin_fee });
+  }
+
   public(package) fun update_stable_fee(
     pool: address, 
-    fee_in_percent: u256,
-    fee_out_percent: u256, 
-    admin_fee_percent: u256,     
+    fee: u256,
+    admin_fee: u256,     
   ) {
-    emit(UpdateFee { pool, fee_in_percent, fee_out_percent, admin_fee_percent });
+    emit(UpdateFee { pool, fee, admin_fee });
   }
 
   public(package) fun take_fees(pool: address, coin: TypeName, amount: u64) {
