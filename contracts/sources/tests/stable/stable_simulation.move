@@ -1,7 +1,7 @@
 #[test_only]
 module clamm::stable_simulation {
-  
-  use suitears::fixed_point_wad::mul_down as fmul;
+
+  use suitears::math256::mul_div_up;
 
   use sui::transfer::share_object;
 
@@ -11,13 +11,16 @@ module clamm::stable_simulation {
     invariant_
   };
 
-  const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
+  const PRECISION: u256 = 1_000_000_000_000_000_000;
+  const INITIAL_FEE_PERCENT: u256 = 500000000000000; // 0.05%
+  const MAX_ADMIN_FEE: u256 = 200000000000000000; // 20%  
 
   public struct State has key {
     id: UID,
     a: u256,
     n: u64,
     fee: u256,
+    admin_fee: u256,
     xp: vector<u256>,
     lp_supply: u256
   }
@@ -30,6 +33,7 @@ module clamm::stable_simulation {
         a: 0,
         n: 0,
         fee: INITIAL_FEE_PERCENT,
+        admin_fee: MAX_ADMIN_FEE,
         xp: vector[],
         lp_supply: 0
       }
@@ -65,21 +69,30 @@ module clamm::stable_simulation {
     *vector::borrow(&state.xp, j) - y(state, i, j, *vector::borrow(&state.xp, i) + dx)
   }
 
-  public fun swap(state: &mut State, i: u64, j: u64, dx: u256): u256 {
-    let dx = dx - fmul(dx, state.fee);
+  public fun set_admin_fee(state: &mut State, fee: u256) {
+    state.admin_fee = fee;
+  }
+
+  public fun xp(state: &State): vector<u256> {
+    state.xp
+  }
+
+  public fun swap(state: &mut State, i: u64, j: u64, dx: u256): (u256, u256) {
+    let dx = dx;
     let x = *vector::borrow(&state.xp, i) + dx;
     let y = y(state, i, j, x);
     let dy = *vector::borrow(&state.xp, j) - y;
-    let fee = fmul(dy, state.fee);
+    let fee = mul_div_up(dy, state.fee, PRECISION);
+    let admin_fee = mul_div_up(fee, state.admin_fee, PRECISION);
     assert!(dy != 0, 0);
 
     let x_i_ref = vector::borrow_mut(&mut state.xp, i);
     *x_i_ref = x;
 
     let x_j_ref = vector::borrow_mut(&mut state.xp, j);
-    *x_j_ref = y + fee;
+    *x_j_ref = y + fee - admin_fee;
 
-    dy - fee
+    (dy, fee)
   }   
 
   public fun calc_withdraw_one_coin(state: &State, token_amount: u256, i: u64): u256 {

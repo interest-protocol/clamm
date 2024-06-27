@@ -6,25 +6,30 @@ module clamm::interest_clamm_volatile {
 
   use std::type_name::{Self, TypeName};
 
-  use sui::clock::Clock;
-  use sui::bag::{Self, Bag};
-  use sui::coin::{Self, Coin};
-  use sui::vec_map::{Self, VecMap};
-  use sui::versioned::{Self, Versioned};
-  use sui::balance::{Self, Supply, Balance};
-  
-  use suitears::math256::{Self, min, sum, diff, mul_div_up};
-  use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
-  use suitears::fixed_point_wad::{mul_down, div_down, div_up, mul_up};
+  use sui::{
+    clock::Clock,
+    bag::{Self, Bag},
+    coin::{Self, Coin},
+    vec_map::{Self, VecMap},
+    versioned::{Self, Versioned},
+    balance::{Self, Supply, Balance}
+  };
 
-  use clamm::utils;
-  use clamm::errors;
-  use clamm::volatile_math;
-  use clamm::curves::Volatile;
-  use clamm::pool_events as events;
-  use clamm::pool_admin::PoolAdmin;
-  use clamm::utils::{empty_vector, make_coins_vec_set_from_vector};
-  use clamm::interest_pool::{Self, HooksBuilder, InterestPool, Request};
+  use suitears::{
+    coin_decimals::CoinDecimals,
+    math256::{Self, min, sum, diff, mul_div_up},
+    fixed_point_wad::{mul_down, div_down, div_up, mul_up}
+  };
+
+  use clamm::{
+    errors,
+    volatile_math,
+    curves::Volatile,
+    pool_events as events,
+    pool_admin::PoolAdmin,
+    utils::{Self, empty_vector, make_coins_vec_set_from_vector},
+    interest_pool::{Self, HooksBuilder, InterestPool, Request}
+  };
 
   use fun coin::take as Balance.take;
   use fun utils::head as vector.head;
@@ -956,7 +961,7 @@ module clamm::interest_clamm_volatile {
     assert!(rebalancing_params.length() == 3, errors::must_have_3_values());
     assert!(fee_params.length() == 3, errors::must_have_3_values());
 
-    let lp_coin_decimals = decimals<LpCoin>(coin_decimals);
+    let lp_coin_decimals = coin_decimals.decimals<LpCoin>();
 
     assert!(lp_coin_decimals == 9, errors::must_have_9_decimals());
 
@@ -1797,7 +1802,7 @@ module clamm::interest_clamm_volatile {
       price,
       price_oracle: price,
       last_price: price,
-      decimals_scalar: scalar<CoinType>(coin_decimals).to_u256(),
+      decimals_scalar: coin_decimals.scalar<CoinType>().to_u256(),
       type_name: coin_name
     });
     state.coin_balances.add(coin_name, balance::zero<CoinType>());    
@@ -2184,6 +2189,7 @@ module clamm::interest_clamm_volatile {
     versioned.load_value_mut()
   }
 
+  #[allow(unused_mut_parameter)]
   fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     // * IMPORTANT: When new versions are added, we need to explicitly upgrade here.
     assert!(versioned.version() == STATE_V1_VERSION, errors::invalid_version());

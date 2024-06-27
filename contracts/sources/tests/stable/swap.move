@@ -3,16 +3,16 @@
 module clamm::stable_swap_tests {
 
   use sui::clock::Clock;
-  use sui::test_utils::assert_eq;
   use sui::coin::burn_for_testing as burn;
+  use sui::test_utils::{assert_eq, destroy};
   use sui::test_scenario::{Self as test, next_tx, ctx};
 
   use suitears::comparator::{Self, eq};
-
+  use suitears::math256::mul_div_up;
+  
   use clamm::dai::DAI;
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
-  use clamm::stable_fees;
   use clamm::stable_math;
   use clamm::curves::Stable;
   use clamm::lp_coin::LP_COIN;
@@ -24,14 +24,14 @@ module clamm::stable_swap_tests {
   use clamm::amm_test_utils::{people, scenario, normalize_amount, mint};
 
   const DAI_DECIMALS: u8 = 9;
-  const DAI_DECIMALS_SCALAR: u256 = 1000000000; 
+  const DAI_DECIMALS_SCALAR: u256 = 1_000_000_000; 
   const USDC_DECIMALS_SCALAR: u256 = 1000000; 
   const USDT_DECIMALS_SCALAR: u256 = 1000000000; 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
   const MAX_ADMIN_FEE: u256 = 200000000000000000; // 20%
 
   #[test]
-  fun swap_no_admin_fee() {
+  fun swap_admin_fee() {
    let mut scenario = scenario();
     let (alice, _) = people();
 
@@ -55,34 +55,35 @@ module clamm::stable_swap_tests {
 
       let balances_2 = interest_clamm_stable::balances<LP_COIN>(&mut pool);
 
-      let expected_amount = sim::swap(&mut sim_state, 0, 1, normalize_amount(344));
+      let (expected_amount, fee) = sim::swap(&mut sim_state, 0, 1, normalize_amount(344));
+
+      let admin_fee = mul_div_up(fee, MAX_ADMIN_FEE, PRECISION);
 
       let coin_usdc_amount = burn(coin_usdc);
 
-      assert_eq(coin_usdc_amount, ((expected_amount * USDC_DECIMALS_SCALAR / PRECISION) as u64));
+      assert_eq(
+        coin_usdc_amount, 
+        ((expected_amount * USDC_DECIMALS_SCALAR / PRECISION) as u64) - ((fee * USDC_DECIMALS_SCALAR / PRECISION) as u64)
+      );
 
-      let expected_balances = vector[
-        normalize_amount(1344),
-        ((1000 * (USDC_DECIMALS_SCALAR as u64) - coin_usdc_amount) as u256) * PRECISION / USDC_DECIMALS_SCALAR,
-        normalize_amount(1000)
-      ];
-
-      assert_eq(eq(&comparator::compare(&balances_2, &expected_balances)), true);
+      assert_eq(eq(&comparator::compare(&balances_2, &sim_state.xp())), true);
 
       let dai_balance = interest_clamm_stable::coin_balance<DAI, LP_COIN>(&mut pool);
       let usdc_balance = interest_clamm_stable::coin_balance<USDC, LP_COIN>(&mut pool);
       let usdt_balance = interest_clamm_stable::coin_balance<USDT, LP_COIN>(&mut pool);
 
+      let admin_fee = ((admin_fee  * USDC_DECIMALS_SCALAR / PRECISION) as u64); 
+
       let coin_balances = vector[dai_balance, usdc_balance, usdt_balance];
       let expected_balances = vector[
         1344 * (DAI_DECIMALS_SCALAR as u64),
-        1000 * (USDC_DECIMALS_SCALAR as u64) - coin_usdc_amount,
+        (1000 * (USDC_DECIMALS_SCALAR) as u64) - admin_fee - coin_usdc_amount,
         1000 * (USDT_DECIMALS_SCALAR as u64)
       ];
 
       assert_eq(eq(&comparator::compare(&expected_balances, &coin_balances)), true);
       assert_eq(interest_clamm_stable::admin_balance<DAI, LP_COIN>(&mut pool), 0);
-      assert_eq(interest_clamm_stable::admin_balance<USDC, LP_COIN>(&mut pool), 0);
+      assert_eq(interest_clamm_stable::admin_balance<USDC, LP_COIN>(&mut pool), admin_fee);
 
       test::return_shared(sim_state);
       test::return_shared(c);
@@ -92,7 +93,7 @@ module clamm::stable_swap_tests {
   }
 
   #[test]
-  fun swap_admin_fee() {
+  fun swap_no_admin_fee() {
    let mut scenario = scenario();
     let (alice, _) = people();
 
@@ -107,12 +108,17 @@ module clamm::stable_swap_tests {
       let sim_state = test::take_shared<SimState>(test); 
       let admin_cap = test::take_from_sender<PoolAdmin>(test);
 
+      interest_clamm_stable::commit_fee<LP_COIN>(&mut pool, &admin_cap, option::some(0), option::some(0), test.ctx());
+
+      test.next_epoch(@0x0);
+      test.next_epoch(@0x0);
+      test.next_epoch(@0x0);
+      test.next_epoch(@0x0);
+
       interest_clamm_stable::update_fee<LP_COIN>(
         &mut pool,
         &admin_cap,
-        option::none(),
-        option::none(),
-        option::some(MAX_ADMIN_FEE)
+        test.ctx()
       );
 
       let coin_usdc = interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
@@ -125,32 +131,10 @@ module clamm::stable_swap_tests {
 
       burn(coin_usdc);
 
-      let fees = interest_clamm_stable::fees<LP_COIN>(&mut pool);
+      assert_eq(interest_clamm_stable::admin_balance<DAI, LP_COIN>(&mut pool), 0);
+      assert_eq(interest_clamm_stable::admin_balance<USDC, LP_COIN>(&mut pool), 0);
 
-      let amp = interest_clamm_stable::a<LP_COIN>(&mut pool, &c);
-
-      let fee_in = stable_fees::calculate_fee_in_amount(&fees, ((344 * DAI_DECIMALS_SCALAR) as u64));
-      let admin_fee_in = stable_fees::calculate_admin_amount(&fees, fee_in);
-
-      let y = stable_math::y(
-        amp, 
-        0, 
-        1,
-        normalize_amount(1000) + ((344 * DAI_DECIMALS_SCALAR - ((fee_in + admin_fee_in) as u256)) * PRECISION / DAI_DECIMALS_SCALAR),
-        vector[normalize_amount(1000), normalize_amount(1000), normalize_amount(1000)]
-      );
-
-      let dy = normalize_amount(1000) - y;
-
-      let dy = ((dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
-
-      let fee_out = stable_fees::calculate_fee_out_amount(&fees, dy);
-      let admin_fee_out = stable_fees::calculate_admin_amount(&fees, fee_out);
-
-      assert_eq(interest_clamm_stable::admin_balance<DAI, LP_COIN>(&mut pool), (admin_fee_in as u64));
-      assert_eq(interest_clamm_stable::admin_balance<USDC, LP_COIN>(&mut pool), admin_fee_out);
-
-      test::return_to_sender(test, admin_cap);
+      destroy(admin_cap);
       test::return_shared(sim_state);
       test::return_shared(c);
       test::return_shared(pool);
@@ -179,14 +163,14 @@ module clamm::stable_swap_tests {
 
       let amp = interest_clamm_stable::a<LP_COIN>(&mut pool, &c);
 
-      let fee_in = stable_fees::calculate_fee_in_amount(&fees, ((344 * DAI_DECIMALS_SCALAR) as u64));
-      let admin_fee_in = stable_fees::calculate_admin_amount(&fees, fee_in);
+      let fee_in = fees.calculate_fee(344 * PRECISION);
+      let admin_fee_in = fees.calculate_admin_fee(fee_in);
 
       let y = stable_math::y(
         amp, 
         0, 
         1,
-        normalize_amount(1000) + ((344 * DAI_DECIMALS_SCALAR - ((fee_in + admin_fee_in) as u256)) * PRECISION / DAI_DECIMALS_SCALAR),
+        normalize_amount(1000) + ((344 * DAI_DECIMALS_SCALAR) * PRECISION / DAI_DECIMALS_SCALAR - (fee_in + admin_fee_in)),
         vector[normalize_amount(1000), normalize_amount(1000), normalize_amount(1000)]
       );
 

@@ -1,19 +1,26 @@
+#[allow(implicit_const_copy)]
 module clamm::interest_pool {
   // === Imports ===
 
-  use std::string::{Self, String};
-  use std::type_name::{Self, TypeName};
+  use std::{
+    string::{Self, String},
+    type_name::{Self, TypeName}
+  };
 
-  use sui::bag::{Self, Bag};
-  use sui::versioned::Versioned;
-  use sui::vec_map::{Self, VecMap};
-  use sui::vec_set::{Self, VecSet};
+  use sui::{
+    bag::{Self, Bag},
+    versioned::Versioned,
+    vec_map::{Self, VecMap},
+    vec_set::{Self, VecSet}
+  };
 
   use suitears::comparator::{compare, eq};
 
-  use clamm::curves;
-  use clamm::errors;
-  use clamm::pool_admin::{Self, PoolAdmin};
+  use clamm::{
+    curves,
+    errors,
+    pool_admin::{Self, PoolAdmin}
+  };
 
   use fun string::utf8 as vector.utf8;
 
@@ -60,6 +67,7 @@ module clamm::interest_pool {
 
   // === Public Mutative Functions ===
 
+  #[allow(lint(share_owned))]
   public fun share<Curve>(self: InterestPool<Curve>) {
     transfer::share_object(self);
   }

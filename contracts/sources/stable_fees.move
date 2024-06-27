@@ -59,7 +59,7 @@ module clamm::stable_fees {
     assert!(MAX_ADMIN_FEE >= *fee.borrow(), errors::invalid_fee());
     
     self.update_deadline(ctx);
-    self.future_fee = fee;
+    self.future_admin_fee = fee;
   }
 
   public fun update_admin_fee(self: &mut StableFees, ctx: &mut TxContext) {
@@ -92,25 +92,25 @@ module clamm::stable_fees {
     self.deadline
   }
 
-  public fun calculate_fee(self: &StableFees, amount: u64): u64 {
+  public fun calculate_fee(self: &StableFees, amount: u256): u256 {
     calculate_fee_amount(amount, self.fee)
   }
 
-  public fun calculate_admin_fee(fees: &StableFees, amount: u64): u64 {
+  public fun calculate_admin_fee(fees: &StableFees, amount: u256): u256 {
     calculate_fee_amount(amount, fees.admin_fee)
   }
 
   // === Private Functions ===
 
-  fun assert_epoch(self: &StableFees, ctx: &mut TxContext) {
-    assert!(self.deadline > ctx.epoch(), errors::must_wait_update_fees());
+  fun assert_epoch(self: &StableFees, ctx: &TxContext) {
+    assert!(ctx.epoch() > self.deadline, errors::must_wait_update_fees());
   }
 
-  fun update_deadline(self: &mut StableFees, ctx: &mut TxContext) {
+  fun update_deadline(self: &mut StableFees, ctx: &TxContext) {
     self.deadline = ctx.epoch() + UPDATE_DELAY;
   }
 
-  fun calculate_fee_amount(x: u64, percent: u256): u64 {
-    (mul_div_up((x as u256), percent, PRECISION) as u64)
+  fun calculate_fee_amount(x: u256, percent: u256): u256 {
+    mul_div_up(x, percent, PRECISION)
   }
 }

@@ -3,25 +3,30 @@ module clamm::interest_clamm_stable {
 
   use std::type_name::{Self, TypeName};
 
-  use sui::clock::Clock;
-  use sui::bag::{Self, Bag};
-  use sui::coin::{Self, Coin};
-  use sui::vec_map::{Self, VecMap};
-  use sui::versioned::{Self, Versioned};
-  use sui::balance::{Self, Supply, Balance};
+  use sui::{
+    clock::Clock,
+    bag::{Self, Bag},
+    coin::{Self, Coin},
+    vec_map::{Self, VecMap},
+    versioned::{Self, Versioned},
+    balance::{Self, Supply, Balance}
+  };
 
-  use suitears::math256::min;
-  use suitears::coin_decimals::{scalar, decimals, CoinDecimals};
+  use suitears::{
+    math256::min,
+    coin_decimals::CoinDecimals
+  };
 
-  use clamm::utils;
-  use clamm::errors;
-  use clamm::curves::Stable;
-  use clamm::pool_admin::PoolAdmin;
-  use clamm::pool_events as events;
-  use clamm::stable_fees::{Self, StableFees};
-  use clamm::stable_math::{y, y_lp, a as get_a, invariant_};
-  use clamm::utils::{empty_vector, make_coins_vec_set_from_vector};
-  use clamm::interest_pool::{Self, InterestPool, HooksBuilder, Request};
+  use clamm::{
+    errors,
+    curves::Stable,
+    pool_admin::PoolAdmin,
+    pool_events as events,
+    stable_fees::{Self, StableFees},
+    stable_math::{y, y_lp, y_d, a as get_a, invariant_},
+    interest_pool::{Self, InterestPool, HooksBuilder, Request},
+    utils::{Self, empty_vector, make_coins_vec_set_from_vector},
+  };
 
   use fun coin::take as Balance.take;
   use fun utils::to_u64 as u256.to_u64;
@@ -867,11 +872,10 @@ module clamm::interest_clamm_stable {
     );
 
     let amount_out = state.balances[coin_out_index] - new_out_balance;
-    let amount_out = (amount_out * coin_out_decimals / PRECISION).to_u64();
-
     let fee = state.fees.calculate_fee(amount_out);
+    let amount_out = ((amount_out - fee) * coin_out_decimals / PRECISION).to_u64();
 
-    (amount_out - fee, fee)
+    (amount_out, (fee * coin_out_decimals / PRECISION).to_u64())
   }
 
   public fun quote_add_liquidity<LpCoin>(pool: &mut InterestPool<Stable>, clock: &Clock, amounts: vector<u64>): u64 {
@@ -929,7 +933,7 @@ module clamm::interest_clamm_stable {
   ): (u64, u64) {
     let state = load<LpCoin>(pool.state_mut());
 
-    let (amount_to_take, fee, _, _, _) = state.calculate_withdraw_one_coin<CoinType, LpCoin>(clock, lp_amount);
+    let (amount_to_take, fee, _, _) = state.calculate_withdraw_one_coin<CoinType, LpCoin>(clock, lp_amount);
 
     (amount_to_take, fee)
   }
@@ -1005,14 +1009,14 @@ module clamm::interest_clamm_stable {
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
 
-    events::update_stable_fee(
-      pool_address, 
-      *state.fees.future_fee().borrow(), 
-      *state.fees.future_admin_fee().borrow()
-    );
-
     state.fees.update_fee(ctx);
     state.fees.update_admin_fee(ctx);
+
+    events::update_stable_fee(
+      pool_address, 
+      state.fees.fee(), 
+      state.fees.admin_fee()
+    );
   }
 
   public fun take_fees<CoinType, LpCoin>(
@@ -1041,7 +1045,7 @@ module clamm::interest_clamm_stable {
     ctx: &mut TxContext    
   ): StateV1<LpCoin> {
     assert!(lp_coin_supply.supply_value() == 0, errors::supply_must_have_zero_value());
-    assert!(decimals<LpCoin>(coin_decimals) == 9, errors::must_have_9_decimals());
+    assert!(coin_decimals.decimals<LpCoin>() == 9, errors::must_have_9_decimals());
     assert!(initial_a != 0 && initial_a < MAX_A, errors::invalid_amplifier());
 
     StateV1 {
@@ -1052,7 +1056,7 @@ module clamm::interest_clamm_stable {
         initial_a_time: 0,
         future_a_time: 0,
         lp_coin_supply,
-        lp_coin_decimals_scalar: scalar<LpCoin>(coin_decimals).to_u256(),
+        lp_coin_decimals_scalar: coin_decimals.scalar<LpCoin>().to_u256(),
         n_coins,
         fees: stable_fees::new(),
         coin_balances: bag::new(ctx),
@@ -1234,7 +1238,7 @@ module clamm::interest_clamm_stable {
  fun swap_impl<CoinIn, CoinOut, LpCoin>(
     pool: &mut InterestPool<Stable>,
     clock: &Clock,
-    mut coin_in: Coin<CoinIn>,
+    coin_in: Coin<CoinIn>,
     min_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
@@ -1265,12 +1269,11 @@ module clamm::interest_clamm_stable {
     );
 
     let normalized_amount_out = state.balances[coin_out_index] - new_out_balance;
-    let amount_out = (normalized_amount_out * coin_out_decimals / PRECISION).to_u64();
-    
-    let fee = state.fees.calculate_fee(amount_out);
-    let admin_fee = state.fees.calculate_admin_fee(fee);
 
-    let amount_out = amount_out - fee - admin_fee;
+    let fee = state.fees.calculate_fee(normalized_amount_out);
+    let admin_fee = state.fees.calculate_admin_fee(fee);    
+    
+    let amount_out = ((normalized_amount_out - fee) * coin_out_decimals / PRECISION).to_u64();
 
     assert!(amount_out >= min_amount, errors::slippage());
 
@@ -1279,7 +1282,7 @@ module clamm::interest_clamm_stable {
 
     let coin_out_balance = &mut state.balances[coin_out_index];
     // We need to remove the admin fee from balance
-    *coin_out_balance = *coin_out_balance - (amount_out + admin_fee).to_u256() * PRECISION / coin_out_decimals; 
+    *coin_out_balance = *coin_out_balance - ((normalized_amount_out - fee) + admin_fee); 
 
     // * Invariant must hold after all balances updates
     assert!(invariant_(amp, state.balances) >= prev_k, errors::invalid_invariant());
@@ -1296,7 +1299,7 @@ module clamm::interest_clamm_stable {
 
     let coin_out_balance = coin_state_balance_mut<CoinOut, LpCoin>(state);
 
-    let admin_balance_in = coin_out_balance.split(admin_fee);
+    let admin_balance_in = coin_out_balance.split((admin_fee * coin_out_decimals / PRECISION).to_u64());
 
     let coin_out = coin_out_balance.take(amount_out, ctx);
 
@@ -1692,10 +1695,11 @@ module clamm::interest_clamm_stable {
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
 
+    let prev_invariant = virtual_price_impl(state, clock);
+
     let (
       amount_to_take, 
       _, 
-      prev_invariant, 
       balance_out, 
       index
     ) = state.calculate_withdraw_one_coin<CoinType, LpCoin>(clock, lp_coin.value());
@@ -1764,7 +1768,7 @@ module clamm::interest_clamm_stable {
     state.admin_balances.add(coin_name, balance::zero<CoinType>());
     state.coin_balances.add(coin_name, balance::zero<CoinType>());
     state.coin_metadatas.insert(coin_name, CoinMetadata {
-      decimals: scalar<CoinType>(coin_decimals).to_u256(),
+      decimals: coin_decimals.scalar<CoinType>().to_u256(),
       index
     });
   }
@@ -1773,7 +1777,7 @@ module clamm::interest_clamm_stable {
     state: &StateV1<LpCoin>, 
     clock: &Clock,
     lp_burn_amount: u64
-  ): (u64, u64, u256, u256, u64) {
+  ): (u64, u64, u256, u64) {
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);
 
     let prev_invariant = invariant_(amp, state.balances);
@@ -1783,7 +1787,7 @@ module clamm::interest_clamm_stable {
 
     let (index, decimals) = coin_state_metadata<CoinOut, LpCoin>(state);
 
-    let balances_reduced = state.balances;
+    let mut balances_reduced = state.balances;
 
     let initial_coin_balance = state.balances[index];
 
@@ -1806,32 +1810,28 @@ module clamm::interest_clamm_stable {
       else 
         state.balances[i] - state.balances[i] * new_invariant / prev_invariant;
 
-      let pointer = &mut balances_reduced[i];
-
-      *pointer = balances_reduced[i] - (fee * coin_balance / PRECISION);
+      *&mut balances_reduced[i] = balances_reduced[i] - (fee * coin_balance / PRECISION);
 
       i = i + 1;
     };
 
-    let new_out_balance_with_fee = y_lp(
+    let new_out_balance_with_fee = y_d(
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
       index.to_u256(),
       balances_reduced,
-      lp_burn_amount.to_u256(),
-      lp_supply_value
-    ) + 1;    
+      new_invariant
+    );    
 
-    let amount_to_take = (initial_coin_balance - min(initial_coin_balance, new_out_balance_with_fee));
+    let amount_to_take = (balances_reduced[index] - min(balances_reduced[index], new_out_balance_with_fee));
     let amount_to_take_without_fees = (initial_coin_balance - min(initial_coin_balance, new_out_balance));
 
-    let fee = amount_to_take - amount_to_take_without_fees;
+    let fee = amount_to_take_without_fees - amount_to_take;
     let admin_fee = fee * state.fees.admin_fee() / PRECISION;
 
     let amount_out = (amount_to_take * decimals / PRECISION).to_u64();
     let fee_out = (fee * decimals / PRECISION).to_u64();
 
-
-    (amount_out, fee_out, prev_invariant, amount_to_take + admin_fee, index)
+    (amount_out, fee_out, amount_to_take + admin_fee, index)
   }
 
   fun virtual_price_impl<LpCoin>(state: &StateV1<LpCoin>, clock: &Clock): u256 {
@@ -1857,6 +1857,7 @@ module clamm::interest_clamm_stable {
     versioned.load_value_mut()
   }
 
+  #[allow(unused_mut_parameter)]
   fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     // * IMPORTANT: When new versions are added, we need to explicitly upgrade here.
     assert!(versioned.version() == STATE_V1_VERSION, errors::invalid_version());
