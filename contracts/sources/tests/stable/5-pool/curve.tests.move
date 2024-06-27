@@ -289,82 +289,82 @@ module clamm::stable_tuple_5pool_curve_tests {
     test::end(scenario);   
   }
 
-  // // * We compare the pool curve with our Sim curve
-  // #[test]
-  // fun curve() {
-  //   let mut scenario = scenario();
-  //   let (alice, _) = people();
+  // * We compare the pool curve with our Sim curve
+  #[test]
+  fun curve() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
 
-  //   let test = &mut scenario;
+    let test = &mut scenario;
 
-  //   setup_5pool(test, 100, 110, 121, 133, 146);
+    setup_5pool(test, 100, 110, 121, 133, 146);
 
-  //   next_tx(test, alice);
-  //   {
-  //     let mut pool = test::take_shared<InterestPool<Stable>>(test);
-  //     let c = test::take_shared<Clock>(test);
-  //     let mut sim_state = test::take_shared<SimState>(test);
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test);
+      let mut sim_state = test::take_shared<SimState>(test);
 
-  //     burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<DAI>(25, DAI_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(25, DAI_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(interest_clamm_stable::swap<USDC, USDT, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<USDC>(30, USDC_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_clamm_stable::swap<USDC, USDT, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDC>(30, USDC_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(interest_clamm_stable::swap<USDT, FRAX, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<USDT>(30, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_clamm_stable::swap<USDT, FRAX, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<USDT>(30, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(interest_clamm_stable::swap<FRAX, TRUE_USD, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<FRAX>(35, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));
+      burn(interest_clamm_stable::swap<FRAX, TRUE_USD, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<FRAX>(35, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
 
-  //     burn(interest_clamm_stable::swap<TRUE_USD, DAI, LP_COIN>(
-  //       &mut pool,
-  //       &c,
-  //       mint<TRUE_USD>(40, USDT_DECIMALS, ctx(test)),
-  //       0,
-  //       ctx(test)
-  //     ));      
+      burn(interest_clamm_stable::swap<TRUE_USD, DAI, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<TRUE_USD>(40, USDT_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));      
 
-  //     sim::swap(&mut sim_state, 0, 1, normalize_amount(25));
-  //     sim::swap(&mut sim_state, 1, 2, normalize_amount(30));
-  //     sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
-  //     sim::swap(&mut sim_state, 3, 4, normalize_amount(35));
-  //     sim::swap(&mut sim_state, 4, 0, normalize_amount(35));
+      sim::swap(&mut sim_state, 0, 1, normalize_amount(25));
+      sim::swap(&mut sim_state, 1, 2, normalize_amount(30));
+      sim::swap(&mut sim_state, 2, 3, normalize_amount(30));
+      sim::swap(&mut sim_state, 3, 4, normalize_amount(35));
+      sim::swap(&mut sim_state, 4, 0, normalize_amount(35));
 
-  //     let (pool_dy, _, _) = interest_clamm_stable::quote_swap<DAI, USDC, LP_COIN>(&mut pool, &c, add_decimals(10, DAI_DECIMALS));
+      let (pool_dy, _,) = interest_clamm_stable::quote_swap<DAI, USDC, LP_COIN>(&mut pool, &c, add_decimals(10, DAI_DECIMALS));
 
-  //     let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
-  //     let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
+      let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
+      let sim_dy = ((sim_dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
 
-  //     // Difference of 1 cent
-  //     // happens because of fees rounding
-  //     assert_eq( (USDC_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
+      // Difference of 1 cent
+      // happens because of fees rounding
+      assert_eq( (USDC_DECIMALS_SCALAR as u64) / 100 > diff(pool_dy, sim_dy), true);
 
-  //     test::return_shared(c);
-  //     test::return_shared(pool);
-  //     test::return_shared(sim_state);
-  //   };
+      test::return_shared(c);
+      test::return_shared(pool);
+      test::return_shared(sim_state);
+    };
 
-  //   test::end(scenario);
-  // }
+    test::end(scenario);
+  }
 }

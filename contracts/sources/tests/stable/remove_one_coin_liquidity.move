@@ -38,7 +38,7 @@ module clamm::stable_remove_one_coin_liquidity_tests {
       let balances = interest_clamm_stable::balances<LP_COIN>(&mut pool);
       let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
 
-      sim::set_state(&mut sim_state, amp, 3, balances, (supply as u256) * PRECISION / LP_COIN_DECIMALS_SCALAR);
+      sim::set_state(&mut sim_state, amp, 3, balances, (supply as u256));
 
       let coin_dai = interest_clamm_stable::remove_liquidity_one_coin<DAI, LP_COIN>(
         &mut pool,
@@ -51,12 +51,17 @@ module clamm::stable_remove_one_coin_liquidity_tests {
       let balances_2 = interest_clamm_stable::balances<LP_COIN>(&mut pool);
       let supply_2 = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
 
-      let expected_amount = sim::calc_withdraw_one_coin(&sim_state, normalize_amount(((supply / 10) as u256) / LP_COIN_DECIMALS_SCALAR ), 0);
+      let (expected_amount, admin_fee) = sim::calc_withdraw_one_coin(
+        &sim_state, 
+        amp,
+        ((supply / 10) as u256), 
+        0
+      );
 
       let coin_dai_amount = burn(coin_dai);
 
       let expected_balances = vector[
-        normalize_amount(1000) - expected_amount,
+        normalize_amount(1000) - expected_amount - admin_fee,
         normalize_amount(1000),
         normalize_amount(1000)
       ];
@@ -74,7 +79,7 @@ module clamm::stable_remove_one_coin_liquidity_tests {
 
   #[test]
   #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_clamm_stable)]  
-  fun remove_liquidity_one_coinslippage() {
+  fun remove_liquidity_one_coin_slippage() {
     let mut scenario = scenario();
     let (alice, _) = people();
 
@@ -95,7 +100,7 @@ module clamm::stable_remove_one_coin_liquidity_tests {
 
       sim::set_state(&mut sim_state, amp, 3, balances, (supply as u256) * PRECISION / LP_COIN_DECIMALS_SCALAR);
 
-      let expected_amount = sim::calc_withdraw_one_coin(&sim_state, normalize_amount(((supply / 10) as u256) / LP_COIN_DECIMALS_SCALAR ), 0);
+      let (expected_amount, _) = sim::calc_withdraw_one_coin(&sim_state, amp, normalize_amount(((supply / 10) as u256) / LP_COIN_DECIMALS_SCALAR ), 0);
 
       burn(interest_clamm_stable::remove_liquidity_one_coin<DAI, LP_COIN>(
         &mut pool,

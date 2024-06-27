@@ -87,7 +87,7 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, pool_admin) = interest_pool::new<Stable>(
+     let (pool, pool_admin) = interest_pool::new<Stable>(
       make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -111,7 +111,7 @@ module clamm::interest_pool_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, pool_admin) = interest_pool::new<Stable>(
+     let (pool, pool_admin) = interest_pool::new<Stable>(
       make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)

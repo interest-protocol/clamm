@@ -6,6 +6,7 @@ module clamm::stable_simulation {
   use sui::transfer::share_object;
 
   use clamm::stable_math::{
+    y_lp,
     y as get_y,
     y_d as get_y_d,
     invariant_
@@ -95,13 +96,40 @@ module clamm::stable_simulation {
     (dy, fee)
   }   
 
-  public fun calc_withdraw_one_coin(state: &State, token_amount: u256, i: u64): u256 {
+  public fun calc_withdraw_one_coin(state: &State, amp: u256, token_amount: u256, i: u64): (u256, u256) {
     let _xp = state.xp;
-    let d0 = d(state);
+    let d0 = invariant_(amp, _xp);
     let d1 = d0 - (token_amount * d0) / state.lp_supply;
-    let dy = *vector::borrow(&_xp, i) - (y_d(state, i, d1) + 1);
 
-    dy
+    let mut xp_reduced = _xp;
+    let init_b = _xp[0];
+
+    let n_coins = state.n;
+    let fee = state.fee * (n_coins as u256) / (4 * ((n_coins - 1) as u256));
+    let dy0 = y_lp(amp, (i as u256), _xp, token_amount, state.lp_supply) + 1;
+
+    let mut j = 0;
+
+    while(n_coins > j) {
+      let coin_balance = if (j == (i as u64))
+        _xp[j] * d1 / d0 - dy0
+      else 
+        _xp[j] - _xp[j] * d1 / d0;
+
+      *&mut xp_reduced[j] = xp_reduced[j] - (fee * coin_balance / PRECISION);
+
+      j = j + 1;      
+    };
+
+    let dy1 = get_y_d(amp, (i as u256), xp_reduced, d1);
+
+    let amount_to_take = (xp_reduced[i] - dy1);
+    let amount_to_take_without_fees = (init_b - dy0);
+
+    let fee = amount_to_take_without_fees - amount_to_take;
+    let admin_fee = fee * state.admin_fee / PRECISION;
+
+    (amount_to_take, admin_fee)
   } 
 
   public fun init_for_testing(ctx: &mut TxContext) {

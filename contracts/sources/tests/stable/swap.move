@@ -158,26 +158,19 @@ module clamm::stable_swap_tests {
       let c = test::take_shared<Clock>(test);
       let sim_state = test::take_shared<SimState>(test); 
 
-
-      let fees = interest_clamm_stable::fees<LP_COIN>(&mut pool);
-
       let amp = interest_clamm_stable::a<LP_COIN>(&mut pool, &c);
-
-      let fee_in = fees.calculate_fee(344 * PRECISION);
-      let admin_fee_in = fees.calculate_admin_fee(fee_in);
 
       let y = stable_math::y(
         amp, 
         0, 
         1,
-        normalize_amount(1000) + ((344 * DAI_DECIMALS_SCALAR) * PRECISION / DAI_DECIMALS_SCALAR - (fee_in + admin_fee_in)),
+        normalize_amount(1000) + ((344 * DAI_DECIMALS_SCALAR) * PRECISION / DAI_DECIMALS_SCALAR),
         vector[normalize_amount(1000), normalize_amount(1000), normalize_amount(1000)]
       );
 
       let dy = normalize_amount(1000) - y;
 
       let dy = ((dy * USDC_DECIMALS_SCALAR / PRECISION) as u64);
-
 
       burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
         &mut pool,
