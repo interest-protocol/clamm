@@ -68,6 +68,8 @@ module clamm::errors {
   const MUST_BE_START_DONATE_REQUEST: u64 = 64;
   const MUST_BE_FINISH_REQUEST: u64 = 65;
   const MUST_WAIT_TO_UPDATE_FEES: u64 = 66;
+  const POOL_IS_PAUSED: u64 = 67;
+  const PAUSE_PERIOD_HAS_PASSED: u64 = 68;
 
   // === Public-View Functions ===
 
@@ -337,7 +339,13 @@ module clamm::errors {
 
   public fun must_wait_update_fees(): u64 {
     MUST_WAIT_TO_UPDATE_FEES
+  }  
+
+  public fun pool_is_paused(): u64 {
+    POOL_IS_PAUSED
   }    
+
+  public fun pause_period_has_passed(): u64 {
+    PAUSE_PERIOD_HAS_PASSED
+  }
 }
-
-

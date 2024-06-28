@@ -107,6 +107,14 @@ module clamm::pool_events {
     amount: u64
   }
 
+  public struct Pause has copy, drop {
+    pool: address
+  }
+
+  public struct UnPause has copy, drop {
+    pool: address
+  }
+
   // === Public-Package Functions ===
 
   public(package) fun new_pool(
@@ -229,5 +237,13 @@ module clamm::pool_events {
 
   public(package) fun donate(pool: address, coin: TypeName, amount: u64) {
     emit(Donate { pool, coin, amount });
+  }
+
+  public(package) fun pause(pool: address) {
+    emit(Pause { pool });
+  }
+
+  public(package) fun unpause(pool: address) {
+    emit(UnPause { pool });
   }
 } 

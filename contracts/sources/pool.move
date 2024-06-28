@@ -19,6 +19,7 @@ module clamm::interest_pool {
   use clamm::{
     curves,
     errors,
+    pool_events as events,
     pool_admin::{Self, PoolAdmin}
   };
 
@@ -38,6 +39,9 @@ module clamm::interest_pool {
   const START_DONATE: vector<u8> = b"START_DONATE";
   const FINISH_DONATE: vector<u8> = b"FINISH_DONATE";
 
+  // @dev 90 days in epochs
+  const PAUSE_TIME_PERIOD: u64 = 90;
+
   // === Structs ===
 
   public struct InterestPool<phantom Curve> has key {
@@ -45,7 +49,9 @@ module clamm::interest_pool {
     coins: VecSet<TypeName>,
     state: Versioned,
     pool_admin_address: address,
-    hooks: Option<Hooks>
+    hooks: Option<Hooks>,
+    pause_deadline: u64,
+    paused: bool
   }
 
   public struct Hooks has store {
@@ -265,13 +271,24 @@ module clamm::interest_pool {
     &mut self.id
   }
 
-  // === Public-Package Functions ===
+  public fun pause<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin, ctx: &mut TxContext) {
+    assert!(self.pause_deadline >= ctx.epoch(), errors::pause_period_has_passed());
 
-  public(package) fun state<Curve>(self: &InterestPool<Curve>): &Versioned {
-    &self.state
+    self.paused = true;
+
+    events::pause(self.addy());
   }
 
+  public fun unkill<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin) {
+    self.paused = false;
+
+    events::unpause(self.addy());
+  }
+
+  // === Public-Package Functions ===
+
   public(package) fun state_mut<Curve>(self: &mut InterestPool<Curve>): &mut Versioned {
+    assert!(!self.paused, errors::pool_is_paused());
     &mut self.state
   }
 
@@ -291,7 +308,9 @@ module clamm::interest_pool {
       coins,
       state,
       pool_admin_address: pool_admin.addy(),
-      hooks: option::none()
+      hooks: option::none(),
+      pause_deadline: PAUSE_TIME_PERIOD + ctx.epoch(),
+      paused: false
     };
 
     (self, pool_admin)
@@ -310,7 +329,9 @@ module clamm::interest_pool {
       coins,
       state,
       pool_admin_address: pool_admin.addy(),
-      hooks: option::none()
+      hooks: option::none(),
+      pause_deadline: PAUSE_TIME_PERIOD + ctx.epoch(),
+      paused: false
     };
 
     let hooks_builder = new_hooks_builder(self.addy(), ctx);
