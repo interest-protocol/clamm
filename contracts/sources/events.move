@@ -84,6 +84,17 @@ module clamm::pool_events {
     timestamp: u64,
   }
 
+  public struct CommitParameters has drop, copy {
+    pool: address,
+    admin_fee: u256,
+    out_fee: u256,
+    mid_fee: u256,
+    gamma_fee: u256,
+    allowed_extra_profit: u256,
+    adjustment_step: u256,
+    ma_half_time: u256
+  }
+
   public struct UpdateParameters has drop, copy {
     pool: address,
     admin_fee: u256,
@@ -211,6 +222,28 @@ module clamm::pool_events {
     timestamp: u64
   ) {
     emit(StopRampAGamma { pool, a, gamma, timestamp });
+  }
+
+  public(package) fun commit_parameters(
+    pool: address,
+    admin_fee: u256,
+    out_fee: u256,
+    mid_fee: u256,
+    gamma_fee: u256,
+    allowed_extra_profit: u256,
+    adjustment_step: u256,
+    ma_half_time: u256    
+  ) {
+    emit(CommitParameters { 
+      pool,
+      admin_fee,
+      out_fee,
+      mid_fee,
+      gamma_fee,
+      allowed_extra_profit,
+      adjustment_step,
+      ma_half_time
+    });
   }
 
   public(package) fun update_parameters(
