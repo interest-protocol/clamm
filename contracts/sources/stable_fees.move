@@ -24,7 +24,7 @@ module clamm::stable_fees {
     deadline: u64
   }
 
-  // === Public-Mutative Functions ===
+  // === public(package)-Mutative Functions ===
 
   public fun new(): StableFees {
     StableFees {
@@ -36,7 +36,7 @@ module clamm::stable_fees {
     }
   }
 
-  public fun commit_fee(self: &mut StableFees, fee: Option<u256>, ctx: &mut TxContext) {
+  public(package) fun commit_fee(self: &mut StableFees, fee: Option<u256>, ctx: &TxContext) {
     if (fee.is_none()) return;
   
     assert!(MAX_FEE_PERCENT >= *fee.borrow(), errors::invalid_fee());
@@ -45,7 +45,7 @@ module clamm::stable_fees {
     self.future_fee = fee;
   }
 
-  public fun update_fee(self: &mut StableFees, ctx: &mut TxContext) {
+  public(package) fun update_fee(self: &mut StableFees, ctx: &TxContext) {
     if (self.future_fee.is_none()) return;
     
     self.assert_epoch(ctx);
@@ -53,7 +53,7 @@ module clamm::stable_fees {
     self.fee = self.future_fee.extract();
   }
 
-  public fun commit_admin_fee(self: &mut StableFees, fee: Option<u256>, ctx: &mut TxContext) {
+  public(package) fun commit_admin_fee(self: &mut StableFees, fee: Option<u256>, ctx: &TxContext) {
     if (fee.is_none()) return;
     
     assert!(MAX_ADMIN_FEE >= *fee.borrow(), errors::invalid_fee());
@@ -62,7 +62,7 @@ module clamm::stable_fees {
     self.future_admin_fee = fee;
   }
 
-  public fun update_admin_fee(self: &mut StableFees, ctx: &mut TxContext) {
+  public(package) fun update_admin_fee(self: &mut StableFees, ctx: &TxContext) {
     if (self.future_admin_fee.is_none()) return;
 
     self.assert_epoch(ctx);
@@ -70,33 +70,33 @@ module clamm::stable_fees {
     self.admin_fee = self.future_admin_fee.extract();
   }
 
-  // === Public-View Functions ===
+  // === public(package)-View Functions ===
 
-  public fun fee(self: &StableFees): u256 {
+  public(package) fun fee(self: &StableFees): u256 {
     self.fee
   }
 
-  public fun future_fee(self: &StableFees): Option<u256> {
+  public(package) fun future_fee(self: &StableFees): Option<u256> {
     self.future_fee
   }
 
-  public fun admin_fee(self: &StableFees): u256 {
+  public(package) fun admin_fee(self: &StableFees): u256 {
     self.admin_fee
   }
 
-  public fun future_admin_fee(self: &StableFees): Option<u256> {
+  public(package) fun future_admin_fee(self: &StableFees): Option<u256> {
     self.future_admin_fee
   }
 
-  public fun deadline(self: &StableFees): u64 {
+  public(package) fun deadline(self: &StableFees): u64 {
     self.deadline
   }
 
-  public fun calculate_fee(self: &StableFees, amount: u256): u256 {
+  public(package) fun calculate_fee(self: &StableFees, amount: u256): u256 {
     calculate_fee_amount(amount, self.fee)
   }
 
-  public fun calculate_admin_fee(fees: &StableFees, amount: u256): u256 {
+  public(package) fun calculate_admin_fee(fees: &StableFees, amount: u256): u256 {
     calculate_fee_amount(amount, fees.admin_fee)
   }
 

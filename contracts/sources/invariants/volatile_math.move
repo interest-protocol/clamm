@@ -35,7 +35,7 @@ module clamm::volatile_math {
   const POW_10_17: u256 = 100_000_000_000_000_000; // 1e17
   const POW_10_20: u256 = 100_000_000_000_000_000_000; // 1e20
 
-  // === Public-View Functions ===
+  // === public(package)-View Functions ===
   
   /*
   * @notice It calculates the minimum amplifier value based on the number of coins in the pool.  
@@ -43,7 +43,7 @@ module clamm::volatile_math {
   * @n_coins The number of coins in the pool 
   * @return u256 The minimum amplifier value
   */
-  public fun min_a(n_coins: u64): u256 {
+  public(package) fun min_a(n_coins: u64): u256 {
     n_coins.pow(n_coins.to_u8()).to_u256() * A_MULTIPLIER / 100
   }
 
@@ -53,7 +53,7 @@ module clamm::volatile_math {
   * @n_coins The number of coins in the pool 
   * @return u256 The maximum amplifier value
   */
-  public fun max_a(n_coins: u64): u256 {
+  public(package) fun max_a(n_coins: u64): u256 {
     n_coins.pow(n_coins.to_u8()).to_u256() * A_MULTIPLIER * 1000    
   }
 
@@ -67,7 +67,7 @@ module clamm::volatile_math {
   * @param sort If we should sort before calculating the geometric mean 
   * @return u256 The geometric mean of `balances`
   */
-  public fun geometric_mean(unsorted_balances: vector<u256>, sort: bool): u256 {
+  public(package) fun geometric_mean(unsorted_balances: vector<u256>, sort: bool): u256 {
     let balances = if (sort) descending_insertion_sort(unsorted_balances) else unsorted_balances;
 
     let len = balances.length();
@@ -98,7 +98,7 @@ module clamm::volatile_math {
   * @param sort If we should sort before calculating the geometric mean 
   * @return u256 The geometric mean of `balances`
   */
-  public fun reduction_coefficient(x: vector<u256>, fee_gamma: u256): u256 {
+  public(package) fun reduction_coefficient(x: vector<u256>, fee_gamma: u256): u256 {
     let s = x.sum();
     let n_coins = x.length();
 
@@ -127,7 +127,7 @@ module clamm::volatile_math {
   * @param unsorted_balances The balances in the pool. 
   * @return u256 The invariant of the pool
   */
-  public fun invariant_(ann: u256, gamma: u256, unsorted_balances: vector<u256>): u256 {
+  public(package) fun invariant_(ann: u256, gamma: u256, unsorted_balances: vector<u256>): u256 {
     let n_coins = unsorted_balances.length();
     
     assert_ann_is_within_range(ann, n_coins);
@@ -202,7 +202,7 @@ module clamm::volatile_math {
   * @param d The invariant of the pool  
   * @return u256 The new balance for the Coin at `coin_out_index`. 
   */
-  public fun y(ann: u256, gamma: u256, balances: &vector<u256>, d: u256, coin_out_index: u64): u256 {
+  public(package) fun y(ann: u256, gamma: u256, balances: &vector<u256>, d: u256, coin_out_index: u64): u256 {
     let n_coins = balances.length();
     
     assert_ann_is_within_range(ann, n_coins);
@@ -288,7 +288,7 @@ module clamm::volatile_math {
   * @param precision The maximum return value  
   * @return u256 the half power of `power`
   */
-  public fun half_pow(power: u256, precision: u256): u256 {
+  public(package) fun half_pow(power: u256, precision: u256): u256 {
     let intpow = power / PRECISION;
     
     if (intpow > 59) return 0;
@@ -329,7 +329,7 @@ module clamm::volatile_math {
   * @param x The initial value.  
   * @return u256 the square root of `x`
   */
-  public fun sqrt(x: u256): u256 {
+  public(package) fun sqrt(x: u256): u256 {
     if (x == 0) return 0;
 
     let mut z = (x + PRECISION) / 2;

@@ -963,6 +963,7 @@ module clamm::interest_clamm_volatile {
     state.rebalancing_params = state.future_rebalancing_params;
 
     increment_version(state);
+    
     events::update_parameters(
       pool_address, 
       state.fees.admin_fee, 

@@ -18,10 +18,6 @@ module clamm::pool_admin {
 
   // === Public Package Functions ===
 
-  public(package) fun addy(self: &PoolAdmin): address {
-    self.id.to_address()
-  } 
-
   // === Public-View Functions === 
 
   // === Test Functions ===

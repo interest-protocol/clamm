@@ -16,6 +16,7 @@ module clamm::volatile_2pool_swap_max_tests {
   use clamm::pool_admin::PoolAdmin;
   use clamm::interest_clamm_volatile;
   use clamm::interest_pool::InterestPool;
+  use clamm::init_interest_amm_volatile::setup_2pool;
   use clamm::amm_test_utils ::{people, scenario, mint, setup_dependencies};
 
   const A: u256  = 36450000;
@@ -369,36 +370,36 @@ module clamm::volatile_2pool_swap_max_tests {
     test::end(scenario);     
   }  
 
-  public fun setup_2pool(test: &mut Scenario, usdc_amount: u64, eth_amount: u64) {
-    let (alice, _) = people();
+  // public fun setup_2pool(test: &mut Scenario, usdc_amount: u64, eth_amount: u64) {
+  //   let (alice, _) = people();
     
-    setup_dependencies(test);
+  //   setup_dependencies(test);
 
-    next_tx(test, alice);
-    {
-      let c = test::take_shared<Clock>(test);
-      let coin_decimals = test::take_shared<CoinDecimals>(test);
-      let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
+  //   next_tx(test, alice);
+  //   {
+  //     let c = test::take_shared<Clock>(test);
+  //     let coin_decimals = test::take_shared<CoinDecimals>(test);
+  //     let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
 
-      let (pool, pool_admin, lp_coin) = interest_clamm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
-        &c,
-        &coin_decimals,
-        mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
-        mint<ETH>(eth_amount, ETH_DECIMALS, ctx(test)),
-        coin::treasury_into_supply(lp_coin_cap),
-        vector[A, GAMMA],
-        vector[PRECISION - 1, PRECISION - 1, ONE_WEEK],
-        ETH_INITIAL_PRICE,
-        vector[MAX_FEE, MAX_FEE, PRECISION],
-        ctx(test)
-      );
+  //     let (pool, pool_admin, lp_coin) = interest_clamm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
+  //       &c,
+  //       &coin_decimals,
+  //       mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
+  //       mint<ETH>(eth_amount, ETH_DECIMALS, ctx(test)),
+  //       coin::treasury_into_supply(lp_coin_cap),
+  //       vector[A, GAMMA],
+  //       vector[PRECISION - 1, PRECISION - 1, ONE_WEEK],
+  //       ETH_INITIAL_PRICE,
+  //       vector[MAX_FEE, MAX_FEE, PRECISION],
+  //       ctx(test)
+  //     );
 
-      burn(lp_coin);    
-      interest_pool::share(pool);
-      transfer::public_transfer(pool_admin, alice);
+  //     burn(lp_coin);    
+  //     interest_pool::share(pool);
+  //     transfer::public_transfer(pool_admin, alice);
       
-      test::return_shared(coin_decimals);
-      test::return_shared(c);
-    };
-  }   
+  //     test::return_shared(coin_decimals);
+  //     test::return_shared(c);
+  //   };
+  // }   
 }

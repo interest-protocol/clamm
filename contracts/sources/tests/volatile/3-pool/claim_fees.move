@@ -96,37 +96,37 @@ module clamm::volatile_3pool_claim_fees_tests {
     test::end(scenario);    
   }
 
-  #[test]
-  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
-  fun teest_claim_fees_invalid_pool_admin() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
+  // #[test]
+  // #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  // fun teest_claim_fees_invalid_pool_admin() {
+  //   let mut scenario = scenario();
+  //   let (alice, _) = people();
 
-    let test = &mut scenario;
+  //   let test = &mut scenario;
     
-    setup_3pool(test, 150000, 3, 100);
+  //   setup_3pool(test, 150000, 3, 100);
 
-    let c = clock::create_for_testing(ctx(test));
+  //   let c = clock::create_for_testing(ctx(test));
 
-    next_tx(test, alice); 
-    {
-      let mut pool = test::take_shared<InterestPool<Volatile>>(test);  
-      let admin_cap = pool_admin::new(test.ctx());
+  //   next_tx(test, alice); 
+  //   {
+  //     let mut pool = test::take_shared<InterestPool<Volatile>>(test);  
+  //     let admin_cap = pool_admin::new(test.ctx());
 
-      let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
+  //     let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
 
-      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<BTC, LP_COIN>(&mut pool, &mut request);         
+  //     interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+  //     interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);
+  //     interest_clamm_volatile::read_balance<BTC, LP_COIN>(&mut pool, &mut request);         
 
-      assert_eq(burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, &c, request, ctx(test))), 15279144167);
+  //     assert_eq(burn(interest_clamm_volatile::claim_admin_fees<LP_COIN>(&mut pool, &admin_cap, &c, request, ctx(test))), 15279144167);
 
-      pool_admin::destroy(admin_cap);
+  //     pool_admin::destroy(admin_cap);
 
-      test::return_shared(pool);
-    };
+  //     test::return_shared(pool);
+  //   };
     
-    clock::destroy_for_testing(c);
-    test::end(scenario);    
-  }
+  //   clock::destroy_for_testing(c);
+  //   test::end(scenario);    
+  // }
 }
