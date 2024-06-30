@@ -23,9 +23,7 @@ module clamm::pool_admin {
   // === Test Functions ===
 
   #[test_only]
-  public fun new_for_testing(ctx: &mut TxContext): PoolAdmin {
-    PoolAdmin {
-      id: object::new(ctx)
-    }
+  public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
   }
 }

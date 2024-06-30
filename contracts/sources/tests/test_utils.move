@@ -8,15 +8,18 @@ module clamm::amm_test_utils {
   use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
 
   use suitears::coin_decimals::{Self, CoinDecimals};
-  
-  use clamm::btc::{Self, BTC};
-  use clamm::eth::{Self, ETH};
-  use clamm::dai::{Self, DAI};
-  use clamm::usdt::{Self, USDT};
-  use clamm::usdc::{Self, USDC};
-  use clamm::frax::{Self, FRAX};
-  use clamm::lp_coin::{Self, LP_COIN};
-  use clamm::true_usd::{Self, TRUE_USD};
+
+  use clamm::{
+    pool_admin,
+    btc::{Self, BTC},
+    eth::{Self, ETH},
+    dai::{Self, DAI},
+    usdt::{Self, USDT},
+    usdc::{Self, USDC},
+    frax::{Self, FRAX},
+    lp_coin::{Self, LP_COIN},
+    true_usd::{Self, TRUE_USD}
+  };
 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
@@ -50,6 +53,7 @@ module clamm::amm_test_utils {
       lp_coin::init_for_testing(ctx(test));
       frax::init_for_testing(ctx(test));
       true_usd::init_for_testing(ctx(test));
+      pool_admin::init_for_testing(ctx(test));
 
       let mut cap = coin_decimals::new_cap(ctx(test));
 

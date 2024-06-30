@@ -13,9 +13,9 @@ module clamm::stable_swap_fees_tests {
   use clamm::stable_fees;
   use clamm::curves::Stable;
   use clamm::lp_coin::LP_COIN;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
-  use clamm::pool_admin::{Self, PoolAdmin};
   use clamm::init_interest_amm_stable::setup_3pool;
   use clamm::amm_test_utils::{people, scenario, mint};
 
@@ -160,28 +160,4 @@ module clamm::stable_swap_fees_tests {
     };
     test::end(scenario);      
   }
-
-  // #[test]
-  // #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
-  // fun take_fees_invalid_admin() {
-  //  let mut scenario = scenario();
-  //   let (alice, _) = people();
-
-  //   let test = &mut scenario;
-    
-  //   setup_3pool(test, 1000, 1000, 1000);
-
-  //   next_tx(test, alice);
-  //   {
-  //     let mut pool = test::take_shared<InterestPool<Stable>>(test);
-  //     let pool_admin_cap = pool_admin::new(test.ctx());
-
-  //     burn(interest_clamm_stable::take_fees<USDC, LP_COIN>(&mut pool, &pool_admin_cap, ctx(test)));
-
-  //     pool_admin::destroy(pool_admin_cap);
-      
-  //     test::return_shared(pool);
-  //   };
-  //   test::end(scenario);      
-  // }  
 }
