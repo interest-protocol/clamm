@@ -32,7 +32,6 @@ module clamm::interest_clamm_volatile {
   };
 
   use fun coin::take as Balance.take;
-  use fun utils::head as vector.head;
   use fun utils::to_u64 as u256.to_u64;
   use fun utils::to_u256 as u64.to_u256;
   use fun coin::from_balance as Balance.to_coin;  
@@ -920,7 +919,7 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
 
-    let mid_fee = option::destroy_with_default(values.head(), state.fees.mid_fee);
+    let mid_fee = option::destroy_with_default(values[0], state.fees.mid_fee);
     let out_fee = option::destroy_with_default(values[1], state.fees.out_fee);
     let admin_fee = option::destroy_with_default(values[2], state.fees.admin_fee); 
     let gamma_fee = option::destroy_with_default(values[3], state.fees.gamma_fee);  
@@ -1435,7 +1434,7 @@ module clamm::interest_clamm_volatile {
     state.d = state.d - state.d * lp_coin_amount.to_u256() / total_supply.to_u256();
 
     let (coin_a, coin_b) = (
-      withdraw_coin<CoinA, LpCoin>(state, lp_coin_amount, min_amounts.head(), total_supply, ctx),
+      withdraw_coin<CoinA, LpCoin>(state, lp_coin_amount, min_amounts[0], total_supply, ctx),
       withdraw_coin<CoinB, LpCoin>(state, lp_coin_amount, min_amounts[1], total_supply, ctx),
     );
 
@@ -1474,7 +1473,7 @@ module clamm::interest_clamm_volatile {
     state.d = state.d - state.d * lp_coin_amount.to_u256() / total_supply.to_u256();
 
     let (coin_a, coin_b, coin_c) = (
-      withdraw_coin<CoinA, LpCoin>(state, lp_coin_amount, min_amounts.head(), total_supply, ctx),
+      withdraw_coin<CoinA, LpCoin>(state, lp_coin_amount, min_amounts[0], total_supply, ctx),
       withdraw_coin<CoinB, LpCoin>(state, lp_coin_amount, min_amounts[1], total_supply, ctx),
       withdraw_coin<CoinC, LpCoin>(state, lp_coin_amount, min_amounts[2], total_supply, ctx),
     );
@@ -1598,7 +1597,7 @@ module clamm::interest_clamm_volatile {
 
             if (i != ix) {
               if (i == 0)
-                s = s + xx.head()
+                s = s + xx[0]
               else 
                 s = s + mul_down(xx[i], coin_state.last_price);
             };
@@ -1773,7 +1772,7 @@ module clamm::interest_clamm_volatile {
       while(n_coins > index) {
         if (index != index_out) {
           s = if (index == 0) 
-            s + state.balances.head()
+            s + state.balances[0]
           else
              s + mul_down(state.balances[index], coin_states[index].last_price)  
         };  
@@ -1921,7 +1920,7 @@ module clamm::interest_clamm_volatile {
         };
      } else {
       let mut xp = balances;
-      let dx_price = xp.head() / 1000000;
+      let dx_price = xp[0] / 1000000;
       let ref = &mut xp[0];
       *ref = *ref + dx_price;
 

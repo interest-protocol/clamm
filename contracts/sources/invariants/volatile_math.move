@@ -16,7 +16,6 @@ module clamm::volatile_math {
   use fun pow as u64.pow;
   use fun sum as vector.sum; 
   use fun utils::to_u8 as u64.to_u8;
-  use fun utils::head as vector.head;
   use fun utils::to_u256 as u64.to_u256;
 
   // === Constants ===
@@ -71,7 +70,7 @@ module clamm::volatile_math {
     let balances = if (sort) descending_insertion_sort(unsorted_balances) else unsorted_balances;
 
     let len = balances.length();
-    let mut d = balances.head(); 
+    let mut d = balances[0]; 
     let mut prev_d = 0;
 
     while (diff(prev_d, d) > 1 && diff(prev_d, d) * PRECISION >= d) {
@@ -134,7 +133,7 @@ module clamm::volatile_math {
     assert_gamma_is_within_range(gamma);
 
     let x = descending_insertion_sort(unsorted_balances);
-    let fst = x.head();
+    let fst = x[0];
 
     assert!(fst >= POW_10_9 && fst <= POW_10_15 * PRECISION, errors::unsafe_value());
 
@@ -228,7 +227,7 @@ module clamm::volatile_math {
     *&mut new_x[coin_out_index] = 0;
     let x_sorted = descending_insertion_sort(new_x);
 
-    let converge_limit = max(max(x_sorted.head() / POW_10_14, d / POW_10_14), 100);
+    let converge_limit = max(max(x_sorted[0] / POW_10_14, d / POW_10_14), 100);
 
     let mut j = 2;
     while (j < n_coins + 1) {

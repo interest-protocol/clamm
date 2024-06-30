@@ -60,8 +60,4 @@ module clamm::utils {
   public(package) fun to_u256(x: u64): u256 {
     (x as u256)
   }
-
-  public(package) fun head<T: copy + drop>(x: vector<T>): T {
-    x[0]
-  }  
 }
