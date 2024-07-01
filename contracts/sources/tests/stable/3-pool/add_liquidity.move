@@ -16,7 +16,7 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
   use clamm::lp_coin::LP_COIN;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_3pool;
-  use clamm::amm_test_utils::{people, scenario, normalize_amount, mint};
+  use clamm::amm_test_utils::{people, scenario, normalize_amount, mint, add_decimals, get_stable_add_liquidity_added_balances};
 
   const INITIAL_A: u256 = 360;
   const DAI_DECIMALS: u8 = 9;
@@ -40,7 +40,9 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
       let balances = interest_clamm_stable::balances<LP_COIN>(&mut pool);
       let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
 
-      let k0 = stable_math::invariant_(INITIAL_A, balances);
+      let expected_value = interest_clamm_stable::quote_add_liquidity<LP_COIN>(
+        &mut pool, &c, vector[add_decimals(100, DAI_DECIMALS), add_decimals(110, USDC_DECIMALS), add_decimals(120, USDT_DECIMALS)]
+      );
 
       let lp_coin = interest_clamm_stable::add_liquidity_3_pool<DAI, USDC, USDT, LP_COIN>(
         &mut pool,
@@ -52,28 +54,27 @@ module clamm::stable_tuple_3pool_add_liquidity_tests {
         ctx(test)
       );
 
-      let new_balances = interest_clamm_stable::balances<LP_COIN>(&mut pool);
+      let new_balances = vector[
+        balances[0] + normalize_amount(100),
+        balances[1] + normalize_amount(110),
+        balances[2] + normalize_amount(120),
+      ];
+      let actual_balances = interest_clamm_stable::balances<LP_COIN>(&mut pool);
       let new_supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
       let n_coins = interest_clamm_stable::n_coins<LP_COIN>(&mut pool);
 
-      let k1 = stable_math::invariant_(INITIAL_A, new_balances);
-
       let lp_value = burn(lp_coin);
 
-      assert_eq(lp_value, (((supply as u256) * (k1 - k0) / k0) as u64));
+      assert_eq(lp_value, expected_value);
       assert_eq(lp_value, new_supply - supply);
 
-      let diff_vector = vector[
-        normalize_amount(100),
-        normalize_amount(110),
-        normalize_amount(120)
-      ];
+      let diff_vector = get_stable_add_liquidity_added_balances<LP_COIN>(&mut pool, &c, balances, new_balances);
       
       {
         let mut i = 0;
         while (n_coins > i) {
           let prev_bal = *vector::borrow(&balances, i);
-          let new_bal = *vector::borrow(&new_balances, i);
+          let new_bal = *vector::borrow(&actual_balances, i);
           let diff = *vector::borrow(&diff_vector, i);
 
           assert_eq(new_bal - prev_bal, diff);

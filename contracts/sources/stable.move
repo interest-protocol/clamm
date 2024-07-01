@@ -829,9 +829,9 @@ module clamm::interest_clamm_stable {
     load<LpCoin>(pool.state_mut()).admin_balances.borrow<TypeName, Balance<CoinType>>(type_name::get<CoinType>()).value()
   } 
 
-  public fun coin_decimals<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u8 {
+  public fun coin_decimals_scalar<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u256 {
     let (_, decimals) = coin_state_metadata<CoinType, LpCoin>(load(pool.state_mut()));
-    (decimals as u8)
+    decimals
   } 
 
   public fun coin_index<CoinType, LpCoin>(pool: &mut InterestPool<Stable>): u8 {
@@ -1709,7 +1709,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64
   ): u64 {
     let new_k = invariant_(amp, state.balances);
-    let xx = state.balances;
+
     assert!(new_k > prev_k, errors::invalid_invariant());
     
     let supply_value = state.lp_coin_supply.supply_value().to_u256();
