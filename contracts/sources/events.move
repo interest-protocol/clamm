@@ -19,6 +19,7 @@ module clamm::pool_events {
     coinOut: TypeName,    
     amount_in: u64, 
     amount_out: u64,
+    fee: u64
   }
 
   public struct AddLiquidity has copy, drop {
@@ -142,9 +143,10 @@ module clamm::pool_events {
     coinIn: TypeName,
     coinOut: TypeName,    
     amount_in: u64, 
-    amount_out: u64
+    amount_out: u64,
+    fee: u64
   ) {
-    emit(Swap { pool, coinIn, coinOut, amount_in, amount_out });
+    emit(Swap { pool, coinIn, coinOut, amount_in, amount_out, fee });
   }
 
   public(package) fun add_liquidity(

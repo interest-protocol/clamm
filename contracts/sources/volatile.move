@@ -1262,7 +1262,9 @@ module clamm::interest_clamm_volatile {
     // Convert from Price => Coin Balance
     coin_out_amount = if (coin_out_state.index != 0) div_down(coin_out_amount, coin_out_state.price) else coin_out_amount;
 
-    coin_out_amount = coin_out_amount - fee_impl(state, balances_in_price) * coin_out_amount / 10000000000;
+    let fee = fee_impl(state, balances_in_price) * coin_out_amount / 10000000000;
+
+    coin_out_amount = coin_out_amount - fee;
 
     // Scale to the right decimal house
     let amount_out = mul_down(coin_out_amount, coin_out_state.decimals_scalar).to_u64();
@@ -1308,7 +1310,14 @@ module clamm::interest_clamm_volatile {
       lp_supply * ROLL
     ); 
 
-    events::swap(pool_address, type_name::get<CoinIn>(), type_name::get<CoinOut>(), coin_in_value, amount_out);
+    events::swap(
+      pool_address, 
+      type_name::get<CoinIn>(), 
+      type_name::get<CoinOut>(), 
+      coin_in_value, 
+      amount_out,
+      mul_down(fee, coin_out_state.decimals_scalar).to_u64()
+    );
 
     increment_version(state);
 

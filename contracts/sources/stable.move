@@ -13,7 +13,7 @@ module clamm::interest_clamm_stable {
   };
 
   use suitears::{
-    math256::min,
+    math256::{min, diff},
     coin_decimals::CoinDecimals
   };
 
@@ -1300,7 +1300,14 @@ module clamm::interest_clamm_stable {
 
     admin_balance_mut<CoinOut, LpCoin>(state).join(admin_balance_in);
 
-    events::swap(pool_address, type_name::get<CoinIn>(), type_name::get<CoinOut>(), coin_in_value, amount_out);
+    events::swap(
+      pool_address, 
+      type_name::get<CoinIn>(), 
+      type_name::get<CoinOut>(), 
+      coin_in_value, 
+      amount_out,
+      (fee * coin_out_decimals / PRECISION).to_u64() 
+    );
 
     coin_out
   }
@@ -1324,11 +1331,12 @@ module clamm::interest_clamm_stable {
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
 
     let prev_k = invariant_(amp, state.balances);
+    let old_balances = state.balances;
 
     let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
     let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
 
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, old_balances, lp_coin_min_amount);
 
     events::add_liquidity(
       pool_address, 
@@ -1364,12 +1372,13 @@ module clamm::interest_clamm_stable {
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
 
     let prev_k = invariant_(amp, state.balances);
+    let old_balances = state.balances;
 
     let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
     let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
     let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
 
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, old_balances, lp_coin_min_amount);
 
     events::add_liquidity(
       pool_address, 
@@ -1409,13 +1418,14 @@ module clamm::interest_clamm_stable {
     
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
     let prev_k = invariant_(amp, state.balances);
+    let old_balances = state.balances;
 
     let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
     let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
     let coin_c_value = deposit_coin<CoinC, LpCoin>(state, coin_c);
     let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
 
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, old_balances, lp_coin_min_amount);
 
     events::add_liquidity(
       pool_address, 
@@ -1457,6 +1467,7 @@ module clamm::interest_clamm_stable {
     
     let amp = get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock);    
     let prev_k = invariant_(amp, state.balances);
+    let old_balances = state.balances;
 
     let coin_a_value = deposit_coin<CoinA, LpCoin>(state, coin_a);
     let coin_b_value = deposit_coin<CoinB, LpCoin>(state, coin_b);
@@ -1464,7 +1475,7 @@ module clamm::interest_clamm_stable {
     let coin_d_value = deposit_coin<CoinD, LpCoin>(state, coin_d);
     let coin_e_value = deposit_coin<CoinE, LpCoin>(state, coin_e);
 
-    let mint_amount = calculate_mint_amount(state, amp, prev_k, lp_coin_min_amount);
+    let mint_amount = calculate_mint_amount(state, amp, prev_k, old_balances, lp_coin_min_amount);
 
     events::add_liquidity(
       pool_address, 
@@ -1663,14 +1674,49 @@ module clamm::interest_clamm_stable {
     (coin_a, coin_b, coin_c, coin_d, coin_e)
   }
 
-  fun calculate_mint_amount<LpCoin>(state: &StateV1<LpCoin>, amp: u256, prev_k: u256, lp_coin_min_amount: u64): u64 {
+  fun calculate_mint_amount<LpCoin>(
+    state: &mut StateV1<LpCoin>, 
+    amp: u256, 
+    prev_k: u256, 
+    old_balances: vector<u256>,
+    lp_coin_min_amount: u64
+  ): u64 {
     let new_k = invariant_(amp, state.balances);
-
     assert!(new_k > prev_k, errors::invalid_invariant());
-
+    
     let supply_value = state.lp_coin_supply.supply_value().to_u256();
 
-    let mint_amount = if (supply_value == 0) (new_k / 1_000_000_000).to_u64() else (supply_value * (new_k - prev_k) / prev_k).to_u64();
+    let mint_amount = if (supply_value == 0) {
+      (new_k / 1_000_000_000).to_u64()
+    } else {
+      let fee = state.imbalanced_fee();
+
+      let len = state.n_coins;
+      let mut i = 0;  
+
+      let mut balances_minus_fees = state.balances;
+      while (len > i) {
+
+        let ideal_balance = new_k * old_balances[i] / prev_k;
+        let difference = diff(ideal_balance, state.balances[i]);
+
+        let balance_fee = fee * difference / PRECISION;
+        let x = &mut state.balances[i];
+        *x = *x- state.fees.calculate_admin_fee(balance_fee);
+
+        let y = &mut balances_minus_fees[i];
+        *y = *y - balance_fee;
+
+        i = i + 1;
+      };
+
+      let new_k_2 = invariant_(amp, balances_minus_fees);
+
+      // Sanity check
+      assert!(new_k_2 > prev_k, errors::invalid_invariant());
+
+      (supply_value * (new_k_2 - prev_k) / prev_k).to_u64()
+    };
 
     assert!(mint_amount >= lp_coin_min_amount, errors::slippage());
 
@@ -1786,7 +1832,7 @@ module clamm::interest_clamm_stable {
 
     let initial_coin_balance = state.balances[index];
 
-    let fee = state.fees.fee() * state.n_coins.to_u256() / (4 * (state.n_coins.to_u256() - 1));
+    let fee = state.imbalanced_fee();
 
     let new_out_balance = y_lp(
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),
@@ -1827,6 +1873,10 @@ module clamm::interest_clamm_stable {
     let fee_out = (fee * decimals / PRECISION).to_u64();
 
     (amount_out, fee_out, amount_to_take + admin_fee, index)
+  }
+
+  fun imbalanced_fee<LpCoin>(state: &StateV1<LpCoin>): u256 {
+    state.fees.fee() * state.n_coins.to_u256() / (4 * (state.n_coins.to_u256() - 1))
   }
 
   fun virtual_price_impl<LpCoin>(state: &StateV1<LpCoin>, clock: &Clock): u256 {
