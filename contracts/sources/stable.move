@@ -901,7 +901,34 @@ module clamm::interest_clamm_stable {
 
     let new_k = invariant_(amp, balances);    
     let supply_value = state.lp_coin_supply.supply_value().to_u256();
-    if (supply_value == 0) (new_k / 1_000_000_000).to_u64() else (supply_value * (new_k - prev_k) / prev_k).to_u64()
+
+    if (supply_value == 0) {
+      (new_k / 1_000_000_000).to_u64() 
+    }
+    else {
+      
+      let fee = state.imbalanced_fee();
+      let mut balances_minus_fees = balances;
+
+      let mut i = 0;
+
+      while (num_of_coins > i) {
+
+        let ideal_balance = new_k * state.balances[i] / prev_k;
+        let difference = diff(ideal_balance, balances[i]);
+
+        let balance_fee = fee * difference / PRECISION;
+
+        let y = &mut balances_minus_fees[i];
+        *y = *y - balance_fee;
+
+        i = i + 1;
+      };
+
+      let new_k_2 = invariant_(amp, balances_minus_fees);
+
+      (supply_value * (new_k_2 - prev_k) / prev_k).to_u64()
+    }
   }
 
   public fun quote_remove_liquidity<LpCoin>(
@@ -1682,6 +1709,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64
   ): u64 {
     let new_k = invariant_(amp, state.balances);
+    let xx = state.balances;
     assert!(new_k > prev_k, errors::invalid_invariant());
     
     let supply_value = state.lp_coin_supply.supply_value().to_u256();
