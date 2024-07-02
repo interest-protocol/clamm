@@ -1211,7 +1211,7 @@ module clamm::interest_clamm_volatile {
     mint_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
-
+    pool.assert_is_live();
     assert!(type_name::get<CoinIn>() != type_name::get<CoinOut>(), errors::cannot_swap_same_coin());
     
     let coin_in_value = coin_in.value();
@@ -1332,6 +1332,7 @@ module clamm::interest_clamm_volatile {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext      
   ): Coin<LpCoin> {
+    pool.assert_is_live();
     assert!(coin_a.value() != 0 || coin_b.value() != 0, errors::must_supply_one_coin());
     // Make sure the second argument is in right order
     assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
@@ -1369,6 +1370,7 @@ module clamm::interest_clamm_volatile {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext      
   ): Coin<LpCoin> {
+    pool.assert_is_live();
     assert!(coin_a.value() != 0 || coin_b.value() != 0 || coin_c.value() != 0, errors::must_supply_one_coin());
     // Make sure the second argument is in right order
     assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
@@ -1669,6 +1671,7 @@ module clamm::interest_clamm_volatile {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinOut> {
+    pool.assert_is_live();
     let lp_coin_amount = lp_coin.value();
 
     assert!(lp_coin_amount != 0, errors::no_zero_coin());

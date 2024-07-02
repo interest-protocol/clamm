@@ -1264,6 +1264,7 @@ module clamm::interest_clamm_stable {
     min_amount: u64,
     ctx: &mut TxContext
   ): Coin<CoinOut> {
+    pool.assert_is_live();
     assert!(type_name::get<CoinIn>() != type_name::get<CoinOut>(), errors::cannot_swap_same_coin());
     
     let coin_in_value = coin_in.value();
@@ -1347,6 +1348,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
+    pool.assert_is_live();
     assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>()]), errors::coins_must_be_in_order());
 
     let pool_address = pool.addy();
@@ -1388,6 +1390,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
+    pool.assert_is_live();
     assert!(pool.are_coins_ordered(vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>()]), errors::coins_must_be_in_order());
 
     let pool_address = pool.addy();
@@ -1431,6 +1434,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
+    pool.assert_is_live();
     assert!(
       pool.are_coins_ordered(
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>()]
@@ -1479,6 +1483,7 @@ module clamm::interest_clamm_stable {
     lp_coin_min_amount: u64,
     ctx: &mut TxContext     
   ): Coin<LpCoin> {
+    pool.assert_is_live();
     assert!(
       pool.are_coins_ordered( 
         vector[type_name::get<CoinA>(), type_name::get<CoinB>(), type_name::get<CoinC>(), type_name::get<CoinD>(), type_name::get<CoinE>()]
@@ -1758,6 +1763,7 @@ module clamm::interest_clamm_stable {
     min_amount: u64,
     ctx: &mut TxContext    
   ): Coin<CoinType> {
+    pool.assert_is_live();
     let lp_coin_value = lp_coin.value();
     assert!(lp_coin_value != 0, errors::no_zero_coin());
 

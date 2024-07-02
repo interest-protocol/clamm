@@ -265,6 +265,10 @@ module clamm::interest_pool {
 
   // === Public-Package Functions ===
 
+  public fun assert_is_live<Curve>(self: &InterestPool<Curve>) {
+    assert!(!self.paused, errors::pool_is_paused());
+  }
+
   public(package) fun addy<Curve>(self: &InterestPool<Curve>): address {
     self.id.to_address()
   }
@@ -278,7 +282,6 @@ module clamm::interest_pool {
   }
 
   public(package) fun state_mut<Curve>(self: &mut InterestPool<Curve>): &mut Versioned {
-    assert!(!self.paused, errors::pool_is_paused());
     &mut self.state
   }
 
