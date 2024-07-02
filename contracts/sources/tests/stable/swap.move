@@ -186,4 +186,37 @@ module clamm::stable_swap_tests {
     };
     test::end(scenario); 
   }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]
+  fun swap_is_paused() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test);
+      let cap = test.take_from_sender<PoolAdmin>();
+
+      pool.pause(&cap);
+
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(344, DAI_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      test.return_to_sender(cap);
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario); 
+  }
 }

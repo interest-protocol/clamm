@@ -13,9 +13,10 @@ module clamm::stable_tuple_5pool_add_liquidity_tests {
   use clamm::usdc::USDC;
   use clamm::stable_math;
   use clamm::curves::Stable;
-  use clamm::interest_clamm_stable;
   use clamm::lp_coin::LP_COIN;
   use clamm::true_usd::TRUE_USD;
+  use clamm::pool_admin::PoolAdmin;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_5pool;
   use clamm::amm_test_utils::{people, scenario, normalize_amount, mint, add_decimals, get_stable_add_liquidity_added_balances};
@@ -104,7 +105,6 @@ module clamm::stable_tuple_5pool_add_liquidity_tests {
     test::end(scenario);      
   }
 
-
   #[test]
   #[expected_failure(abort_code = clamm::errors::COINS_MUST_BE_IN_ORDER, location = clamm::interest_clamm_stable)]  
   fun add_liquidity_coins_wrong_order() {
@@ -183,6 +183,45 @@ module clamm::stable_tuple_5pool_add_liquidity_tests {
         ctx(test)
       ));
 
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario);      
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]  
+  fun add_liquidity_is_paused() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_5pool(test, 1000, 1000, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test); 
+      let cap = test.take_from_sender<PoolAdmin>();
+
+      pool.pause(&cap);
+
+      let lp_coin = interest_clamm_stable::add_liquidity_5_pool<DAI, USDC, USDT, FRAX, TRUE_USD, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(100, DAI_DECIMALS, ctx(test)),
+        mint<USDC>(110, USDC_DECIMALS, ctx(test)),
+        mint<USDT>(120, USDT_DECIMALS, ctx(test)),
+        mint<FRAX>(130, FRAX_DECIMALS, ctx(test)),
+        mint<TRUE_USD>(140, TRUE_USD_DECIMALS, ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      burn(lp_coin);
+
+      test.return_to_sender(cap);
       test::return_shared(c);
       test::return_shared(pool);
     };

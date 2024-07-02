@@ -64,6 +64,7 @@ module clamm::interest_pool_tests {
       assert_eq(interest_pool::finish_remove_liquidity_name(), FINISH_REMOVE_LIQUIDITY);
       assert_eq(interest_pool::start_donate_name(), START_DONATE);
       assert_eq(interest_pool::finish_donate_name(), FINISH_DONATE);
+      assert_eq(pool.paused(), false);
 
       // Will not throw
       // Will not throw
@@ -577,5 +578,32 @@ module clamm::interest_pool_tests {
     };
 
     test::end(scenario);      
+  }
+
+  #[test]
+  fun test_pause_logic() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let pool_admin_cap = test::take_from_sender<PoolAdmin>(test);
+
+      assert_eq(pool.paused(), false);
+      
+      pool.pause(&pool_admin_cap);
+
+      assert_eq(pool.paused(), true);
+
+
+      test::return_to_sender(test, pool_admin_cap);
+      test::return_shared(pool);
+    };
+    test::end(scenario);   
   }
 }

@@ -39,9 +39,6 @@ module clamm::interest_pool {
   const START_DONATE: vector<u8> = b"START_DONATE";
   const FINISH_DONATE: vector<u8> = b"FINISH_DONATE";
 
-  // @dev 90 days in epochs
-  const PAUSE_TIME_PERIOD: u64 = 90;
-
   // === Structs ===
 
   public struct InterestPool<phantom Curve> has key {
@@ -49,7 +46,6 @@ module clamm::interest_pool {
     coins: VecSet<TypeName>,
     state: Versioned,
     hooks: Option<Hooks>,
-    pause_deadline: u64,
     paused: bool
   }
 
@@ -249,9 +245,7 @@ module clamm::interest_pool {
     &mut self.id
   }
 
-  public fun pause<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin, ctx: &mut TxContext) {
-    assert!(self.pause_deadline >= ctx.epoch(), errors::pause_period_has_passed());
-
+  public fun pause<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin) {
     self.paused = true;
 
     events::pause(self.addy());
@@ -301,7 +295,6 @@ module clamm::interest_pool {
       coins,
       state,
       hooks: option::none(),
-      pause_deadline: PAUSE_TIME_PERIOD + ctx.epoch(),
       paused: false
     }
   }
@@ -318,7 +311,6 @@ module clamm::interest_pool {
       coins,
       state,
       hooks: option::none(),
-      pause_deadline: PAUSE_TIME_PERIOD + ctx.epoch(),
       paused: false
     };
 
@@ -439,5 +431,10 @@ module clamm::interest_pool {
   #[test_only]
   public fun confirm_for_testing<Curve>(self: &InterestPool<Curve>, request: Request) {
     confirm(self, request)
+  }
+
+  #[test_only]
+  public fun paused<Curve>(self: &InterestPool<Curve>): bool {
+    self.paused
   }
 }
