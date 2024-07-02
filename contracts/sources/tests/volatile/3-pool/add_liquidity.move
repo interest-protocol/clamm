@@ -14,6 +14,7 @@ module clamm::volatile_3pool_add_liquidity_tests {
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
+  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_3pool;
   use clamm::amm_test_utils ::{people, scenario, mint};
@@ -767,6 +768,44 @@ module clamm::volatile_3pool_add_liquidity_tests {
         733139234906431020032474
       );                       
 
+      test::return_shared(pool);
+    };
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }  
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]  
+  fun add_liquidity_is_paused() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 150000, 3, 100);
+
+    let mut c = clock::create_for_testing(ctx(test));
+
+    clock::increment_for_testing(&mut c, 14_000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Volatile>>(test);   
+      let cap = test.take_from_sender<PoolAdmin>();
+
+      pool.pause(&cap);
+
+      burn(interest_clamm_volatile::add_liquidity_3_pool<USDC, BTC, ETH, LP_COIN>(
+        &mut pool,
+        &c,
+        coin::zero(ctx(test)),
+        mint<BTC>(3, 9, ctx(test)),
+        coin::zero(ctx(test)),
+        0,
+        ctx(test)
+      ));                 
+
+      test.return_to_sender(cap);
       test::return_shared(pool);
     };
     clock::destroy_for_testing(c);

@@ -37,7 +37,7 @@ module clamm::stable_4pool_quote_tests {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
       let c = test::take_shared<Clock>(test); 
 
-      let (expected_value, _, _) = interest_clamm_stable::quote_swap<USDT, USDC, LP_COIN>(
+      let (expected_value, _) = interest_clamm_stable::quote_swap<USDT, USDC, LP_COIN>(
         &mut pool,
         &c,
         add_decimals(55, USDT_DECIMALS)       
@@ -153,7 +153,7 @@ module clamm::stable_4pool_quote_tests {
 
       let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
 
-      let expected_value = interest_clamm_stable::quote_remove_liquidity_one_coin<FRAX, LP_COIN>(&mut pool, &c, supply/ 10);
+      let (expected_value, _) = interest_clamm_stable::quote_remove_liquidity_one_coin<FRAX, LP_COIN>(&mut pool, &c, supply/ 10);
 
       let coin_dai = interest_clamm_stable::remove_liquidity_one_coin<FRAX, LP_COIN>(
         &mut pool,

@@ -8,28 +8,22 @@ module clamm::pool_admin {
 
   // === Public-Mutative Functions ===
 
-  public fun destroy(self: PoolAdmin) {
-    let PoolAdmin { id } = self;
-    
-    id.delete();
+  fun init(ctx: &mut TxContext) {
+    let admin = PoolAdmin {
+      id: object::new(ctx)
+    };
+
+    transfer::transfer(admin, ctx.sender());
   }
 
   // === Public Package Functions ===
 
-  public(package) fun new(ctx: &mut TxContext): PoolAdmin {
-    PoolAdmin { id: object::new(ctx) }
-  }
-
-  // === Public-View Functions ===
-
-  public fun addy(self: &PoolAdmin): address {
-    self.id.to_address()
-  }  
+  // === Public-View Functions === 
 
   // === Test Functions ===
 
   #[test_only]
-  public fun new_for_testing(ctx: &mut TxContext): PoolAdmin {
-    new(ctx)
+  public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
   }
 }

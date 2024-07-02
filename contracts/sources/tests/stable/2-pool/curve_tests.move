@@ -282,7 +282,7 @@ module clamm::stable_tuple_2pool_curve_tests {
       sim::swap(&mut sim_state, 1, 0, normalize_amount(25));
       sim::swap(&mut sim_state, 0, 1, normalize_amount(30));
 
-      let (pool_dy, _, _) = interest_clamm_stable::quote_swap<USDC, USDT, LP_COIN>(&mut pool, &c, add_decimals(10, USDC_DECIMALS));
+      let (pool_dy, _) = interest_clamm_stable::quote_swap<USDC, USDT, LP_COIN>(&mut pool, &c, add_decimals(10, USDC_DECIMALS));
 
       let sim_dy = sim::dy(&sim_state, 0, 1, normalize_amount(10));
       let sim_dy = ((sim_dy * USDT_DECIMALS_SCALAR / PRECISION) as u64);

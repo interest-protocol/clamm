@@ -9,8 +9,9 @@ module clamm::stable_tuple_2pool_remove_liquidity_tests {
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
   use clamm::curves::Stable;
-  use clamm::interest_clamm_stable;
   use clamm::lp_coin::LP_COIN;
+  use clamm::pool_admin::PoolAdmin;
+  use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_2pool;
   use clamm::amm_test_utils::{people, scenario, normalize_amount};
@@ -68,8 +69,7 @@ module clamm::stable_tuple_2pool_remove_liquidity_tests {
   }
 
   #[test]
-  #[expected_failure(abort_code = clamm::errors::SLIPPAGE, location = clamm::interest_clamm_stable)]  
-  fun remove_liquidity_slippage() {
+  fun remove_liquidity_cannot_be_paused() {
     let mut scenario = scenario();
     let (alice, _) = people();
 
@@ -80,19 +80,19 @@ module clamm::stable_tuple_2pool_remove_liquidity_tests {
     next_tx(test, alice);    
     {
       let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let cap = test.take_from_sender<PoolAdmin>();
 
       let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
 
-      let expected_usdc_amount = ((900 * USDC_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
-      let expected_usdt_amount = ((1000 * USDT_DECIMALS_SCALAR) * ((supply / 10) as u256) / (supply as u256) as u64);
-
       let c = clock::create_for_testing(ctx(test));
+
+      pool.pause(&cap);
 
       let(coin_usdc, coin_usdt) = interest_clamm_stable::remove_liquidity_2_pool<USDC, USDT, LP_COIN>(
         &mut pool,
         &c,
         mint<LP_COIN>(supply / 10, ctx(test)),
-        vector[expected_usdc_amount, expected_usdt_amount + 1],
+        vector[0, 0],
         ctx(test)
       );
 
@@ -101,6 +101,7 @@ module clamm::stable_tuple_2pool_remove_liquidity_tests {
 
       clock::destroy_for_testing(c);
 
+      test.return_to_sender(cap);
       test::return_shared(pool);            
     };
     test::end(scenario); 
