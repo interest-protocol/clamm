@@ -1,27 +1,27 @@
 // CurveV2 in Move - All logic from Curve
 // It is best to for the first coin to be a stable coin or Sui as all Coins are quoted from it
 // https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
-module clamm::interest_clamm_volatile {
+module clamm::interest_clamm_volatile;
   // === Imports ===
 
-  use std::type_name::{Self, TypeName};
+use std::type_name::{Self, TypeName};
 
-  use sui::{
+use sui::{
     clock::Clock,
     bag::{Self, Bag},
     coin::{Self, Coin},
     vec_map::{Self, VecMap},
     versioned::{Self, Versioned},
     balance::{Self, Supply, Balance}
-  };
+};
 
-  use suitears::{
+use suitears::{
     coin_decimals::CoinDecimals,
     math256::{Self, min, sum, diff, mul_div_up},
     fixed_point_wad::{mul_down, div_down, div_up, mul_up}
-  };
+};
 
-  use clamm::{
+use clamm::{
     errors,
     volatile_math,
     curves::Volatile,
@@ -29,14 +29,14 @@ module clamm::interest_clamm_volatile {
     pool_admin::PoolAdmin,
     utils::{Self, empty_vector, make_coins_vec_set_from_vector},
     interest_pool::{Self, HooksBuilder, InterestPool, Request}
-  };
+};
 
-  use fun coin::take as Balance.take;
-  use fun utils::to_u64 as u256.to_u64;
-  use fun utils::to_u256 as u64.to_u256;
-  use fun coin::from_balance as Balance.to_coin;  
-  use fun utils::vector_2_to_tuple as vector.to_2_tuple;
-  use fun utils::vector_3_to_tuple as vector.to_3_tuple;
+use fun coin::take as Balance.take;
+use fun utils::to_u64 as u256.to_u64;
+use fun utils::to_u256 as u64.to_u256;
+use fun coin::from_balance as Balance.to_coin;  
+use fun utils::vector_2_to_tuple as vector.to_2_tuple;
+use fun utils::vector_3_to_tuple as vector.to_3_tuple;
 
   // === Constants ===
 
