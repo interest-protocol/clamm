@@ -28,6 +28,7 @@ module clamm::interest_clamm_stable {
     utils::{Self, empty_vector, make_coins_vec_set_from_vector},
   };
 
+  use fun utils::map as vector.map;
   use fun coin::take as Balance.take;
   use fun utils::to_u64 as u256.to_u64;
   use fun utils::to_u256 as u64.to_u256;
@@ -886,18 +887,11 @@ module clamm::interest_clamm_stable {
 
     let prev_k = invariant_(amp, state.balances);
 
-    let mut i = 0;
-    let num_of_coins = coins.length();
-    let mut balances = state.balances;
-
-    while (num_of_coins > i) {
+    let balances = state.balances.map!(|balance, i| {
       let coin_metadata = state.coin_metadatas.get(&coins[i]);
       let normalized_value = (amounts[i]).to_u256() * PRECISION / coin_metadata.decimals;
-      let ref = &mut balances[i];
-      *ref = *ref + normalized_value;
-
-      i = i + 1;
-    };
+      normalized_value + balance
+    });
 
     let new_k = invariant_(amp, balances);    
     let supply_value = state.lp_coin_supply.supply_value().to_u256();
@@ -906,7 +900,7 @@ module clamm::interest_clamm_stable {
       (new_k / 1_000_000_000).to_u64() 
     }
     else {
-      
+      let num_of_coins = coins.length();
       let fee = state.imbalanced_fee();
       let mut balances_minus_fees = balances;
 
