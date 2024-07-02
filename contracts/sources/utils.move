@@ -5,17 +5,12 @@ use std::type_name::TypeName;
 
 use sui::vec_set::{Self, VecSet};
 
-  // === public(package)-PackageFunctions ===
+// === public(package)-PackageFunctions ===
 
 public(package) fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
-    let len = data.length();
-    let mut set = vec_set::empty();
-    let mut i = 0;
+    let set = vec_set::empty();
 
-    while (len > i) {
-      set.insert(data[i]);
-      i = i + 1;
-    };
+    data.length().do!(|i| set.insert(data[i]));
 
     set
 }
@@ -53,7 +48,6 @@ public macro fun do<$T>($v: vector<$T>, $f: |$T, u64|) {
     let mut i = 0;
     while (!v.is_empty()) {
         $f(v.pop_back(), i);
-
         i = i + 1;
     };
     v.destroy_empty();

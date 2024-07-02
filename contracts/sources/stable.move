@@ -900,24 +900,15 @@ module clamm::interest_clamm_stable {
       (new_k / 1_000_000_000).to_u64() 
     }
     else {
-      let num_of_coins = coins.length();
       let fee = state.imbalanced_fee();
-      let mut balances_minus_fees = balances;
-
-      let mut i = 0;
-
-      while (num_of_coins > i) {
-
+      let balances_minus_fees = balances.map!(|e, i| {
         let ideal_balance = new_k * state.balances[i] / prev_k;
         let difference = diff(ideal_balance, balances[i]);
 
         let balance_fee = fee * difference / PRECISION;
 
-        let y = &mut balances_minus_fees[i];
-        *y = *y - balance_fee;
-
-        i = i + 1;
-      };
+        e - balance_fee
+      });
 
       let new_k_2 = invariant_(amp, balances_minus_fees);
 
@@ -932,19 +923,12 @@ module clamm::interest_clamm_stable {
     let coins = pool.coins();
     let state = load<LpCoin>(pool.state_mut());
 
-    let mut i = 0;
-    let mut amounts = vector[];
-    let num_of_coins = coins.length();
-    
-    while (num_of_coins > i) {
-      let coin_metadata = state.coin_metadatas.get(&coins[i]);
-      let denormalized_value = state.balances[i] * coin_metadata.decimals / PRECISION;
+    state.balances.map!(|e, i| {
+      let coin_metadata = &state.coin_metadatas[&coins[i]];
+      let denormalized_value = e * coin_metadata.decimals / PRECISION;
       let balance_to_remove = denormalized_value * lp_coin_amount.to_u256() / state.lp_coin_supply.supply_value().to_u256();
-      amounts.push_back(balance_to_remove.to_u64());
-      i = i + 1;
-    };
-
-    amounts
+      balance_to_remove.to_u64()   
+    })
   }
 
   public fun quote_remove_liquidity_one_coin<CoinType, LpCoin>(
@@ -1718,24 +1702,16 @@ module clamm::interest_clamm_stable {
     } else {
       let fee = state.imbalanced_fee();
 
-      let len = state.n_coins;
-      let mut i = 0;  
-
-      let mut balances_minus_fees = state.balances;
-      while (len > i) {
-
+      let balances_minus_fees = state.balances.map!(|e, i| {
         let ideal_balance = new_k * old_balances[i] / prev_k;
         let difference = diff(ideal_balance, state.balances[i]);
 
         let balance_fee = fee * difference / PRECISION;
         let x = &mut state.balances[i];
-        *x = *x- state.fees.calculate_admin_fee(balance_fee);
+        *x = *x - state.fees.calculate_admin_fee(balance_fee);
 
-        let y = &mut balances_minus_fees[i];
-        *y = *y - balance_fee;
-
-        i = i + 1;
-      };
+        e - balance_fee
+      });
 
       let new_k_2 = invariant_(amp, balances_minus_fees);
 
@@ -1856,8 +1832,6 @@ module clamm::interest_clamm_stable {
 
     let (index, decimals) = coin_state_metadata<CoinOut, LpCoin>(state);
 
-    let mut balances_reduced = state.balances;
-
     let initial_coin_balance = state.balances[index];
 
     let fee = state.imbalanced_fee();
@@ -1870,19 +1844,14 @@ module clamm::interest_clamm_stable {
       lp_supply_value
     ) + 1;
 
-    let mut i = 0;
-    let n_coins = state.n_coins;
+    let balances_reduced = state.balances.map!(|e, i| {
+        let coin_balance = if (i == index)
+            state.balances[i] * new_invariant / prev_invariant - new_out_balance
+        else 
+            state.balances[i] - state.balances[i] * new_invariant / prev_invariant;
 
-    while (n_coins > i) {
-      let coin_balance = if (i == index)
-        state.balances[i] * new_invariant / prev_invariant - new_out_balance
-      else 
-        state.balances[i] - state.balances[i] * new_invariant / prev_invariant;
-
-      *&mut balances_reduced[i] = balances_reduced[i] - (fee * coin_balance / PRECISION);
-
-      i = i + 1;
-    };
+        e - (fee * coin_balance / PRECISION)
+    });
 
     let new_out_balance_with_fee = y_d(
       get_a(state.initial_a, state.initial_a_time, state.future_a, state.future_a_time, clock),

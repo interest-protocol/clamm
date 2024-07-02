@@ -6,8 +6,8 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 version = "5.0.0-alpha"
 
 [dependencies]
-MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/mainnet" }
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "main", override = true }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "main", override = true }
 SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "mainnet-1.0.0-beta" }
 
 [addresses]
