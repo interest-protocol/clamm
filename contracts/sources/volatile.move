@@ -2,7 +2,7 @@
 // It is best to for the first coin to be a stable coin or Sui as all Coins are quoted from it
 // https://etherscan.io/address/0xd51a44d3fae010294c616388b506acda1bfaae46#code
 module clamm::interest_clamm_volatile;
-  // === Imports ===
+// === Imports ===
 
 use std::type_name::{Self, TypeName};
 
@@ -38,24 +38,24 @@ use fun coin::from_balance as Balance.to_coin;
 use fun utils::vector_2_to_tuple as vector.to_2_tuple;
 use fun utils::vector_3_to_tuple as vector.to_3_tuple;
 
-  // === Constants ===
+// === Constants ===
 
-  const STATE_V1_VERSION: u64 = 1;
-  const ROLL: u256 = 1_000_000_000; // 1e9 - LpCoins have 9 decimals 
-  const MIN_FEE: u256 = 5 * 100_000;
-  const MAX_FEE: u256 = 10 * 1_000_000_000;
-  const ONE_WEEK: u256 = 7 * 86400000; // 1 week in milliseconds
-  const INF_COINS: u64 = 15;
-  const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
-  const ADMIN_FEE: u256 = 2 * 1_000_000_000; // 20%
-  const NOISE_FEE: u256 = 100_000;
-  const MIN_GAMMA: u256 = 10_000_000_000;
-  const MAX_GAMMA: u256 = 10_000_000_000_000_000;
-  const MAX_A_CHANGE: u256 = 10;
-  const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
-  const MAX_ADMIN_FEE: u256 = 10000000000;
-  const MAX_U256: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-  const UPDATE_DELAY: u64 = 3; // 3 epochs
+const STATE_V1_VERSION: u64 = 1;
+const ROLL: u256 = 1_000_000_000; // 1e9 - LpCoins have 9 decimals 
+const MIN_FEE: u256 = 5 * 100_000;
+const MAX_FEE: u256 = 10 * 1_000_000_000;
+const ONE_WEEK: u256 = 7 * 86400000; // 1 week in milliseconds
+const INF_COINS: u64 = 15;
+const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
+const ADMIN_FEE: u256 = 2 * 1_000_000_000; // 20%
+const NOISE_FEE: u256 = 100_000;
+const MIN_GAMMA: u256 = 10_000_000_000;
+const MAX_GAMMA: u256 = 10_000_000_000_000_000;
+const MAX_A_CHANGE: u256 = 10;
+const MIN_RAMP_TIME: u64 = 86400000; // 1 day in milliseconds
+const MAX_ADMIN_FEE: u256 = 10000000000;
+const MAX_U256: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+const UPDATE_DELAY: u64 = 3; // 3 epochs
 
   // === Structs ===
 

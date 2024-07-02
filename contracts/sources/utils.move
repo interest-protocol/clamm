@@ -1,13 +1,13 @@
-module clamm::utils {
-  // === Imports ===
+module clamm::utils;
+// === Imports ===
 
-  use std::type_name::TypeName;
+use std::type_name::TypeName;
 
-  use sui::vec_set::{Self, VecSet};
+use sui::vec_set::{Self, VecSet};
 
   // === public(package)-PackageFunctions ===
 
-  public(package) fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
+public(package) fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
     let len = data.length();
     let mut set = vec_set::empty();
     let mut i = 0;
@@ -18,24 +18,24 @@ module clamm::utils {
     };
 
     set
-  }
+}
 
-  public(package) fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
+public(package) fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
     (
       x[0],
       x[1],
     )
-  }
+}
 
-  public(package) fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
+public(package) fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
     (
       x[0],
       x[1],
       x[2]
     )
-  }
+}
 
-  public(package) fun empty_vector(x: u256): vector<u256> {
+public(package) fun empty_vector(x: u256): vector<u256> {
     let mut data = vector::empty();
 
     let mut i = 0;
@@ -45,19 +45,37 @@ module clamm::utils {
     };
 
     data
-  }
+}
 
-  // === public(package)-View Functions ===
+public macro fun do<$T>($v: vector<$T>, $f: |$T, u64|) {
+    let mut v = $v;
+    v.reverse();
+    let mut i = 0;
+    while (!v.is_empty()) {
+        $f(v.pop_back(), i);
 
-  public(package) fun to_u8(x: u64): u8 {
+        i = i + 1;
+    };
+    v.destroy_empty();
+}
+
+public macro fun map<$T, $U>($v: vector<$T>, $f: |$T, u64| -> $U): vector<$U> {
+    let v = $v;
+    let mut r = vector[];
+    do!(v, |e, i| r.push_back($f(e, i)));
+    r
+}
+
+// === public(package)-View Functions ===
+
+public(package) fun to_u8(x: u64): u8 {
     (x as u8)
-  }
+}
 
-  public(package) fun to_u64(x: u256): u64 {
+public(package) fun to_u64(x: u256): u64 {
     (x as u64)
-  }
+}
 
-  public(package) fun to_u256(x: u64): u256 {
+public(package) fun to_u256(x: u64): u256 {
     (x as u256)
-  }
 }
