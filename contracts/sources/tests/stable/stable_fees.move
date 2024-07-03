@@ -145,7 +145,7 @@ module clamm::stable_fees_tests {
   }
 
 #[test]
-#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
+#[expected_failure(abort_code = clamm::errors::INVALID_FEE, location = clamm::stable_fees)]  
 fun aborts_max_fee() {
     let mut scenario = scenario();
     let (alice, _) = people();
@@ -162,7 +162,7 @@ fun aborts_max_fee() {
   }
 
 #[test]
-#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
+#[expected_failure(abort_code = clamm::errors::INVALID_FEE, location = clamm::stable_fees)]  
 fun aborts_max_admin_fee() {
     let mut scenario = scenario();
     let (alice, _) = people();
@@ -179,7 +179,7 @@ fun aborts_max_admin_fee() {
   }
 
 #[test]
-#[expected_failure(abort_code = 66, location = clamm::stable_fees)]  
+#[expected_failure(abort_code = clamm::errors::MUST_WAIT_TO_UPDATE_FEES, location = clamm::stable_fees)]  
 fun commit_fee_aborts_on_early_update() {
     let mut scenario = scenario();
     let (alice, _) = people();
@@ -200,7 +200,7 @@ fun commit_fee_aborts_on_early_update() {
   }
 
 #[test]
-#[expected_failure(abort_code = 66, location = clamm::stable_fees)]  
+#[expected_failure(abort_code = clamm::errors::MUST_WAIT_TO_UPDATE_FEES, location = clamm::stable_fees)]  
 fun commit_admin_fee_aborts_on_early_update() {
     let mut scenario = scenario();
     let (alice, _) = people();

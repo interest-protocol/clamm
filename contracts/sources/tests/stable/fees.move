@@ -53,10 +53,9 @@ module clamm::stable_swap_fees_tests {
       test.next_epoch(@0x0);
       test.next_epoch(@0x0);
 
-      let mut fees = interest_clamm_stable::fees<LP_COIN>(&mut pool);
+      interest_clamm_stable::update_fee<LP_COIN>(&mut pool, &admin_cap, test.ctx());
 
-      stable_fees::update_fee(&mut fees, test.ctx());
-      stable_fees::update_admin_fee(&mut fees, test.ctx());
+      let fees = interest_clamm_stable::fees<LP_COIN>(&mut pool);
 
       let fee = stable_fees::fee(&fees);
       let fee_admin = stable_fees::admin_fee(&fees);

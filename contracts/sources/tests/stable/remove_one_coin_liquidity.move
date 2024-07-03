@@ -13,9 +13,9 @@ module clamm::stable_remove_one_coin_liquidity_tests {
   use clamm::interest_clamm_stable;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_3pool;
-  use clamm::amm_test_utils::{people, scenario, normalize_amount};
   use clamm::stable_simulation::{Self as sim, State as SimState};
-
+  use clamm::amm_test_utils::{people, scenario, normalize_amount};
+  
   const LP_COIN_DECIMALS_SCALAR: u256 = 1000000000; 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 

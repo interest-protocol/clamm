@@ -70,6 +70,7 @@ module clamm::errors {
   const MUST_WAIT_TO_UPDATE_FEES: u64 = 66;
   const POOL_IS_PAUSED: u64 = 67;
   const PAUSE_PERIOD_HAS_PASSED: u64 = 68;
+  const INVALID_STABLE_FEE_AMOUNT: u64 = 69;
 
 
   // === Public-View Functions ===
@@ -348,5 +349,9 @@ module clamm::errors {
 
   public(package) fun must_wait_to_update_parameters(): u64 {
     MUST_WAIT_TO_UPDATE_PARAMETERS
+  }
+
+  public(package) fun invalids_stable_fee_amount(): u64 {
+    INVALID_STABLE_FEE_AMOUNT
   }
 }

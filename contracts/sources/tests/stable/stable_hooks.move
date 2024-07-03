@@ -48,8 +48,8 @@ module clamm::stable_hooks_tests {
     let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      mint(2, test.ctx()),
-      mint(3, test.ctx()),
+      mint(2_000_000_000, test.ctx()),
+      mint(3_000_000_000_000, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
@@ -68,7 +68,7 @@ module clamm::stable_hooks_tests {
       &mut pool,
       &c,
       start_request,
-      mint(1, test.ctx()),
+      mint(1_000, test.ctx()),
       0,
       test.ctx()
     );

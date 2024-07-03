@@ -188,6 +188,51 @@ module clamm::stable_swap_tests {
   }
 
   #[test]
+  fun swap_value_is_too_low_no_fees() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test);
+      let cap = test.take_from_sender<PoolAdmin>();
+
+      interest_clamm_stable::commit_fee<LP_COIN>(
+        &mut pool,
+        &cap,
+        option::some(0),
+        option::some(MAX_ADMIN_FEE),
+        test.ctx()
+      );
+
+      test.next_epoch(alice);
+      test.next_epoch(alice);
+      test.next_epoch(alice);
+      test.next_epoch(alice);
+
+      interest_clamm_stable::update_fee<LP_COIN>(&mut pool, &cap, test.ctx());
+
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(10_000_000, 0, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
+      test.return_to_sender(cap);
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario); 
+  }
+
+  #[test]
   #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]
   fun swap_is_paused() {
    let mut scenario = scenario();
@@ -214,6 +259,35 @@ module clamm::stable_swap_tests {
       ));
 
       test.return_to_sender(cap);
+      test::return_shared(c);
+      test::return_shared(pool);
+    };
+    test::end(scenario); 
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_STABLE_FEE_AMOUNT, location = clamm::interest_clamm_stable)]
+  fun swap_value_is_too_low() {
+   let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_3pool(test, 1000, 1000, 1000);
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let c = test::take_shared<Clock>(test);
+
+      burn(interest_clamm_stable::swap<DAI, USDC, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<DAI>(1_000_000, 0, ctx(test)),
+        0,
+        ctx(test)
+      ));
+
       test::return_shared(c);
       test::return_shared(pool);
     };

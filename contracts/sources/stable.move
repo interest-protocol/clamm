@@ -1298,6 +1298,11 @@ module clamm::interest_clamm_stable {
     
     let amount_out = ((normalized_amount_out - fee) * coin_out_decimals / PRECISION).to_u64();
 
+    assert!(
+      (normalized_amount_out * coin_out_decimals / PRECISION).to_u64() > amount_out
+      || fee == 0, 
+      errors::invalids_stable_fee_amount()
+    );
     assert!(amount_out >= min_amount, errors::slippage());
 
     let coin_in_balance = &mut state.balances[coin_in_index];
