@@ -8,11 +8,12 @@ module clamm::volatile_2pool_remove_liquidity_tests {
   use sui::test_utils::assert_eq;
   use sui::test_scenario::{Self as test, next_tx, ctx}; 
 
-  use clamm::interest_clamm_volatile;
   use clamm::eth::ETH;
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
+  use clamm::pool_admin::PoolAdmin;
+  use clamm::interest_clamm_volatile;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_2pool;
   use clamm::amm_test_utils ::{people, scenario, mint};
@@ -558,6 +559,77 @@ module clamm::volatile_2pool_remove_liquidity_tests {
         6006729288251020546217
       );        
 
+      test::return_shared(pool);
+    };  
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }  
+
+  #[test]
+  fun remove_liquidity_cannot_be_paused() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_2pool(test, 4500, 3);
+    let c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
+      let cap = test.take_from_sender<PoolAdmin>();
+
+      pool.pause(&cap);
+
+      let (usdc_coin, eth_coin) = interest_clamm_volatile::remove_liquidity_2_pool<USDC, ETH, LP_COIN>(
+        &mut pool,
+        mint_for_testing(38729833462, ctx(test)),
+        vector[0, 0],
+        ctx(test)
+      );
+
+      burn(usdc_coin);
+      burn(eth_coin);      
+
+      test.return_to_sender(cap);
+      test::return_shared(pool);
+    };      
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]  
+  fun remove_liquidity_one_coin_is_paused() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_2pool(test, 4500, 3);
+    let c = clock::create_for_testing(ctx(test));
+
+   next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
+      let cap = test.take_from_sender<PoolAdmin>();
+      
+      pool.pause(&cap);
+
+      let eth_coin = interest_clamm_volatile::remove_liquidity_one_coin<ETH, LP_COIN>(
+        &mut pool,
+        &c,
+        mint_for_testing(224642009232, ctx(test)),
+        0,
+        ctx(test)
+      );
+
+      burn(eth_coin);       
+
+      test.return_to_sender(cap);
       test::return_shared(pool);
     };  
 

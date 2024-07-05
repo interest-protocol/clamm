@@ -1,19 +1,27 @@
+#[allow(implicit_const_copy)]
 module clamm::interest_pool {
   // === Imports ===
 
-  use std::string::{Self, String};
-  use std::type_name::{Self, TypeName};
+  use std::{
+    string::{Self, String},
+    type_name::{Self, TypeName}
+  };
 
-  use sui::bag::{Self, Bag};
-  use sui::versioned::Versioned;
-  use sui::vec_map::{Self, VecMap};
-  use sui::vec_set::{Self, VecSet};
+  use sui::{
+    bag::{Self, Bag},
+    versioned::Versioned,
+    vec_map::{Self, VecMap},
+    vec_set::{Self, VecSet}
+  };
 
   use suitears::comparator::{compare, eq};
 
-  use clamm::curves;
-  use clamm::errors;
-  use clamm::pool_admin::{Self, PoolAdmin};
+  use clamm::{
+    curves,
+    errors,
+    pool_events as events,
+    pool_admin::PoolAdmin
+  };
 
   use fun string::utf8 as vector.utf8;
 
@@ -37,8 +45,8 @@ module clamm::interest_pool {
     id: UID,
     coins: VecSet<TypeName>,
     state: Versioned,
-    pool_admin_address: address,
-    hooks: Option<Hooks>
+    hooks: Option<Hooks>,
+    paused: bool
   }
 
   public struct Hooks has store {
@@ -60,12 +68,9 @@ module clamm::interest_pool {
 
   // === Public Mutative Functions ===
 
+  #[allow(lint(share_owned))]
   public fun share<Curve>(self: InterestPool<Curve>) {
     transfer::share_object(self);
-  }
-
-  public fun assert_pool_admin<Curve>(self: &InterestPool<Curve>, pool_admin: &PoolAdmin) {
-    assert!(self.pool_admin_address == pool_admin.addy(), errors::invalid_pool_admin());
   }
 
   public fun start_swap<Curve>(self: &InterestPool<Curve>): Request {
@@ -97,22 +102,6 @@ module clamm::interest_pool {
   }  
 
   // === Public-View Functions ===
-
-  public fun addy<Curve>(self: &InterestPool<Curve>): address {
-    self.id.to_address()
-  }
-
-  public fun coins<Curve>(self: &InterestPool<Curve>): vector<TypeName> {
-    *self.coins.keys()
-  }
-
-  public fun pool_admin_address<Curve>(self: &InterestPool<Curve>): address {
-    self.pool_admin_address
-  }
-
-  public fun are_coins_ordered<Curve>(self: &InterestPool<Curve>, coins: vector<TypeName>): bool {
-    eq(&compare(&self.coins(), &coins))
-  }
 
   public fun start_swap_name(): vector<u8> {
     START_SWAP
@@ -252,15 +241,38 @@ module clamm::interest_pool {
 
   // === Admin Functions ===
 
-  public fun uid_mut<Curve>(self: &mut InterestPool<Curve>, pool_admin: &PoolAdmin): &mut UID {
-    assert_pool_admin(self, pool_admin);
+  public fun uid_mut<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin): &mut UID {
     &mut self.id
+  }
+
+  public fun pause<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin) {
+    self.paused = true;
+
+    events::pause(self.addy());
+  }
+
+  public fun unpause<Curve>(self: &mut InterestPool<Curve>, _: &PoolAdmin) {
+    self.paused = false;
+
+    events::unpause(self.addy());
   }
 
   // === Public-Package Functions ===
 
-  public(package) fun state<Curve>(self: &InterestPool<Curve>): &Versioned {
-    &self.state
+  public fun assert_is_live<Curve>(self: &InterestPool<Curve>) {
+    assert!(!self.paused, errors::pool_is_paused());
+  }
+
+  public(package) fun addy<Curve>(self: &InterestPool<Curve>): address {
+    self.id.to_address()
+  }
+
+  public(package) fun coins<Curve>(self: &InterestPool<Curve>): vector<TypeName> {
+    *self.coins.keys()
+  }
+
+  public(package) fun are_coins_ordered<Curve>(self: &InterestPool<Curve>, coins: vector<TypeName>): bool {
+    eq(&compare(&self.coins(), &coins))
   }
 
   public(package) fun state_mut<Curve>(self: &mut InterestPool<Curve>): &mut Versioned {
@@ -275,39 +287,36 @@ module clamm::interest_pool {
     }
   }
 
-  public(package) fun new<Curve>(coins: VecSet<TypeName>, state: Versioned, ctx: &mut TxContext): (InterestPool<Curve>, PoolAdmin)  {
+  public(package) fun new<Curve>(coins: VecSet<TypeName>, state: Versioned, ctx: &mut TxContext): InterestPool<Curve>  {
     curves::assert_curve<Curve>();
-    let pool_admin = pool_admin::new(ctx);
-    let self = InterestPool {
+
+    InterestPool {
       id: object::new(ctx),
       coins,
       state,
-      pool_admin_address: pool_admin.addy(),
-      hooks: option::none()
-    };
-
-    (self, pool_admin)
+      hooks: option::none(),
+      paused: false
+    }
   }
 
   public(package) fun new_with_hooks<Curve>(
     coins: VecSet<TypeName>, 
     state: Versioned,
     ctx: &mut TxContext
-  ): (InterestPool<Curve>, PoolAdmin, HooksBuilder)  {
+  ): (InterestPool<Curve>, HooksBuilder)  {
     curves::assert_curve<Curve>();
 
-    let pool_admin = pool_admin::new(ctx);
     let self = InterestPool {
       id: object::new(ctx),
       coins,
       state,
-      pool_admin_address: pool_admin.addy(),
-      hooks: option::none()
+      hooks: option::none(),
+      paused: false
     };
 
     let hooks_builder = new_hooks_builder(self.addy(), ctx);
 
-    (self, pool_admin, hooks_builder)
+    (self, hooks_builder)
   }  
 
   public(package) fun finish_swap<Curve>(self: &InterestPool<Curve>, request: Request): Request {
@@ -422,5 +431,10 @@ module clamm::interest_pool {
   #[test_only]
   public fun confirm_for_testing<Curve>(self: &InterestPool<Curve>, request: Request) {
     confirm(self, request)
+  }
+
+  #[test_only]
+  public fun paused<Curve>(self: &InterestPool<Curve>): bool {
+    self.paused
   }
 }

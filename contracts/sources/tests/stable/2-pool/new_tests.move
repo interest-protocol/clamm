@@ -102,7 +102,7 @@ module clamm::stable_tuple_2pool_new_tests {
       let coin_decimals = test::take_shared<CoinDecimals>(test);
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
 
-      let (pool, pool_admin, lp_coin) = interest_clamm_stable::new_2_pool(
+      let (pool, lp_coin) = interest_clamm_stable::new_2_pool(
         &c,
         &coin_decimals,
         mint<USDC>(1000, USDC_DECIMALS, test.ctx()),
@@ -114,7 +114,6 @@ module clamm::stable_tuple_2pool_new_tests {
 
       burn(lp_coin);    
       interest_pool::share(pool);
-      transfer::public_transfer(pool_admin, alice);
 
       test::return_shared(coin_decimals);
       test::return_shared(c);

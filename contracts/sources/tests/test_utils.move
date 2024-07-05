@@ -1,22 +1,34 @@
 #[test_only]
 module clamm::amm_test_utils {
 
-  use sui::math;
-  use sui::clock;
-  use sui::test_utils::destroy;
-  use sui::coin::{mint_for_testing, Coin, CoinMetadata};
-  use sui::test_scenario::{Self as test, Scenario, next_tx, ctx};
+  use sui::{
+    math,
+    test_utils::destroy,
+    clock::{Self, Clock},
+    coin::{mint_for_testing, Coin, CoinMetadata},
+    test_scenario::{Self as test, Scenario, next_tx, ctx}
+  };
 
-  use suitears::coin_decimals::{Self, CoinDecimals};
-  
-  use clamm::btc::{Self, BTC};
-  use clamm::eth::{Self, ETH};
-  use clamm::dai::{Self, DAI};
-  use clamm::usdt::{Self, USDT};
-  use clamm::usdc::{Self, USDC};
-  use clamm::frax::{Self, FRAX};
-  use clamm::lp_coin::{Self, LP_COIN};
-  use clamm::true_usd::{Self, TRUE_USD};
+  use suitears::{
+    math256::diff,
+    coin_decimals::{Self, CoinDecimals}
+  };
+
+  use clamm::{
+    pool_admin,
+    curves::Stable,
+    btc::{Self, BTC},
+    eth::{Self, ETH},
+    dai::{Self, DAI},
+    usdt::{Self, USDT},
+    usdc::{Self, USDC},
+    frax::{Self, FRAX},
+    interest_clamm_stable,
+    stable_math::invariant_,
+    lp_coin::{Self, LP_COIN},
+    true_usd::{Self, TRUE_USD},
+    interest_pool::InterestPool,
+  };
 
   const PRECISION: u256 = 1_000_000_000_000_000_000; // 1e18
 
@@ -36,6 +48,55 @@ module clamm::amm_test_utils {
     a * PRECISION
   }
 
+  public fun imbalanced_fee(fee: u256, n_coins: u64): u256 {
+    fee * (n_coins as u256) / (4 * ((n_coins as u256) - 1))
+  }
+
+  public fun get_stable_add_liquidity_added_balances<LpCoin>(
+    pool: &mut InterestPool<Stable>, 
+    clock: &Clock, 
+    old_balances: vector<u256>,
+    new_balances: vector<u256>,
+  ): vector<u256> {
+
+    let coins = pool.coins();
+
+    let amp = interest_clamm_stable::a<LpCoin>(pool, clock);  
+
+    let prev_k = invariant_(amp, old_balances);
+
+    let num_of_coins = coins.length();
+
+    let new_k = invariant_(amp, new_balances);    
+    let supply_value = (interest_clamm_stable::lp_coin_supply<LpCoin>(pool) as u256);
+
+    if (supply_value == 0) {
+      new_balances
+    } else {
+      
+      let stable_fee = interest_clamm_stable::fees<LpCoin>(pool);
+      let fee = stable_fee.fee() * (num_of_coins as u256) / (4 * ((num_of_coins as u256) - 1));
+      let mut balances_minus_fees = new_balances;
+
+      let mut i = 0;
+
+      while (num_of_coins > i) {
+
+        let ideal_balance = new_k * old_balances[i] / prev_k;
+        let difference = diff(ideal_balance, new_balances[i]);
+
+        let balance_fee = fee * difference / PRECISION;
+
+        let y = &mut balances_minus_fees[i];
+        *y = (*y - stable_fee.calculate_admin_fee(balance_fee)) - old_balances[i];
+
+        i = i + 1;
+      };
+
+      balances_minus_fees 
+    }
+   }
+
   #[lint_allow(share_owned)]
   public fun setup_dependencies(test: &mut Scenario) {
     let (alice, _) = people();
@@ -50,6 +111,7 @@ module clamm::amm_test_utils {
       lp_coin::init_for_testing(ctx(test));
       frax::init_for_testing(ctx(test));
       true_usd::init_for_testing(ctx(test));
+      pool_admin::init_for_testing(ctx(test));
 
       let mut cap = coin_decimals::new_cap(ctx(test));
 

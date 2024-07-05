@@ -48,13 +48,6 @@ module clamm::utils_tests {
   }
 
   #[test]
-  fun test_head() {
-    let vec = vector[2, 3, 4];
-
-    assert_eq(utils::head(vec), 2);
-  }
-
-  #[test]
   fun test_convert_uint() {
     assert_eq(utils::to_u8(1), 1);
     assert_eq(utils::to_u64(2), 2);
