@@ -8,9 +8,9 @@ module clamm::stable_fees_tests {
   
   use clamm::amm_test_utils::{people, scenario};
 
-  const INITIAL_FEE_PERCENT: u256 = 500000000000000; // 0.05%
+  const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
-  const MAX_ADMIN_FEE: u256 = 200000000000000000; // 20%  
+  const MAX_ADMIN_FEE: u256 = 200000000000000000; // 20%
 
   #[test]
   fun sets_initial_state_correctly() {
@@ -25,11 +25,13 @@ module clamm::stable_fees_tests {
       
       let fees = stable_fees::new();
 
-      let fee = stable_fees::fee(&fees);
-      let fee_admin = stable_fees::admin_fee(&fees);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
-      assert_eq(fee, INITIAL_FEE_PERCENT);
-      assert_eq(fee_admin, MAX_ADMIN_FEE);
+      assert_eq(fee_in, INITIAL_FEE_PERCENT);
+      assert_eq(fee_out, INITIAL_FEE_PERCENT);
+      assert_eq(fee_admin, 0);
 
     };
     test::end(scenario);      
@@ -47,61 +49,40 @@ module clamm::stable_fees_tests {
     {
       let mut fees = stable_fees::new();
 
-      stable_fees::commit_fee(&mut fees, option::some(MAX_FEE_PERCENT), test.ctx());
-      stable_fees::commit_admin_fee(&mut fees, option::some(1), test.ctx());
+      stable_fees::update_fee_in_percent(&mut fees, option::some(MAX_FEE_PERCENT));
+      stable_fees::update_fee_out_percent(&mut fees, option::some(MAX_FEE_PERCENT));
+      stable_fees::update_admin_fee_percent(&mut fees, option::some(1));
 
-      let fee = stable_fees::fee(&fees);
-      let fee_admin = stable_fees::admin_fee(&fees);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
-      assert_eq(fee, INITIAL_FEE_PERCENT);
-      assert_eq(fee_admin, MAX_ADMIN_FEE);
-
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-
-      stable_fees::update_fee(&mut fees, test.ctx());
-      stable_fees::update_admin_fee(&mut fees, test.ctx());
-
-      let fee = stable_fees::fee(&fees);
-      let fee_admin = stable_fees::admin_fee(&fees);
-
-      assert_eq(fee, MAX_FEE_PERCENT);
+      assert_eq(fee_in, MAX_FEE_PERCENT);
+      assert_eq(fee_out, MAX_FEE_PERCENT);
       assert_eq(fee_admin, 1);
 
-      stable_fees::commit_fee(&mut fees, option::none(), test.ctx());
-      stable_fees::commit_admin_fee(&mut fees, option::none(), test.ctx());
+      stable_fees::update_fee_in_percent(&mut fees, option::none());
+      stable_fees::update_fee_out_percent(&mut fees, option::none());
+      stable_fees::update_admin_fee_percent(&mut fees, option::none());
 
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
-      stable_fees::update_fee(&mut fees, test.ctx());
-      stable_fees::update_admin_fee(&mut fees, test.ctx());
-
-      let fee = stable_fees::fee(&fees);
-      let fee_admin = stable_fees::admin_fee(&fees);
-
-      assert_eq(fee, MAX_FEE_PERCENT);
+      assert_eq(fee_in, MAX_FEE_PERCENT);
+      assert_eq(fee_out, MAX_FEE_PERCENT);
       assert_eq(fee_admin, 1);
 
-      stable_fees::commit_fee(&mut fees, option::some(0), test.ctx());
-      stable_fees::commit_admin_fee(&mut fees, option::some(0), test.ctx());
+      stable_fees::update_fee_in_percent(&mut fees, option::some(0));
+      stable_fees::update_fee_out_percent(&mut fees, option::some(0));
+      stable_fees::update_admin_fee_percent(&mut fees, option::some(0));
 
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
+      let fee_in = stable_fees::fee_in_percent(&fees);
+      let fee_out = stable_fees::fee_out_percent(&fees);
+      let fee_admin = stable_fees::admin_fee_percent(&fees);
 
-      stable_fees::update_fee(&mut fees, test.ctx());
-      stable_fees::update_admin_fee(&mut fees, test.ctx());
-
-      let fee = stable_fees::fee(&fees);
-      let fee_admin = stable_fees::admin_fee(&fees);
-
-      assert_eq(fee, 0);
+      assert_eq(fee_in, 0);
+      assert_eq(fee_out, 0);
       assert_eq(fee_admin, 0);
     };
     test::end(scenario);
@@ -119,34 +100,22 @@ module clamm::stable_fees_tests {
     {
       let mut fees = stable_fees::new();
 
-      stable_fees::commit_fee(&mut fees, option::some(MAX_FEE_PERCENT), test.ctx());
-      stable_fees::commit_admin_fee(&mut fees, option::some(MAX_FEE_PERCENT / 2), test.ctx());
-
-      let fee = stable_fees::fee(&fees);
-      let fee_admin = stable_fees::admin_fee(&fees);
-
-      assert_eq(fee, INITIAL_FEE_PERCENT);
-      assert_eq(fee_admin, MAX_ADMIN_FEE);
-
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-
-      stable_fees::update_fee(&mut fees, test.ctx());
-      stable_fees::update_admin_fee(&mut fees, test.ctx());
+      stable_fees::update_fee_in_percent(&mut fees, option::some(MAX_FEE_PERCENT)); // 2%
+      stable_fees::update_fee_out_percent(&mut fees, option::some(MAX_FEE_PERCENT / 2)); // 1%
+      stable_fees::update_admin_fee_percent(&mut fees, option::some(MAX_FEE_PERCENT * 2)); // 4%
 
       let amount = 100;
 
-      assert_eq(stable_fees::calculate_fee(&fees, amount), 2);
-      assert_eq(stable_fees::calculate_admin_fee(&fees, amount), 1);
+      assert_eq(stable_fees::calculate_fee_in_amount(&fees, amount), 2);
+      assert_eq(stable_fees::calculate_fee_out_amount(&fees, amount), 1);
+      assert_eq(stable_fees::calculate_admin_amount(&fees, amount), 4);
     };
     test::end(scenario);
   }
 
 #[test]
-#[expected_failure(abort_code = clamm::errors::INVALID_FEE, location = clamm::stable_fees)]  
-fun aborts_max_fee() {
+#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
+fun aborts_max_fee_in() {
     let mut scenario = scenario();
     let (alice, _) = people();
 
@@ -156,13 +125,30 @@ fun aborts_max_fee() {
     {
       let mut fees = stable_fees::new();
 
-      stable_fees::commit_fee(&mut fees, option::some(MAX_FEE_PERCENT + 1), test.ctx());
+      stable_fees::update_fee_in_percent(&mut fees, option::some(MAX_FEE_PERCENT + 1));
     };
     test::end(scenario);
   }
 
 #[test]
-#[expected_failure(abort_code = clamm::errors::INVALID_FEE, location = clamm::stable_fees)]  
+#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
+fun aborts_max_fee_out() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+   
+    next_tx(test, alice);
+    {
+      let mut fees = stable_fees::new();
+
+      stable_fees::update_fee_out_percent(&mut fees, option::some(MAX_FEE_PERCENT + 1));
+    };
+    test::end(scenario);
+  }
+
+#[test]
+#[expected_failure(abort_code = 11, location = clamm::stable_fees)]  
 fun aborts_max_admin_fee() {
     let mut scenario = scenario();
     let (alice, _) = people();
@@ -173,48 +159,7 @@ fun aborts_max_admin_fee() {
     {
       let mut fees = stable_fees::new();
 
-      stable_fees::commit_admin_fee(&mut fees, option::some(MAX_ADMIN_FEE + 1), test.ctx());
-    };
-    test::end(scenario);
-  }
-
-#[test]
-#[expected_failure(abort_code = clamm::errors::MUST_WAIT_TO_UPDATE_FEES, location = clamm::stable_fees)]  
-fun commit_fee_aborts_on_early_update() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-   
-    next_tx(test, alice);
-    {
-      let mut fees = stable_fees::new();
-
-      stable_fees::commit_fee(&mut fees, option::some(2), test.ctx());
-      test.next_epoch(@0x0);
-      test.next_epoch(@0x0);
-
-      stable_fees::update_fee(&mut fees, test.ctx());
-    };
-    test::end(scenario);
-  }
-
-#[test]
-#[expected_failure(abort_code = clamm::errors::MUST_WAIT_TO_UPDATE_FEES, location = clamm::stable_fees)]  
-fun commit_admin_fee_aborts_on_early_update() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-   
-    next_tx(test, alice);
-    {
-      let mut fees = stable_fees::new();
-
-      stable_fees::commit_admin_fee(&mut fees, option::some(2), test.ctx());
-      test.next_epoch(@0x0);
-
-      stable_fees::update_admin_fee(&mut fees, test.ctx());
+      stable_fees::update_admin_fee_percent(&mut fees, option::some(MAX_ADMIN_FEE + 1));
     };
     test::end(scenario);
   }

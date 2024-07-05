@@ -11,9 +11,8 @@ module clamm::stable_tuple_4pool_remove_liquidity_tests {
   use clamm::usdt::USDT;
   use clamm::usdc::USDC;
   use clamm::curves::Stable;
-  use clamm::lp_coin::LP_COIN;
   use clamm::interest_clamm_stable;
-  use clamm::pool_admin::PoolAdmin;
+  use clamm::lp_coin::LP_COIN;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_stable::setup_4pool;
   use clamm::amm_test_utils::{people, scenario, normalize_amount};
@@ -119,44 +118,5 @@ module clamm::stable_tuple_4pool_remove_liquidity_tests {
       test::return_shared(pool);            
     };
     test::end(scenario); 
-  }
-
-  #[test]
-  fun remove_liquidity_cannot_be_paused() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-    
-    setup_4pool(test, 2100, 800, 900, 1000);
-
-    next_tx(test, alice);    
-    {
-      let mut pool = test::take_shared<InterestPool<Stable>>(test);
-      let cap = test.take_from_sender<PoolAdmin>();
-      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
-
-      let c = clock::create_for_testing(ctx(test));
-
-      pool.pause(&cap);
-
-      let(coin_dai, coin_usdc, coin_usdt, coin_frax) = interest_clamm_stable::remove_liquidity_4_pool<DAI, USDC, USDT, FRAX, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<LP_COIN>(supply / 10, ctx(test)),
-        vector[0, 0, 0, 0],
-        ctx(test)
-      );
-
-      burn(coin_dai);
-      burn(coin_usdc);
-      burn(coin_usdt);
-      burn(coin_frax);
-
-      clock::destroy_for_testing(c);
-      test.return_to_sender(cap);
-      test::return_shared(pool);            
-    };
-    test::end(scenario);  
   }
 }

@@ -45,7 +45,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -67,6 +67,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -83,7 +84,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -106,6 +107,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -122,7 +124,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -146,6 +148,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -162,7 +165,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -187,6 +190,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -203,7 +207,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -229,6 +233,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -245,7 +250,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -264,6 +269,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -280,7 +286,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -303,6 +309,7 @@ module clamm::stable_no_hooks_tests {
       destroy(coin_a);
       destroy(coin_b);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -319,7 +326,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -343,6 +350,7 @@ module clamm::stable_no_hooks_tests {
       destroy(coin_b);
       destroy(coin_c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -359,7 +367,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -384,6 +392,7 @@ module clamm::stable_no_hooks_tests {
       destroy(coin_c);
       destroy(coin_d);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -400,7 +409,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -426,6 +435,7 @@ module clamm::stable_no_hooks_tests {
       destroy(coin_d);
       destroy(coin_e);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }
@@ -442,7 +452,7 @@ module clamm::stable_no_hooks_tests {
 
     next_tx(test, alice);
     {
-     let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+     let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
       utils::make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<DAI>()]),
       versioned::create(0, 0, ctx(test)),
       ctx(test)
@@ -463,6 +473,7 @@ module clamm::stable_no_hooks_tests {
 
       destroy(c);
       destroy(pool);
+      destroy(pool_admin);
     };
     test::end(scenario); 
  }

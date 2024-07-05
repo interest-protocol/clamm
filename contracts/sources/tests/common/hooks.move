@@ -29,9 +29,9 @@ module clamm::hooks_tests {
    {
 
 
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
-    versioned::create(0, 0, ctx(test)),
+     versioned::create(0, 0, ctx(test)),
      ctx(test)
     );
 
@@ -51,6 +51,7 @@ module clamm::hooks_tests {
     pool.finish(finish_request);
 
     destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -64,7 +65,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -86,6 +87,7 @@ module clamm::hooks_tests {
     pool.finish(finish_request);
 
     destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -99,7 +101,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -120,7 +122,8 @@ module clamm::hooks_tests {
 
     pool.finish(finish_request);
 
-    destroy(pool);   
+    destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -135,7 +138,7 @@ module clamm::hooks_tests {
    next_tx(test, alice);
    {
 
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -156,7 +159,8 @@ module clamm::hooks_tests {
 
     pool.finish(finish_request);
 
-    destroy(pool);  
+    destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -171,7 +175,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -187,6 +191,7 @@ module clamm::hooks_tests {
     destroy(pool.start_swap());
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -202,7 +207,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -216,7 +221,8 @@ module clamm::hooks_tests {
 
     destroy(pool.finish_swap(request));
 
-    pool.share();  
+    pool.share();
+    transfer::public_transfer(pool_admin, alice);    
    };
    test::end(scenario); 
  }
@@ -231,7 +237,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -250,6 +256,7 @@ module clamm::hooks_tests {
     destroy(pool.finish_swap(request));
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);    
    };
    test::end(scenario); 
  }
@@ -264,7 +271,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -280,6 +287,7 @@ module clamm::hooks_tests {
     destroy(pool.start_add_liquidity());
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -295,7 +303,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -313,6 +321,7 @@ module clamm::hooks_tests {
     destroy(pool.finish_add_liquidity(request));
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -328,7 +337,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -348,6 +357,7 @@ module clamm::hooks_tests {
     destroy(pool.finish_add_liquidity(request));
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -363,7 +373,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -379,6 +389,7 @@ module clamm::hooks_tests {
     destroy(pool.start_remove_liquidity());
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -394,7 +405,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -412,6 +423,7 @@ module clamm::hooks_tests {
     destroy(pool.finish_remove_liquidity(request));
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -427,7 +439,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -445,6 +457,7 @@ module clamm::hooks_tests {
     destroy(pool.finish_remove_liquidity(request));
 
     pool.share();
+    transfer::public_transfer(pool_admin, alice);
    };
   
    test::end(scenario);         
@@ -460,7 +473,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -475,6 +488,7 @@ module clamm::hooks_tests {
     pool.finish(start_request);
 
     destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -490,7 +504,7 @@ module clamm::hooks_tests {
    next_tx(test, alice);
    {
 
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -505,6 +519,7 @@ module clamm::hooks_tests {
     pool.finish(start_request);
 
     destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -519,7 +534,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -533,7 +548,8 @@ module clamm::hooks_tests {
 
     pool.finish(start_request);
 
-    destroy(pool); 
+    destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }
@@ -548,7 +564,7 @@ module clamm::hooks_tests {
 
    next_tx(test, alice);
    {
-    let (mut pool, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
+    let (mut pool, pool_admin, mut hooks_builder) = interest_pool::new_with_hooks<Stable>(
      make_coins_vec_set_from_vector(vector[type_name::get<USDC>(), type_name::get<ETH>()]),
      versioned::create(0, 0, ctx(test)),
      ctx(test)
@@ -562,7 +578,8 @@ module clamm::hooks_tests {
 
     pool.finish(start_request);
 
-    destroy(pool); 
+    destroy(pool);
+    destroy(pool_admin);    
    };
    test::end(scenario);   
   }

@@ -17,7 +17,7 @@ module clamm::stable_math {
   use fun utils::to_u64 as u256.to_u64;
   use fun utils::to_u256 as u64.to_u256;
 
-  // === public(package)-View Functions ===
+  // === Public-View Functions ===
 
   /*
   * @notice It calculates the amplifier for the Stable invariant. A higher `A` makes the bonding curve more linear. 
@@ -31,7 +31,7 @@ module clamm::stable_math {
   * @param clock The `Clock` shared object
   * @return u256 The current `A` value. 
   */
-  public(package) fun a(
+  public fun a(
     a0: u256,
     t0: u256,
     a1: u256,
@@ -57,7 +57,7 @@ module clamm::stable_math {
   * @param balances All coin balances in the pool. 
   * @return u256 The current invariant 
   */
-  public(package) fun invariant_(amp: u256, balances: vector<u256>): u256 {
+  public fun invariant_(amp: u256, balances: vector<u256>): u256 {
     let s = balances.sum();
     if (s == 0) return 0;
     
@@ -101,7 +101,7 @@ module clamm::stable_math {
   * @param balances All coin balances in the pool. 
   * @return u256 The current invariant 
   */
-  public(package) fun y(
+  public fun y(
     amp: u256, 
     coin_in_index: u256, 
     coin_out_index: u256,
@@ -162,7 +162,7 @@ module clamm::stable_math {
   * @param lp_supply_value The current Lp Coin supply before burning `lp_burn_amount`. 
   * @return u256 The new balance for Coin at index `coin_index`. 
   */
-  public(package) fun y_lp(
+  public fun y_lp(
     amp: u256, 
     coin_index: u256, 
     balances: vector<u256>, 
@@ -189,7 +189,7 @@ module clamm::stable_math {
   * @param _invariant The new invariant of the pool. 
   * @return u256 The new balance for Coin at index `coin_index`. 
   */
-  public(package) fun y_d(amp: u256, coin_index: u256, balances: vector<u256>, _invariant: u256): u256 {
+  public fun y_d(amp: u256, coin_index: u256, balances: vector<u256>, _invariant: u256): u256 {
     let mut c = _invariant;
     let mut s = 0;
     let n_coins = balances.length().to_u256();

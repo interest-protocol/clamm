@@ -530,41 +530,4 @@ module clamm::volatile_2pool_swap_tests {
     clock::destroy_for_testing(c);
     test::end(scenario);     
   }   
-
-  #[test]
-  #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]  
-  fun swap_is_paused() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-    
-    setup_2pool(test, 4500, 3);
-    let mut c = clock::create_for_testing(ctx(test));
-
-    clock::increment_for_testing(&mut c, TWENTY_MILLISECONDS / 20);
-
-    next_tx(test, alice);
-    {
-      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
-      let cap = test.take_from_sender<PoolAdmin>();
-
-      pool.pause(&cap);
-
-      burn(interest_clamm_volatile::swap<USDC, ETH, LP_COIN>(
-        &mut pool,
-        &c,
-        mint(1500, 6, ctx(test)),
-        0,
-        ctx(test)
-        )
-      );
-
-      test.return_to_sender(cap);
-      test::return_shared(pool);
-    };   
-
-    clock::destroy_for_testing(c);
-    test::end(scenario);     
-  }  
 }

@@ -19,7 +19,6 @@ module clamm::pool_events {
     coinOut: TypeName,    
     amount_in: u64, 
     amount_out: u64,
-    fee: u64
   }
 
   public struct AddLiquidity has copy, drop {
@@ -36,16 +35,11 @@ module clamm::pool_events {
     shares: u64
   }
 
-  public struct CommitFee has copy, drop {
-    pool: address,
-    future_fee: Option<u256>,
-    future_admin_fee: Option<u256>,     
-  }
-
   public struct UpdateFee has copy, drop {
     pool: address,
-    fee: u256,
-    admin_fee: u256,     
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,     
   }
 
   public struct TakeFee has copy, drop {
@@ -85,17 +79,6 @@ module clamm::pool_events {
     timestamp: u64,
   }
 
-  public struct CommitParameters has drop, copy {
-    pool: address,
-    admin_fee: u256,
-    out_fee: u256,
-    mid_fee: u256,
-    gamma_fee: u256,
-    allowed_extra_profit: u256,
-    adjustment_step: u256,
-    ma_half_time: u256
-  }
-
   public struct UpdateParameters has drop, copy {
     pool: address,
     admin_fee: u256,
@@ -119,14 +102,6 @@ module clamm::pool_events {
     amount: u64
   }
 
-  public struct Pause has copy, drop {
-    pool: address
-  }
-
-  public struct UnPause has copy, drop {
-    pool: address
-  }
-
   // === Public-Package Functions ===
 
   public(package) fun new_pool(
@@ -143,10 +118,9 @@ module clamm::pool_events {
     coinIn: TypeName,
     coinOut: TypeName,    
     amount_in: u64, 
-    amount_out: u64,
-    fee: u64
+    amount_out: u64
   ) {
-    emit(Swap { pool, coinIn, coinOut, amount_in, amount_out, fee });
+    emit(Swap { pool, coinIn, coinOut, amount_in, amount_out });
   }
 
   public(package) fun add_liquidity(
@@ -167,20 +141,13 @@ module clamm::pool_events {
     emit(RemoveLiquidity { pool, coins, amounts, shares });
   }
 
-  public(package) fun commit_stable_fee(
-    pool: address,
-    future_fee: Option<u256>,
-    future_admin_fee: Option<u256>
-  ) {
-    emit(CommitFee { pool, future_fee, future_admin_fee });
-  }
-
   public(package) fun update_stable_fee(
     pool: address, 
-    fee: u256,
-    admin_fee: u256,     
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,     
   ) {
-    emit(UpdateFee { pool, fee, admin_fee });
+    emit(UpdateFee { pool, fee_in_percent, fee_out_percent, admin_fee_percent });
   }
 
   public(package) fun take_fees(pool: address, coin: TypeName, amount: u64) {
@@ -226,28 +193,6 @@ module clamm::pool_events {
     emit(StopRampAGamma { pool, a, gamma, timestamp });
   }
 
-  public(package) fun commit_parameters(
-    pool: address,
-    admin_fee: u256,
-    out_fee: u256,
-    mid_fee: u256,
-    gamma_fee: u256,
-    allowed_extra_profit: u256,
-    adjustment_step: u256,
-    ma_half_time: u256    
-  ) {
-    emit(CommitParameters { 
-      pool,
-      admin_fee,
-      out_fee,
-      mid_fee,
-      gamma_fee,
-      allowed_extra_profit,
-      adjustment_step,
-      ma_half_time
-    });
-  }
-
   public(package) fun update_parameters(
     pool: address,
     admin_fee: u256,
@@ -272,13 +217,5 @@ module clamm::pool_events {
 
   public(package) fun donate(pool: address, coin: TypeName, amount: u64) {
     emit(Donate { pool, coin, amount });
-  }
-
-  public(package) fun pause(pool: address) {
-    emit(Pause { pool });
-  }
-
-  public(package) fun unpause(pool: address) {
-    emit(UnPause { pool });
   }
 } 
