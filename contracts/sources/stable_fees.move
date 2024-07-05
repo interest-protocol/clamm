@@ -1,132 +1,87 @@
 module clamm::stable_fees {
   // === Imports ===
 
-  use suitears::math256::mul_div_up;
+  use suitears::fixed_point_wad::mul_up;
 
   use clamm::errors;
 
   // === Constants ===
 
-  const PRECISION: u256 = 1_000_000_000_000_000_000;
-  const INITIAL_FEE_PERCENT: u256 = 500000000000000; // 0.05%
+  const INITIAL_FEE_PERCENT: u256 = 250000000000000; // 0.025%
   const MAX_FEE_PERCENT: u256 = 20000000000000000; // 2%
   const MAX_ADMIN_FEE: u256 = 200000000000000000; // 20%  
-  const UPDATE_DELAY: u64 = 3; // 3 epochs
 
   // === Structs ===
 
   public struct StableFees has store, copy, drop {
-    fee: u256,
-    admin_fee: u256,     
-    future_fee: Option<u256>,
-    future_admin_fee: Option<u256>,
-    // epoch
-    deadline: u64
+    fee_in_percent: u256,
+    fee_out_percent: u256, 
+    admin_fee_percent: u256,     
   }
 
-  // === public(package)-Mutative Functions ===
+  // === Public-Mutative Functions ===
 
   public fun new(): StableFees {
     StableFees {
-      fee: INITIAL_FEE_PERCENT,
-      admin_fee: MAX_ADMIN_FEE,
-      future_fee: option::none(),
-      future_admin_fee: option::none(),
-      deadline: 0
+      fee_in_percent: INITIAL_FEE_PERCENT,
+      fee_out_percent: INITIAL_FEE_PERCENT,
+      admin_fee_percent: 0
     }
   }
 
-  public(package) fun commit_fee(self: &mut StableFees, fee: Option<u256>, ctx: &TxContext) {
-    if (fee.is_none()) return;
-  
-    assert!(MAX_FEE_PERCENT >= *fee.borrow(), errors::invalid_fee());
-
-    self.update_deadline(ctx);
-    self.future_fee = fee;
-  }
-
-  public(package) fun update_fee(self: &mut StableFees, ctx: &TxContext) {
-    if (self.future_fee.is_none()) return;
+  public fun update_fee_in_percent(fee: &mut StableFees, mut fee_in_percent: Option<u256>) {
+    if (option::is_none(&fee_in_percent)) return;
+    let fee_in_percent = fee_in_percent.extract();
     
-    self.assert_epoch(ctx);
-
-    self.fee = self.future_fee.extract();
+    assert!(MAX_FEE_PERCENT >= fee_in_percent, errors::invalid_fee());
+    fee.fee_in_percent = fee_in_percent;
   }
 
-  public(package) fun commit_admin_fee(self: &mut StableFees, fee: Option<u256>, ctx: &TxContext) {
-    if (fee.is_none()) return;
+  public fun update_fee_out_percent(fee: &mut StableFees, mut fee_out_percent: Option<u256>) {
+    if (option::is_none(&fee_out_percent)) return;
+    let fee_out_percent = fee_out_percent.extract();
     
-    assert!(MAX_ADMIN_FEE >= *fee.borrow(), errors::invalid_fee());
-    
-    self.update_deadline(ctx);
-    self.future_admin_fee = fee;
+    assert!(MAX_FEE_PERCENT >= fee_out_percent, errors::invalid_fee());
+    fee.fee_out_percent = fee_out_percent;
   }
 
-  public(package) fun update_admin_fee(self: &mut StableFees, ctx: &TxContext) {
-    if (self.future_admin_fee.is_none()) return;
+  public fun update_admin_fee_percent(fee: &mut StableFees, mut admin_fee_percent: Option<u256>) {
+    if (option::is_none(&admin_fee_percent)) return;
+    let admin_fee_percent = admin_fee_percent.extract();
 
-    self.assert_epoch(ctx);
-
-    self.admin_fee = self.future_admin_fee.extract();
+    assert!(MAX_ADMIN_FEE >= admin_fee_percent, errors::invalid_fee());
+    fee.admin_fee_percent = admin_fee_percent;
   }
 
-  // === public(package)-View Functions ===
+  // === Public-View Functions ===
 
-  public(package) fun fee(self: &StableFees): u256 {
-    self.fee
+  public fun fee_in_percent(fees: &StableFees): u256 {
+    fees.fee_in_percent
   }
 
-  public(package) fun future_fee(self: &StableFees): Option<u256> {
-    self.future_fee
+  public fun fee_out_percent(fees: &StableFees): u256 {
+    fees.fee_out_percent
   }
 
-  public(package) fun admin_fee(self: &StableFees): u256 {
-    self.admin_fee
+  public fun admin_fee_percent(fees: &StableFees): u256 {
+    fees.admin_fee_percent
   }
 
-  public(package) fun future_admin_fee(self: &StableFees): Option<u256> {
-    self.future_admin_fee
+  public fun calculate_fee_in_amount(fees: &StableFees, amount: u64): u64 {
+    calculate_fee_amount(amount, fees.fee_in_percent)
   }
 
-  public(package) fun deadline(self: &StableFees): u64 {
-    self.deadline
+  public fun calculate_fee_out_amount(fees: &StableFees, amount: u64): u64 {
+    calculate_fee_amount(amount, fees.fee_out_percent)
   }
 
-  public(package) fun calculate_fee(self: &StableFees, amount: u256): u256 {
-    calculate_fee_amount(amount, self.fee)
-  }
-
-  public(package) fun calculate_admin_fee(fees: &StableFees, amount: u256): u256 {
-    calculate_fee_amount(amount, fees.admin_fee)
+  public fun calculate_admin_amount(fees: &StableFees, amount: u64): u64 {
+    calculate_fee_amount(amount, fees.admin_fee_percent)
   }
 
   // === Private Functions ===
 
-  fun assert_epoch(self: &StableFees, ctx: &TxContext) {
-    assert!(ctx.epoch() > self.deadline, errors::must_wait_update_fees());
-  }
-
-  fun update_deadline(self: &mut StableFees, ctx: &TxContext) {
-    self.deadline = ctx.epoch() + UPDATE_DELAY;
-  }
-
-  fun calculate_fee_amount(x: u256, percent: u256): u256 {
-    let result = mul_div_up(x, percent, PRECISION);
-    assert!(result != 0 || percent == 0 || x == 0, errors::invalids_stable_fee_amount());
-
-    result
-  }
-
-  // === Test-Only Functions ===
-
-  #[test_only]
-  public fun new_for_testing(fee: u256, admin_fee: u256): StableFees {
-    StableFees {
-      fee,
-      admin_fee,
-      future_fee: option::none(),
-      future_admin_fee: option::none(),
-      deadline: 0
-    }
+  fun calculate_fee_amount(x: u64, percent: u256): u64 {
+    (mul_up((x as u256), percent) as u64)
   }
 }

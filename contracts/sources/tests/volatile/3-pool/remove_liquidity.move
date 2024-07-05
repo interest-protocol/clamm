@@ -14,7 +14,6 @@ module clamm::volatile_3pool_remove_liquidity_tests {
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
-  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_3pool;
   use clamm::amm_test_utils ::{people, scenario, mint};
@@ -847,94 +846,4 @@ module clamm::volatile_3pool_remove_liquidity_tests {
     clock::destroy_for_testing(c);
     test::end(scenario);
   }    
-
-  #[test]
-  #[expected_failure(abort_code = clamm::errors::POOL_IS_PAUSED, location = clamm::interest_pool)]  
-  fun remove_liquidity_one_coin_is_paused() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-    
-    setup_3pool(test, 150_000, 3, 100);
-    let c = clock::create_for_testing(ctx(test));
-
-    next_tx(test, alice);
-    {
-      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
-      let cap = test.take_from_sender<PoolAdmin>();
-
-      let lp_coin = interest_clamm_volatile::add_liquidity_3_pool<USDC, BTC, ETH, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<USDC>(355_000, 6, ctx(test)),
-        coin::zero(ctx(test)),
-        coin::zero(ctx(test)),
-        0,
-        ctx(test)
-      );
-
-      pool.pause(&cap);
-
-      burn(interest_clamm_volatile::remove_liquidity_one_coin<BTC, LP_COIN>(
-        &mut pool, 
-        &c,
-        lp_coin,
-        0,
-        ctx(test)
-      ));
-
-      test.return_to_sender(cap);
-      test::return_shared(pool);
-    };
-
-    clock::destroy_for_testing(c);
-    test::end(scenario);
-  } 
-
-  #[test]
-  fun remove_liquidity_cannot_be_paused() {
-    let mut scenario = scenario();
-    let (alice, _) = people();
-
-    let test = &mut scenario;
-    
-    setup_3pool(test, 150_000, 3, 100);
-    let mut c = clock::create_for_testing(ctx(test));
-
-    next_tx(test, alice);
-    {
-      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
-      let cap = test.take_from_sender<PoolAdmin>();
-      clock::increment_for_testing(&mut c, 3_000);
-
-      let lp_coin = interest_clamm_volatile::add_liquidity_3_pool<USDC, BTC, ETH, LP_COIN>(
-        &mut pool,
-        &c,
-        mint<USDC>(355_005, 6, ctx(test)),
-        coin::zero(ctx(test)),
-        coin::zero(ctx(test)),
-        0,
-        ctx(test)
-      );
-
-      pool.pause(&cap);
-
-      let (coin_usdc, coin_eth, coin_btc) = interest_clamm_volatile::remove_liquidity_3_pool<USDC, BTC, ETH, LP_COIN>(
-        &mut pool,
-        lp_coin,
-        vector[0, 0, 0],
-        ctx(test)
-      );    
-
-      burn(coin_usdc);
-      burn(coin_eth);
-      burn(coin_btc);
-      test.return_to_sender(cap);
-      test::return_shared(pool);
-    };    
-
-    clock::destroy_for_testing(c);
-    test::end(scenario);
-  }
 }

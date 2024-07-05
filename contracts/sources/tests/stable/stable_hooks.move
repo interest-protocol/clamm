@@ -45,11 +45,11 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
-      mint(2_000_000_000, test.ctx()),
-      mint(3_000_000_000_000, test.ctx()),
+      mint(2, test.ctx()),
+      mint(3, test.ctx()),
       create_supply_for_testing<LP_COIN>(),
       INITIAL_A,
       test.ctx()
@@ -68,7 +68,7 @@ module clamm::stable_hooks_tests {
       &mut pool,
       &c,
       start_request,
-      mint(1_000, test.ctx()),
+      mint(1, test.ctx()),
       0,
       test.ctx()
     );
@@ -81,6 +81,7 @@ module clamm::stable_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -99,7 +100,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(2, test.ctx()),
@@ -138,6 +139,7 @@ module clamm::stable_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -156,7 +158,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
       &coin_decimals,
       mint(2, test.ctx()),
@@ -197,6 +199,7 @@ module clamm::stable_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -215,7 +218,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, DAI, LP_COIN>(
       &c,
       &coin_decimals,
       mint(2, test.ctx()),
@@ -258,6 +261,7 @@ module clamm::stable_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -276,7 +280,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, ETH, USDT, DAI, FRAX, LP_COIN>(
       &c,
       &coin_decimals,
       mint(2, test.ctx()),
@@ -321,6 +325,7 @@ module clamm::stable_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -339,7 +344,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(2, test.ctx()),
@@ -371,6 +376,7 @@ module clamm::stable_hooks_tests {
     destroy(c);     
     destroy(pool);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -389,7 +395,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(1000, test.ctx()),
@@ -427,6 +433,7 @@ module clamm::stable_hooks_tests {
     destroy(coin_a);
     destroy(coin_b);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -445,7 +452,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_3_pool_with_hooks<USDC, ETH, USDT, LP_COIN>(
       &c,
       &coin_decimals,
       mint(1000, test.ctx()),
@@ -484,6 +491,7 @@ module clamm::stable_hooks_tests {
     destroy(coin_b);
     destroy(coin_c);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -503,7 +511,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, FRAX, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_4_pool_with_hooks<USDC, ETH, USDT, FRAX, LP_COIN>(
       &c,
       &coin_decimals,
       mint(1000, test.ctx()),
@@ -544,6 +552,7 @@ module clamm::stable_hooks_tests {
     destroy(coin_c);
     destroy(coin_d);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -562,7 +571,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, TRUE_USD, USDT, FRAX, DAI, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_5_pool_with_hooks<USDC, TRUE_USD, USDT, FRAX, DAI, LP_COIN>(
       &c,
       &coin_decimals,
       mint(1000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -605,6 +614,7 @@ module clamm::stable_hooks_tests {
     destroy(coin_d);
     destroy(coin_e);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -623,7 +633,7 @@ module clamm::stable_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_stable::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(2, test.ctx()),
@@ -659,6 +669,7 @@ module clamm::stable_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    

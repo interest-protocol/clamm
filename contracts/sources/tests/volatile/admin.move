@@ -11,8 +11,8 @@ module clamm::volatile_admin_tests {
   use clamm::usdc::USDC;
   use clamm::lp_coin::LP_COIN;
   use clamm::curves::Volatile;
-  use clamm::pool_admin::PoolAdmin;
   use clamm::interest_clamm_volatile;
+  use clamm::pool_admin::{Self, PoolAdmin};
   use clamm::interest_pool::InterestPool;
   use clamm::init_interest_amm_volatile::setup_2pool;
   use clamm::amm_test_utils ::{people, scenario};
@@ -37,26 +37,6 @@ module clamm::volatile_admin_tests {
       let mut pool = test::take_shared<InterestPool<Volatile>>(test);
       let cap = test::take_from_sender<PoolAdmin>(test);
 
-      interest_clamm_volatile::commit_parameters<LP_COIN>(
-        &mut pool,
-        &cap,
-        vector[
-          option::some(MIN_FEE + 123),
-          option::some(MIN_FEE + 1234),
-          option::some(MIN_FEE + 12345),
-          option::some(MIN_FEE + 123456),
-          option::some(MIN_FEE + 1234567),
-          option::some(MIN_FEE + 12345678),
-          option::some(ONE_WEEK / 2)
-        ],
-        test.ctx()
-      );
-
-      test.next_epoch(alice);
-      test.next_epoch(alice);
-      test.next_epoch(alice);
-      test.next_epoch(alice);
-
       let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
 
       interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
@@ -67,7 +47,15 @@ module clamm::volatile_admin_tests {
         &cap,
         &c,
         request,
-        test.ctx()
+        vector[
+          option::some(MIN_FEE + 123),
+          option::some(MIN_FEE + 1234),
+          option::some(MIN_FEE + 12345),
+          option::some(MIN_FEE + 123456),
+          option::some(MIN_FEE + 1234567),
+          option::some(MIN_FEE + 12345678),
+          option::some(ONE_WEEK / 2)
+        ]
       );
 
       assert_eq(interest_clamm_volatile::mid_fee<LP_COIN>(&mut pool), MIN_FEE + 123);
@@ -85,11 +73,18 @@ module clamm::volatile_admin_tests {
     next_tx(test, alice);
     { 
       let mut pool = test::take_shared<InterestPool<Volatile>>(test);
-      let cap = test::take_from_sender<PoolAdmin>(test); 
+      let cap = test::take_from_sender<PoolAdmin>(test);
 
-      interest_clamm_volatile::commit_parameters<LP_COIN>(
+      let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
+
+      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);      
+
+      interest_clamm_volatile::update_parameters<LP_COIN>(
         &mut pool,
         &cap,
+        &c,
+        request,
         vector[
           option::none(),
           option::none(),
@@ -98,26 +93,7 @@ module clamm::volatile_admin_tests {
           option::none(),
           option::none(),
           option::none(),
-        ],
-        test.ctx()
-      );
-
-      test.next_epoch(alice);
-      test.next_epoch(alice);
-      test.next_epoch(alice);
-      test.next_epoch(alice);
-
-      let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
-
-      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
-      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request); 
-
-      interest_clamm_volatile::update_parameters<LP_COIN>(
-        &mut pool,
-        &cap,
-        &c,
-        request,
-        test.ctx()
+        ]
       );
 
       assert_eq(interest_clamm_volatile::mid_fee<LP_COIN>(&mut pool), MIN_FEE + 123);
@@ -206,6 +182,127 @@ module clamm::volatile_admin_tests {
       assert_eq(interest_clamm_volatile::future_time<LP_COIN>(&mut pool), (ONE_WEEK as u64) + 86400000);      
 
       test::return_to_sender(test, cap);
+      test::return_shared(pool);            
+    };    
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  fun test_update_parameters_invalid_pool_admin() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 15000, 10);
+
+    let c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    { 
+      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
+      let cap = pool_admin::new(test.ctx());
+
+      let mut request = interest_clamm_volatile::balances_request<LP_COIN>(&mut pool);
+
+      interest_clamm_volatile::read_balance<USDC, LP_COIN>(&mut pool, &mut request);
+      interest_clamm_volatile::read_balance<ETH, LP_COIN>(&mut pool, &mut request);
+
+      interest_clamm_volatile::update_parameters<LP_COIN>(
+        &mut pool,
+        &cap,
+        &c,
+        request,
+        vector[
+          option::some(MIN_FEE + 123),
+          option::some(MIN_FEE + 1234),
+          option::some(MIN_FEE + 12345),
+          option::some(MIN_FEE + 123456),
+          option::some(MIN_FEE + 1234567),
+          option::some(MIN_FEE + 12345678),
+          option::some(ONE_WEEK / 2)
+        ]
+      );
+
+      pool_admin::destroy(cap);
+
+      test::return_shared(pool);
+    };
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  fun test_ramp_invalid_pool_admin() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 15000, 10);
+
+    let mut c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
+      let cap = pool_admin::new(test.ctx());
+
+      clock::increment_for_testing(&mut c, MIN_RAMP_TIME);
+
+      interest_clamm_volatile::stop_ramp<LP_COIN>(
+        &mut pool,
+        &cap,
+        &c
+      );    
+
+      pool_admin::destroy(cap);
+
+      test::return_shared(pool);            
+    };    
+
+    clock::destroy_for_testing(c);
+    test::end(scenario);
+  }
+
+  #[test]
+  #[expected_failure(abort_code = clamm::errors::INVALID_POOL_ADMIN, location = clamm::interest_pool)]
+  fun test_stop_ramp_invalid_pool_admin() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+
+    setup_2pool(test, 15000, 10);
+
+    let mut c = clock::create_for_testing(ctx(test));
+
+    next_tx(test, alice);
+    {
+      let mut pool = test::take_shared<InterestPool<Volatile>>(test);
+      let cap = pool_admin::new(test.ctx());
+
+      let current_a = interest_clamm_volatile::a<LP_COIN>(&mut pool, &c);
+      let current_gamma = interest_clamm_volatile::gamma<LP_COIN>(&mut pool, &c);
+
+      clock::increment_for_testing(&mut c, MIN_RAMP_TIME);
+
+      interest_clamm_volatile::ramp<LP_COIN>(
+        &mut pool,
+        &cap,
+        &c,
+        current_a + 300,
+        current_gamma * 2,
+        ((ONE_WEEK * 2) as u64)
+      );
+
+      pool_admin::destroy(cap);
+
       test::return_shared(pool);            
     };    
 

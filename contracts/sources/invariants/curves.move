@@ -33,14 +33,14 @@ module clamm::curves {
   */
   public struct Stable {}
 
-  // === public(package) Package Functions ===  
+  // === Public View Functions ===  
 
   /*
   * @notice Checks if the `Type` is equal to `Volatile`
   *
   * @return bool 
   */
-  public(package) fun is_volatile<Type>(): bool {
+  public fun is_volatile<Type>(): bool {
     are_equal<Type, Volatile>() 
   }
 
@@ -49,7 +49,7 @@ module clamm::curves {
   *
   * @return bool 
   */
-  public(package) fun is_stable<Type>(): bool {
+  public fun is_stable<Type>(): bool {
     are_equal<Type, Stable>() 
   }
 
@@ -58,7 +58,7 @@ module clamm::curves {
   *
   * @return bool 
   */
-  public(package) fun is_curve<Type>(): bool {
+  public fun is_curve<Type>(): bool {
     is_volatile<Type>() || is_stable<Type>()
   }
 
@@ -70,7 +70,7 @@ module clamm::curves {
   * aborts-if 
   *   - The `Type` is not `Volatile` nor `Stable`
   */
-  public(package) fun assert_curve<Type>() {
+  public fun assert_curve<Type>() {
     assert!(is_curve<Type>(), errors::invalid_curve());
   }
 

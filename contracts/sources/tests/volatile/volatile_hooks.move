@@ -49,7 +49,7 @@ module clamm::volatile_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-   let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+   let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -88,6 +88,7 @@ module clamm::volatile_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -106,7 +107,7 @@ module clamm::volatile_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -148,6 +149,7 @@ module clamm::volatile_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -166,7 +168,7 @@ module clamm::volatile_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -210,6 +212,7 @@ module clamm::volatile_hooks_tests {
     destroy(pool);
     destroy(lp_coin); 
     destroy(coin_out);
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -228,7 +231,7 @@ module clamm::volatile_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -269,6 +272,7 @@ module clamm::volatile_hooks_tests {
     destroy(coin_a);
     destroy(coin_b);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -287,7 +291,7 @@ module clamm::volatile_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_3_pool_with_hooks<USDC, FRAX, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -330,6 +334,7 @@ module clamm::volatile_hooks_tests {
     destroy(coin_b);
     destroy(coin_c);
     destroy(lp_coin); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    
@@ -348,7 +353,7 @@ module clamm::volatile_hooks_tests {
     let c = clock::create_for_testing(test.ctx());
     let coin_decimals = test.take_shared<CoinDecimals>();
 
-    let (mut pool, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
+    let (mut pool, pool_admin, mut hooks_builder, mut lp_coin) = interest_clamm_volatile::new_2_pool_with_hooks<USDC, ETH, LP_COIN>(
       &c,
       &coin_decimals,
       mint(30_000 * USDC_DECIMALS_SCALAR, test.ctx()),
@@ -388,7 +393,8 @@ module clamm::volatile_hooks_tests {
     destroy(c);     
     destroy(pool);
     destroy(lp_coin);
-    destroy(coin_out); 
+     destroy(coin_out); 
+    destroy(pool_admin);
     destroy(coin_decimals);
    };
    scenario.end();    

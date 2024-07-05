@@ -40,7 +40,7 @@ module clamm::init_interest_amm_volatile {
       let coin_decimals = test::take_shared<CoinDecimals>(test);
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
 
-      let (pool, lp_coin) = interest_clamm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
+      let (pool, pool_admin, lp_coin) = interest_clamm_volatile::new_2_pool<USDC, ETH, LP_COIN>(
         &c,
         &coin_decimals,
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
@@ -55,6 +55,7 @@ module clamm::init_interest_amm_volatile {
 
       burn(lp_coin);    
       interest_pool::share(pool);
+      transfer::public_transfer(pool_admin, alice);
       
       test::return_shared(coin_decimals);
       test::return_shared(c);
@@ -72,7 +73,7 @@ module clamm::init_interest_amm_volatile {
       let coin_decimals = test::take_shared<CoinDecimals>(test);
       let lp_coin_cap = test::take_from_sender<TreasuryCap<LP_COIN>>(test);
 
-      let (pool, lp_coin) = interest_clamm_volatile::new_3_pool<USDC, BTC, ETH, LP_COIN>(
+      let (pool, pool_admin, lp_coin) = interest_clamm_volatile::new_3_pool<USDC, BTC, ETH, LP_COIN>(
         &c,
         &coin_decimals,
         mint<USDC>(usdc_amount, USDC_DECIMALS, ctx(test)),
@@ -88,6 +89,7 @@ module clamm::init_interest_amm_volatile {
 
       burn(lp_coin);    
       interest_pool::share(pool);
+      transfer::public_transfer(pool_admin, alice);
       
       test::return_shared(coin_decimals);
       test::return_shared(c);
