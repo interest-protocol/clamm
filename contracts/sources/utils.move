@@ -5,9 +5,9 @@ module clamm::utils {
 
   use sui::vec_set::{Self, VecSet};
 
-  // === Public-Mutative Functions ===
+  // === public(package)-PackageFunctions ===
 
-  public fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
+  public(package) fun make_coins_vec_set_from_vector(data: vector<TypeName>): VecSet<TypeName> {
     let len = data.length();
     let mut set = vec_set::empty();
     let mut i = 0;
@@ -20,14 +20,14 @@ module clamm::utils {
     set
   }
 
-  public fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
+  public(package) fun vector_2_to_tuple(x: vector<u256>): (u256, u256) {
     (
       x[0],
       x[1],
     )
   }
 
-  public fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
+  public(package) fun vector_3_to_tuple(x: vector<u256>): (u256, u256, u256) {
     (
       x[0],
       x[1],
@@ -35,7 +35,7 @@ module clamm::utils {
     )
   }
 
-  public fun empty_vector(x: u256): vector<u256> {
+  public(package) fun empty_vector(x: u256): vector<u256> {
     let mut data = vector::empty();
 
     let mut i = 0;
@@ -47,21 +47,17 @@ module clamm::utils {
     data
   }
 
-  // === Public-View Functions ===
+  // === public(package)-View Functions ===
 
-  public fun to_u8(x: u64): u8 {
+  public(package) fun to_u8(x: u64): u8 {
     (x as u8)
   }
 
-  public fun to_u64(x: u256): u64 {
+  public(package) fun to_u64(x: u256): u64 {
     (x as u64)
   }
 
-  public fun to_u256(x: u64): u256 {
+  public(package) fun to_u256(x: u64): u256 {
     (x as u256)
   }
-
-  public fun head<T: copy + drop>(x: vector<T>): T {
-    x[0]
-  }  
 }
