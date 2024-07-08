@@ -1584,7 +1584,9 @@ module clamm::interest_clamm_stable {
       lp_coin_value
     );
 
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    let current_supply = state.lp_coin_supply.supply_value();
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant || current_supply == 0, errors::invalid_invariant());
 
     (coin_a, coin_b)
   }

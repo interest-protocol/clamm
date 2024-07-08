@@ -106,4 +106,43 @@ module clamm::stable_tuple_2pool_remove_liquidity_tests {
     };
     test::end(scenario); 
   }
+
+  #[test]
+  fun remove_liquidity_all() {
+    let mut scenario = scenario();
+    let (alice, _) = people();
+
+    let test = &mut scenario;
+    
+    setup_2pool(test, 900, 1000);
+
+    next_tx(test, alice);    
+    {
+      let mut pool = test::take_shared<InterestPool<Stable>>(test);
+      let cap = test.take_from_sender<PoolAdmin>();
+
+      let supply = interest_clamm_stable::lp_coin_supply<LP_COIN>(&mut pool);
+
+      let c = clock::create_for_testing(ctx(test));
+
+      pool.pause(&cap);
+
+      let(coin_usdc, coin_usdt) = interest_clamm_stable::remove_liquidity_2_pool<USDC, USDT, LP_COIN>(
+        &mut pool,
+        &c,
+        mint<LP_COIN>(supply, ctx(test)),
+        vector[0, 0],
+        ctx(test)
+      );
+
+      burn(coin_usdc);
+      burn(coin_usdt);
+
+      clock::destroy_for_testing(c);
+
+      test.return_to_sender(cap);
+      test::return_shared(pool);            
+    };
+    test::end(scenario); 
+  }
 }
