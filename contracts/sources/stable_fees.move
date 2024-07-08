@@ -70,6 +70,10 @@ module clamm::stable_fees {
     self.admin_fee = self.future_admin_fee.extract();
   }
 
+  public(package) fun reset_deadline(self: &mut StableFees) {
+    self.deadline = 0;
+  }
+
   // === public(package)-View Functions ===
 
   public(package) fun fee(self: &StableFees): u256 {
