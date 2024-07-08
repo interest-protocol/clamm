@@ -919,6 +919,8 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
 
+    assert!(state.update_deadline == 0, errors::current_update_is_ongoing());
+
     let mid_fee = option::destroy_with_default(values[0], state.fees.mid_fee);
     let out_fee = option::destroy_with_default(values[1], state.fees.out_fee);
     let admin_fee = option::destroy_with_default(values[2], state.fees.admin_fee); 
@@ -954,12 +956,14 @@ module clamm::interest_clamm_volatile {
     let pool_address = pool.addy();
     let (state, coin_states) = state_and_coin_states_mut<LpCoin>(pool);
     
+    assert!(state.update_deadline != 0, errors::commit_to_update_fees_first());
     assert!(ctx.epoch() > state.update_deadline, errors::must_wait_to_update_parameters());
 
     claim_admin_fees_impl(state, clock, request, coin_states);
 
     state.fees = state.future_fees;
     state.rebalancing_params = state.future_rebalancing_params;
+    state.update_deadline = 0;
 
     increment_version(state);
     
@@ -1045,7 +1049,7 @@ module clamm::interest_clamm_volatile {
       coin_states: vec_map::empty(),
       coin_balances: bag::new(ctx),
       admin_balance: balance::zero(),
-      update_deadline: ctx.epoch()
+      update_deadline: 0
     }    
   }
 
