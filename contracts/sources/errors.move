@@ -71,6 +71,8 @@ module clamm::errors {
   const POOL_IS_PAUSED: u64 = 67;
   const PAUSE_PERIOD_HAS_PASSED: u64 = 68;
   const INVALID_STABLE_FEE_AMOUNT: u64 = 69;
+  const COMMIT_TO_UPDATE_FEES_FIRST: u64 = 70;
+  const CURRENT_UPDATE_IS_ONGOING: u64 = 71;
 
 
   // === Public-View Functions ===
@@ -353,5 +355,13 @@ module clamm::errors {
 
   public(package) fun invalids_stable_fee_amount(): u64 {
     INVALID_STABLE_FEE_AMOUNT
+  }
+
+  public(package) fun commit_to_update_fees_first(): u64 {
+    COMMIT_TO_UPDATE_FEES_FIRST
+  }
+
+  public(package) fun current_update_is_ongoing(): u64 {
+    CURRENT_UPDATE_IS_ONGOING
   }
 }

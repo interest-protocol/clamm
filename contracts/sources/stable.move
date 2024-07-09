@@ -1014,6 +1014,8 @@ module clamm::interest_clamm_stable {
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
 
+    assert!(state.fees.deadline() == 0, errors::current_update_is_ongoing());
+
     state.fees.commit_fee(fee, ctx);
     state.fees.commit_admin_fee(admin_fee, ctx);
 
@@ -1029,11 +1031,16 @@ module clamm::interest_clamm_stable {
     _: &PoolAdmin,
     ctx: &mut TxContext
   ) {
+
     let pool_address = pool.addy();
     let state = load_mut<LpCoin>(pool.state_mut());
 
+    assert!(state.fees.deadline() != 0, errors::commit_to_update_fees_first());
+
     state.fees.update_fee(ctx);
     state.fees.update_admin_fee(ctx);
+
+    state.fees.reset_deadline();
 
     events::update_stable_fee(
       pool_address, 
@@ -1577,7 +1584,9 @@ module clamm::interest_clamm_stable {
       lp_coin_value
     );
 
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    let current_supply = state.lp_coin_supply.supply_value();
+
+    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant || current_supply == 0, errors::invalid_invariant());
 
     (coin_a, coin_b)
   }
