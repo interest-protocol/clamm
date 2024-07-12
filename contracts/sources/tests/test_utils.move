@@ -3,7 +3,6 @@ module clamm::amm_test_utils {
 
   use sui::{
     math,
-    test_utils::destroy,
     clock::{Self, Clock},
     coin::{mint_for_testing, Coin, CoinMetadata},
     test_scenario::{Self as test, Scenario, next_tx, ctx}
@@ -113,10 +112,7 @@ module clamm::amm_test_utils {
       true_usd::init_for_testing(ctx(test));
       pool_admin::init_for_testing(ctx(test));
 
-      let mut cap = coin_decimals::new_cap(ctx(test));
-
-      transfer::public_share_object(coin_decimals::new(&mut cap, ctx(test)));
-      destroy(cap);
+      transfer::public_share_object(coin_decimals::new( ctx(test)));
     };    
 
     next_tx(test, alice);
