@@ -3,7 +3,7 @@ module clamm::interest_pool {
   // === Imports ===
 
   use std::{
-    string::{Self, String},
+    string::String,
     type_name::{Self, TypeName}
   };
 
@@ -22,8 +22,6 @@ module clamm::interest_pool {
     pool_events as events,
     pool_admin::PoolAdmin
   };
-
-  use fun string::utf8 as vector.utf8;
 
   // === Constants ===
 
@@ -75,27 +73,27 @@ module clamm::interest_pool {
 
   public fun start_swap<Curve>(self: &InterestPool<Curve>): Request {
     assert!(self.has_swap_hooks(), errors::pool_has_no_swap_hooks());
-    new_request(self, START_SWAP.utf8())
+    new_request(self, START_SWAP.to_string())
   }
 
   public fun start_add_liquidity<Curve>(self: &InterestPool<Curve>): Request {
     assert!(self.has_add_liquidity_hooks(), errors::pool_has_no_add_liquidity_hooks());
-    new_request(self, START_ADD_LIQUIDITY.utf8())
+    new_request(self, START_ADD_LIQUIDITY.to_string())
   }
 
   public fun start_remove_liquidity<Curve>(self: &InterestPool<Curve>): Request {
     assert!(self.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
-    new_request(self, START_REMOVE_LIQUIDITY.utf8())
+    new_request(self, START_REMOVE_LIQUIDITY.to_string())
   }  
 
   public fun start_donate<Curve>(self: &InterestPool<Curve>): Request {
     assert!(self.has_donate_hooks(), errors::pool_has_no_donate_hooks());
-    new_request(self, START_DONATE.utf8())
+    new_request(self, START_DONATE.to_string())
   }  
 
   public fun finish<Curve>(self: &InterestPool<Curve>, request: Request) {
     assert!(
-      request.name().index_of(&b"F".utf8()) == 0, 
+      request.name().index_of(&b"F".to_string()) == 0, 
       errors::must_be_finish_request()
     );
     confirm(self, request);      
@@ -325,7 +323,7 @@ module clamm::interest_pool {
     
     self.confirm(request);
 
-    self.new_request(FINISH_SWAP.utf8())     
+    self.new_request(FINISH_SWAP.to_string())     
   }
 
   public(package) fun finish_add_liquidity<Curve>(self: &InterestPool<Curve>, request: Request): Request {
@@ -337,7 +335,7 @@ module clamm::interest_pool {
     
     self.confirm(request);
 
-    self.new_request(FINISH_ADD_LIQUIDITY.utf8())    
+    self.new_request(FINISH_ADD_LIQUIDITY.to_string())    
   }
 
   public(package) fun finish_remove_liquidity<Curve>(self: &InterestPool<Curve>, request: Request): Request {
@@ -349,7 +347,7 @@ module clamm::interest_pool {
     
     self.confirm(request);
 
-    self.new_request(FINISH_REMOVE_LIQUIDITY.utf8())
+    self.new_request(FINISH_REMOVE_LIQUIDITY.to_string())
   }  
 
   public(package) fun finish_donate<Curve>(self: &InterestPool<Curve>, request: Request): Request {
@@ -358,7 +356,7 @@ module clamm::interest_pool {
     
     self.confirm(request);
 
-    self.new_request(FINISH_DONATE.utf8())     
+    self.new_request(FINISH_DONATE.to_string())     
   }
 
   // === Private Functions ===  
@@ -366,17 +364,17 @@ module clamm::interest_pool {
   fun new_hooks_builder(pool_address: address, ctx: &mut TxContext): HooksBuilder {
     let mut rules = vec_map::empty();
 
-    rules.insert(START_SWAP.utf8(), vec_set::empty());
-    rules.insert(FINISH_SWAP.utf8(), vec_set::empty());
+    rules.insert(START_SWAP.to_string(), vec_set::empty());
+    rules.insert(FINISH_SWAP.to_string(), vec_set::empty());
     
-    rules.insert(START_ADD_LIQUIDITY.utf8(), vec_set::empty());
-    rules.insert(FINISH_ADD_LIQUIDITY.utf8(), vec_set::empty());
+    rules.insert(START_ADD_LIQUIDITY.to_string(), vec_set::empty());
+    rules.insert(FINISH_ADD_LIQUIDITY.to_string(), vec_set::empty());
     
-    rules.insert(START_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
-    rules.insert(FINISH_REMOVE_LIQUIDITY.utf8(), vec_set::empty());
+    rules.insert(START_REMOVE_LIQUIDITY.to_string(), vec_set::empty());
+    rules.insert(FINISH_REMOVE_LIQUIDITY.to_string(), vec_set::empty());
 
-    rules.insert(START_DONATE.utf8(), vec_set::empty());
-    rules.insert(FINISH_DONATE.utf8(), vec_set::empty());
+    rules.insert(START_DONATE.to_string(), vec_set::empty());
+    rules.insert(FINISH_DONATE.to_string(), vec_set::empty());
 
     HooksBuilder {
       pool_address,
@@ -390,7 +388,7 @@ module clamm::interest_pool {
 
     let rules = self.hooks.borrow().rules;
 
-    !rules.get(&start.utf8()).is_empty() || !rules.get(&finish.utf8()).is_empty()
+    !rules.get(&start.to_string()).is_empty() || !rules.get(&finish.to_string()).is_empty()
   }  
 
   fun hook<Curve>(
@@ -403,8 +401,8 @@ module clamm::interest_pool {
     let rules = self.hooks.borrow().rules;
 
     (
-      (*rules.get(&start.utf8())).into_keys(),
-      (*rules.get(&finish.utf8())).into_keys(),
+      (*rules.get(&start.to_string())).into_keys(),
+      (*rules.get(&finish.to_string())).into_keys(),
     )
   }
 
