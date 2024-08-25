@@ -6,14 +6,14 @@
 module clamm::volatile_math {
   // === Imports ===
 
-  use sui::math::pow;
+  use std::u64::pow;
+
   use suitears::math256::{diff, sum, max};
   use suitears::vectors::descending_insertion_sort;
 
   use clamm::utils;
   use clamm::errors;
 
-  use fun pow as u64.pow;
   use fun sum as vector.sum; 
   use fun utils::to_u8 as u64.to_u8;
   use fun utils::to_u256 as u64.to_u256;

@@ -1308,7 +1308,7 @@ module clamm::interest_clamm_stable {
     assert!(
       (normalized_amount_out * coin_out_decimals / PRECISION).to_u64() > amount_out
       || fee == 0, 
-      errors::invalids_stable_fee_amount()
+      errors::invalid_stable_fee_amount()
     );
     assert!(amount_out >= min_amount, errors::slippage());
 
@@ -1808,7 +1808,11 @@ module clamm::interest_clamm_stable {
 
     let coin_out = coin_state_balance_mut<CoinType, LpCoin>(state).take(amount_to_take, ctx);
 
-    assert!(virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant, errors::invalid_invariant());
+    let lp_coin_supply = state.lp_coin_supply.supply_value();
+
+    assert!(
+      virtual_price_impl(load<LpCoin>(pool.state_mut()), clock) >= prev_invariant || lp_coin_supply == 0, errors::invalid_invariant()
+    );
 
     coin_out
   }
@@ -1827,7 +1831,9 @@ module clamm::interest_clamm_stable {
     let current_balance = &mut state.balances[index];
     *current_balance = *current_balance + (coin_value * PRECISION / decimals);
 
-    coin_state_balance_mut<CoinType, LpCoin>(state).join(coin_in.into_balance())
+    coin_state_balance_mut<CoinType, LpCoin>(state).join(coin_in.into_balance());
+
+    (coin_value as u64)
   }
 
   fun take_coin<CoinType, LpCoin>(

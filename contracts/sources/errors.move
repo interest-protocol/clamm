@@ -353,7 +353,7 @@ module clamm::errors {
     MUST_WAIT_TO_UPDATE_PARAMETERS
   }
 
-  public(package) fun invalids_stable_fee_amount(): u64 {
+  public(package) fun invalid_stable_fee_amount(): u64 {
     INVALID_STABLE_FEE_AMOUNT
   }
 

@@ -116,7 +116,7 @@ module clamm::stable_fees {
 
   fun calculate_fee_amount(x: u256, percent: u256): u256 {
     let result = mul_div_up(x, percent, PRECISION);
-    assert!(result != 0 || percent == 0 || x == 0, errors::invalids_stable_fee_amount());
+    assert!(result != 0 || percent == 0 || x == 0, errors::invalid_stable_fee_amount());
 
     result
   }

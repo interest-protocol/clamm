@@ -319,7 +319,7 @@ module clamm::interest_pool {
 
   public(package) fun finish_swap<Curve>(self: &InterestPool<Curve>, request: Request): Request {
     assert!(self.has_swap_hooks(), errors::pool_has_no_swap_hooks());
-    assert!(request.name().bytes() == START_SWAP, errors::must_be_start_swap_request());
+    assert!(request.name().as_bytes() == START_SWAP, errors::must_be_start_swap_request());
     
     self.confirm(request);
 
@@ -329,7 +329,7 @@ module clamm::interest_pool {
   public(package) fun finish_add_liquidity<Curve>(self: &InterestPool<Curve>, request: Request): Request {
     assert!(self.has_add_liquidity_hooks(), errors::pool_has_no_add_liquidity_hooks());
     assert!(
-      request.name().bytes() == START_ADD_LIQUIDITY, 
+      request.name().as_bytes() == START_ADD_LIQUIDITY, 
       errors::must_be_start_add_liquidity_request()
     );
     
@@ -341,7 +341,7 @@ module clamm::interest_pool {
   public(package) fun finish_remove_liquidity<Curve>(self: &InterestPool<Curve>, request: Request): Request {
     assert!(self.has_remove_liquidity_hooks(), errors::pool_has_no_remove_liquidity_hooks());
     assert!(
-      request.name().bytes() == START_REMOVE_LIQUIDITY, 
+      request.name().as_bytes() == START_REMOVE_LIQUIDITY, 
       errors::must_be_start_remove_liquidity_request()
     );
     
@@ -352,7 +352,7 @@ module clamm::interest_pool {
 
   public(package) fun finish_donate<Curve>(self: &InterestPool<Curve>, request: Request): Request {
     assert!(self.has_donate_hooks(), errors::pool_has_no_donate_hooks());
-    assert!(request.name().bytes() == START_DONATE, errors::must_be_start_donate_request());
+    assert!(request.name().as_bytes() == START_DONATE, errors::must_be_start_donate_request());
     
     self.confirm(request);
 
